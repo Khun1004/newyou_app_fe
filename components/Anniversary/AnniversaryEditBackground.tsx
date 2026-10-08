@@ -187,11 +187,11 @@ export default function AnniversaryEditBackground() {
             <StatusBar barStyle="light-content" />
 
             {selectedBg.imageUri ? (
-                <ImageBackground source={{ uri: selectedBg.imageUri }} style={StyleSheet.absoluteFillObject} blurRadius={20}>
-                    <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)' }} />
+                <ImageBackground source={{ uri: selectedBg.imageUri }} style={StyleSheet.absoluteFill} blurRadius={20}>
+                    <View style={{ ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.7)' }} />
                 </ImageBackground>
             ) : (
-                <LinearGradient colors={selectedBg.colors || ['#000']} style={StyleSheet.absoluteFillObject} />
+                <LinearGradient colors={selectedBg.colors || ['#000']} style={StyleSheet.absoluteFill} />
             )}
 
             <View style={styles.header}>
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     previewCard: { borderRadius: 16, overflow: 'hidden', elevation: 10 },
     preview: { height: 160, justifyContent: 'center', alignItems: 'center' },
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0,0,0,0.4)',
         borderRadius: 16,
         justifyContent: 'center',

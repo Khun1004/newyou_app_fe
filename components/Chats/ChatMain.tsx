@@ -173,7 +173,7 @@ const ChatsMain = () => {
         setShowNewGroupModal(false);
 
         router.push({
-            pathname: './ChattingRoom',
+            pathname: '/ChattingRoom',
             params: { chatData: JSON.stringify(newGroup) },
         });
     };

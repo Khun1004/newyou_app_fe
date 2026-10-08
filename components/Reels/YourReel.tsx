@@ -14,7 +14,7 @@ import {
 // expo-router에서 라우팅 및 파라미터 훅 임포트
 import { useLocalSearchParams, router } from 'expo-router';
 // 아이콘 라이브러리 임포트
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons as Icon } from '@expo/vector-icons';
 // expo-video 임포트
 import { VideoView, useVideoPlayer } from 'expo-video';
 // ReelContext 임포트 (deleteReel, toggleHideReel 함수 사용)

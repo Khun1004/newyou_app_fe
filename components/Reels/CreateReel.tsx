@@ -9,7 +9,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker'; // 갤러리 접근 라이브러리 import
 import { useReels } from '@/components/contexts/ReelContext';

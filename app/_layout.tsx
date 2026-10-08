@@ -72,127 +72,22 @@ function AppContent() {
     }
 
     return (
-        // ✅ Stack 네비게이터의 기본 옵션으로 헤더를 숨김
+        // 헤더는 모든 화면에서 숨깁니다.
+        // 화면 목록을 여기에 하나하나 적지 않아도 Expo Router가 app 폴더를 보고 자동으로 등록해요.
+        // (괄호로 된 폴더 이름, 예: (birthday), (chat)은 주소에 들어가지 않는 '정리용 폴더'예요.)
         <Stack screenOptions={{ headerShown: false }}>
+            {/* 아래 탭 5개 (홈, 시간표, 게시판, 기념일, 마이) */}
+            <Stack.Screen name="(tabs)" />
+
+            {/* 로그인하지 않았을 때만 열 수 있는 화면 (로그인, 회원가입) */}
+            {/* 로그인에 성공하면 자동으로 닫히고 홈으로 이동합니다. */}
+            <Stack.Protected guard={!isAuthenticated}>
+                <Stack.Screen name="(auth)/login" />
+                <Stack.Screen name="(auth)/signup" />
+            </Stack.Protected>
+
             {/* 404 Not Found 화면 */}
             <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
-
-            {/* ✅ 비인증 상태일 때만 접근 가능한 화면 그룹 (로그인, 회원가입) */}
-            {!isAuthenticated && (
-                <Stack.Group>
-                    {/* 루트 경로 ('index') 접근 시 /login으로 강제 리다이렉트 */}
-                    <Stack.Screen
-                        name="index"
-                        options={{ redirect: '/login' }}
-                    />
-                    <Stack.Screen name="login" />
-                    <Stack.Screen name="signup" />
-                </Stack.Group>
-            )}
-
-            {/* ✅ 인증된 상태일 때만 접근 가능한 화면 그룹 (메인 앱 콘텐츠) */}
-            {isAuthenticated && (
-                <Stack.Group>
-                    {/* 루트 경로 ('index') 접근 시 /(tabs)로 강제 리다이렉트 */}
-                    <Stack.Screen
-                        name="index"
-                        options={{ redirect: '/(tabs)' }}
-                    />
-
-                    {/* 탭 그룹: (tabs) 폴더 내부에서 헤더 숨김이 재확인됨 */}
-                    <Stack.Screen name="(tabs)" />
-
-                    {/* 기타 인증된 화면들 (전역 옵션이 적용됨) */}
-                    <Stack.Screen name="ProfileEdit" />
-                    <Stack.Screen name="friends" />
-                    <Stack.Screen name="friendTimetable" />
-
-                    {/*Plan*/}
-                    <Stack.Screen name="Plan" />
-                    <Stack.Screen name="MakePlan" />
-
-                    <Stack.Screen name="Alarm" />
-                    <Stack.Screen name="AlarmList" />
-                    <Stack.Screen name="Schedule" />
-
-                    {/*Birthday*/}
-                    <Stack.Screen name="Birthday" />
-                    <Stack.Screen name="AddFriBirthday" />
-                    <Stack.Screen name="FriendBirthdayDetail" />
-
-                    {/*Note*/}
-                    <Stack.Screen name="Note" />
-                    <Stack.Screen name="AddNote" />
-                    <Stack.Screen name="NoteDetail" />
-                    <Stack.Screen name="Notification" />
-
-                    {/*Anniversary*/}
-                    <Stack.Screen name="AnniversaryEdit" />
-                    <Stack.Screen name="AnniversaryList" />
-                    <Stack.Screen name="AnniversaryEditBackground" />
-
-                    {/*Chats*/}
-                    <Stack.Screen name="ChatMain" />
-                    <Stack.Screen name="ChattingRoom" />
-                    <Stack.Screen name="ChattingRoomDetail" />
-
-                    {/*Boards*/}
-                    <Stack.Screen name="AgreementMakeBoard" />
-                    <Stack.Screen name="MakeBoard" />
-                    <Stack.Screen name="MyBoard" />
-
-                    {/*Presents*/}
-                    <Stack.Screen name="Present" />
-                    <Stack.Screen name="PresentStorage" />
-                    <Stack.Screen name="ProductDetail" />
-                    <Stack.Screen name="ProductPurchase" />
-                    <Stack.Screen name="GiftPurchase" />
-                    <Stack.Screen name="PaymentFinish" />
-
-                    {/*Like*/}
-                    <Stack.Screen name="Like" />
-
-                    {/*Books*/}
-                    <Stack.Screen name="Books" />
-                    <Stack.Screen name="BooksDetail" />
-                    <Stack.Screen name="ReadBook" />
-
-                    {/*OnlineClass*/}
-                    <Stack.Screen name="OnlineClass" />
-                    <Stack.Screen name="MakeOnlineClass" />
-                    <Stack.Screen name="OnlineClassPersonDetail" />
-                    <Stack.Screen name="OnlineClassMakeVideo" />
-                    <Stack.Screen name="OnlineClassPayment" />
-                    <Stack.Screen name="OnlineClassMyDetail" />
-
-                    {/*Review*/}
-                    <Stack.Screen name="OnlineClassWriteReview" />
-
-                    {/*Payment*/}
-                    <Stack.Screen name="PaymentHistory" />
-                    <Stack.Screen name="PaymentDetail" />
-                    <Stack.Screen name="PaymentSubmit" />
-
-                    {/*Reel*/}
-                    <Stack.Screen name="MainReel" />
-                    <Stack.Screen name="Reels" />
-                    <Stack.Screen name="YourReel" />
-                    <Stack.Screen name="CreateReel" />
-
-                    {/*MyClass*/}
-                    <Stack.Screen name="MyClass" />
-
-                    {/*AppFriendsSelect*/}
-                    <Stack.Screen name="AppFriendsSelect" />
-                    <Stack.Screen name="AppFriendsInfo" />
-
-
-                    {/*AddressManagement*/}
-                    <Stack.Screen name="AddressManagement" />
-                    <Stack.Screen name="AddAddress" />
-                    <Stack.Screen name="SearchAddress" />
-                </Stack.Group>
-            )}
         </Stack>
     );
 }

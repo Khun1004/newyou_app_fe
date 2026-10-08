@@ -154,7 +154,7 @@ const ChattingRoom = () => {
                     <TouchableOpacity
                         style={styles.headerRightButton}
                         onPress={() => router.push({
-                            pathname: './ChattingRoomDetail',
+                            pathname: '/ChattingRoomDetail',
                             params: { chatData: JSON.stringify(chatData) }
                         })}
                     >

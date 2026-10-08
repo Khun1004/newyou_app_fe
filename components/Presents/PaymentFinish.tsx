@@ -54,12 +54,12 @@ const PaymentFinish = () => {
 
     const handleViewOrder = () => {
         // 주문 내역 화면으로 이동 (실제 구현 시)
-        router.push('/orders');
+        router.push('/PaymentHistory');
     };
 
     const handleViewGiftStatus = () => {
         // 선물 내역 화면으로 이동 (실제 구현 시)
-        router.push('/gifts');
+        router.push('/PresentStorage');
     };
 
     return (

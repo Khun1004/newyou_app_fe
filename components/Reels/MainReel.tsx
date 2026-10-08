@@ -9,7 +9,7 @@ import {
     SafeAreaView,
     Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 // 경로 수정 (MainReel 내부에서 컴포넌트 import)

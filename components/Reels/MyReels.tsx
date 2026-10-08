@@ -10,7 +10,7 @@ import {
     SafeAreaView,
     Dimensions,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useReels } from '@/components/contexts/ReelContext';
 import { router } from 'expo-router'; // expo-router를 사용하여 라우팅

@@ -9,7 +9,7 @@ const Chats = () => {
 
     const handleChatPress = (item) => {
         router.push({
-            pathname: './ChattingRoom',
+            pathname: '/ChattingRoom',
             params: { chatData: JSON.stringify(item) },
         });
     };

@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "newyouproject",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -19,8 +18,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "bundler": "metro",
@@ -38,7 +36,13 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "알람에 음성 메모를 녹음하기 위해 마이크 접근이 필요합니다."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
