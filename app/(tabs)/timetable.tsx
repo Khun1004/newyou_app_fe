@@ -2,19 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { scheduleStorage } from '@/components/Schedule/Schedule';
+import { router, useFocusEffect } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 import CalendarModal from '@/components/Schedule/CalendarModal';
-
-interface ScheduleItem {
-    id: string;
-    title: string;
-    time: string; // "HH:MM"
-    day: string; // 'Mon' ~ 'Sun'
-    duration: number; // 시간 단위 (1.5 = 1시간 30분)
-    color: string;
-}
+import { useSchedules, ScheduleItem } from '@/components/Schedule/scheduleStore';
+import { usePlans, Plan } from '@/components/Plan/PlanContext';
+import { useAuth } from '@/components/contexts/AuthProvider';
+import { useRequireLogin } from '@/components/RequireLogin';
+import { THEME } from '@/constants/theme';
 
 // ============================================================
 // 시간표 설정
@@ -25,12 +20,12 @@ const HOUR_HEIGHT = 64; // 1시간 칸의 높이
 const TIME_COLUMN_WIDTH = 44; // 왼쪽 시간 글씨 칸의 너비
 
 const COLORS = {
-    background: '#FFFBF5',
-    text: '#3F2A1E',
-    subText: '#8A7565',
-    line: '#F1E6DB',
-    pink: '#F06292',
-    sunrise: ['#FFF3CF', '#FFE4EC'] as [string, string],
+    background: THEME.background,
+    text: THEME.text,
+    subText: THEME.subText,
+    line: THEME.line,
+    pink: THEME.primary,
+    sunrise: THEME.headerGradient,
 };
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -39,6 +34,11 @@ const DAY_LABEL: Record<string, string> = {
     Mon: '월', Tue: '화', Wed: '수', Thu: '목', Fri: '금', Sat: '토', Sun: '일',
 };
 const JS_DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // Date.getDay() 순서
+const WEEK_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// Date → "YYYY-MM-DD" (계획의 planDate 형식)
+const toDateKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 // 9 → "오전 9시", 13 → "오후 1시", 12 → "낮 12시"
 const hourLabel = (hour: number) => {
@@ -134,7 +134,19 @@ const NowCard = ({ now, schedules }: { now: Date; schedules: ScheduleItem[] }) =
 // ============================================================
 // 시간표 본문
 // ============================================================
-const TimetableBody = ({ days, schedules, now }: { days: string[]; schedules: ScheduleItem[]; now: Date }) => {
+const TimetableBody = ({
+                           days,
+                           schedules,
+                           plans,
+                           now,
+                           weekOffset,
+                       }: {
+    days: string[];
+    schedules: ScheduleItem[];
+    plans: Plan[];
+    now: Date;
+    weekOffset: number;
+}) => {
     const hours = useMemo(() => {
         const list = [];
         for (let h = START_HOUR; h < END_HOUR; h++) list.push(h);
@@ -142,14 +154,23 @@ const TimetableBody = ({ days, schedules, now }: { days: string[]; schedules: Sc
     }, []);
     const totalHeight = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 
-    const todayKey = JS_DAY_KEYS[now.getDay()];
+    const isThisWeek = weekOffset === 0;
+    // 이번 주가 아닐 때는 '오늘' 표시를 하지 않아요.
+    const todayKey = isThisWeek ? JS_DAY_KEYS[now.getDay()] : '';
     const monday = getMonday(now);
-    const dateOf = (dayKey: string) => {
-        const index = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(dayKey);
+    monday.setDate(monday.getDate() + weekOffset * 7);
+    const dateObjOf = (dayKey: string) => {
         const d = new Date(monday);
-        d.setDate(monday.getDate() + index);
-        return d.getDate();
+        d.setDate(monday.getDate() + WEEK_ORDER.indexOf(dayKey));
+        return d;
     };
+
+    // 이 주에 있는 계획 (날짜별)
+    const plansOf = (dayKey: string) => {
+        const key = toDateKey(dateObjOf(dayKey));
+        return plans.filter((p) => p.planDate === key);
+    };
+    const hasAnyPlan = days.some((d) => plansOf(d).length > 0);
 
     const nowHours = now.getHours() + now.getMinutes() / 60;
     const showNowLine = days.includes(todayKey) && nowHours >= START_HOUR && nowHours < END_HOUR;
@@ -175,12 +196,39 @@ const TimetableBody = ({ days, schedules, now }: { days: string[]; schedules: Sc
                         <View key={day} style={styles.dayHeaderCell}>
                             <Text style={[styles.dayName, isToday && { color: COLORS.pink }]}>{DAY_LABEL[day]}</Text>
                             <View style={[styles.dayNumberCircle, isToday && styles.todayCircle]}>
-                                <Text style={[styles.dayNumber, isToday && styles.todayNumber]}>{dateOf(day)}</Text>
+                                <Text style={[styles.dayNumber, isToday && styles.todayNumber]}>{dateObjOf(day).getDate()}</Text>
                             </View>
                         </View>
                     );
                 })}
             </View>
+
+            {/* 그 날짜의 계획 (하루 종일 일정처럼 위에 표시) */}
+            {hasAnyPlan && (
+                <View style={styles.planRow}>
+                    <View style={[styles.planRowLabel, { width: TIME_COLUMN_WIDTH }]}>
+                        <Text style={styles.planRowLabelText}>계획</Text>
+                    </View>
+                    {days.map((day) => {
+                        const list = plansOf(day);
+                        return (
+                            <View key={day} style={styles.planCell}>
+                                {list.slice(0, 2).map((p) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        style={[styles.planChip, { borderLeftColor: p.color && p.color !== '#FFFFFF' ? p.color : COLORS.pink }]}
+                                        onPress={() => router.push({ pathname: '/MakePlan', params: { id: p.id } })}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.planChipText} numberOfLines={1}>{p.title}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                                {list.length > 2 && <Text style={styles.planMore}>+{list.length - 2}</Text>}
+                            </View>
+                        );
+                    })}
+                </View>
+            )}
 
             <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 <View style={{ flexDirection: 'row', height: totalHeight + 12 }}>
@@ -214,14 +262,16 @@ const TimetableBody = ({ days, schedules, now }: { days: string[]; schedules: Sc
                                             const top = Math.max(0, (start - START_HOUR) * HOUR_HEIGHT);
                                             const height = Math.max(28, s.duration * HOUR_HEIGHT - 4);
                                             return (
-                                                <View
+                                                <TouchableOpacity
                                                     key={s.id}
-                                                    style={[styles.card, { top: top + 2, height, backgroundColor: s.color || '#FFE4EC' }]}
+                                                    activeOpacity={0.85}
+                                                    onPress={() => router.push({ pathname: '/Schedule', params: { id: s.id } })}
+                                                    style={[styles.card, { top: top + 2, height, backgroundColor: s.color || THEME.primarySoft }]}
                                                 >
                                                     <View style={styles.cardBar} />
                                                     <Text style={styles.cardTitle} numberOfLines={3}>{s.title}</Text>
                                                     {height > 44 && <Text style={styles.cardTime}>{s.time}</Text>}
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                 </View>
@@ -248,45 +298,49 @@ export default function Timetable() {
     const now = useNow();
     const isWeekendNow = now.getDay() === 0 || now.getDay() === 6;
     const [isWeeklyView, setIsWeeklyView] = useState(!isWeekendNow);
-    const [scheduleData, setScheduleData] = useState<ScheduleItem[]>([...scheduleStorage]);
-    const params = useLocalSearchParams();
+    const { schedules: scheduleData, loadSchedules } = useSchedules();
+    const { plans, loadPlans } = usePlans();
+    const { isAuthenticated } = useAuth();
+    const requireLogin = useRequireLogin();
     const [calendarOpen, setCalendarOpen] = useState(false);
+    const [weekOffset, setWeekOffset] = useState(0); // 0 = 이번 주, 1 = 다음 주, -1 = 지난주
 
-    // 일정 화면에서 돌아올 때마다 최신 일정으로 다시 불러와요.
+    // 화면에 돌아올 때마다 서버에서 최신 시간표와 계획을 불러와요.
     useFocusEffect(
         useCallback(() => {
-            setScheduleData([...scheduleStorage]);
-        }, [])
+            if (isAuthenticated) {
+                loadSchedules();
+                loadPlans();
+            }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [isAuthenticated])
     );
 
-    useEffect(() => {
-        if (params.newSchedule) {
-            try {
-                const newSchedule: ScheduleItem = JSON.parse(params.newSchedule as string);
-                setScheduleData((prev) => [...prev.filter((s) => s.id !== newSchedule.id), newSchedule]);
-                if (!scheduleStorage.some((s: ScheduleItem) => s.id === newSchedule.id)) {
-                    scheduleStorage.push(newSchedule);
-                }
-            } catch (error) {
-                console.warn('새 일정을 읽지 못했어요:', error);
-            }
-        }
-    }, [params.newSchedule]);
+    const openAddSchedule = () => {
+        if (!requireLogin('시간표 일정 추가')) return;
+        router.push('/Schedule');
+    };
 
     const monday = getMonday(now);
+    monday.setDate(monday.getDate() + weekOffset * 7);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    const weekText = `${monday.getMonth() + 1}월 ${monday.getDate()}일 – ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
+    const yearPrefix = monday.getFullYear() !== now.getFullYear() ? `${monday.getFullYear()}년 ` : '';
+    const weekText = `${yearPrefix}${monday.getMonth() + 1}월 ${monday.getDate()}일 – ${sunday.getMonth() + 1}월 ${sunday.getDate()}일`;
+    const weekName =
+        weekOffset === 0 ? '이번 주' : weekOffset === 1 ? '다음 주' : weekOffset === -1 ? '지난주'
+            : weekOffset > 0 ? `${weekOffset}주 후` : `${-weekOffset}주 전`;
 
     return (
         <View style={styles.container}>
             <AppHeader
                 title="시간표"
+                hero
                 showBack={false}
                 left={{ icon: 'calendar-outline', onPress: () => setCalendarOpen(true), accessibilityLabel: '달력 보기' }}
                 right={[
                     { icon: 'people-outline', onPress: () => router.push('/friends'), accessibilityLabel: '친구 시간표' },
-                    { icon: 'add', onPress: () => router.push('/Schedule'), accessibilityLabel: '일정 추가' },
+                    { icon: 'add', onPress: openAddSchedule, accessibilityLabel: '일정 추가' },
                 ]}
             />
 
@@ -294,7 +348,18 @@ export default function Timetable() {
                 <NowCard now={now} schedules={scheduleData} />
 
                 <View style={styles.weekRow}>
-                    <Text style={styles.weekText}>이번 주 · {weekText}</Text>
+                    <View style={styles.weekNav}>
+                        <TouchableOpacity onPress={() => setWeekOffset(weekOffset - 1)} style={styles.weekArrow} accessibilityLabel="지난주">
+                            <Ionicons name="chevron-back" size={18} color={COLORS.text} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setWeekOffset(0)} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+                            <Text style={styles.weekName}>{weekName}</Text>
+                            <Text style={styles.weekText}>{weekText}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setWeekOffset(weekOffset + 1)} style={styles.weekArrow} accessibilityLabel="다음 주">
+                            <Ionicons name="chevron-forward" size={18} color={COLORS.text} />
+                        </TouchableOpacity>
+                    </View>
                     <View style={styles.toggle}>
                         {[
                             { label: '평일', value: true },
@@ -316,13 +381,20 @@ export default function Timetable() {
                 </View>
             </View>
 
-            <TimetableBody days={isWeeklyView ? WEEKDAYS : WEEKEND} schedules={scheduleData} now={now} />
+            <TimetableBody
+                key={weekOffset}
+                days={isWeeklyView ? WEEKDAYS : WEEKEND}
+                schedules={scheduleData}
+                plans={plans}
+                now={now}
+                weekOffset={weekOffset}
+            />
 
             <CalendarModal visible={calendarOpen} onClose={() => setCalendarOpen(false)} schedules={scheduleData} />
 
             {scheduleData.length === 0 && (
                 <View style={styles.emptyHint} pointerEvents="box-none">
-                    <TouchableOpacity style={styles.emptyButton} onPress={() => router.push('/Schedule')} activeOpacity={0.85}>
+                    <TouchableOpacity style={styles.emptyButton} onPress={openAddSchedule} activeOpacity={0.85}>
                         <Ionicons name="add" size={18} color="#fff" />
                         <Text style={styles.emptyButtonText}>첫 일정 추가하기</Text>
                     </TouchableOpacity>
@@ -350,7 +422,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        shadowColor: '#C9A68A',
+        shadowColor: THEME.subText,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 10,
@@ -406,14 +478,77 @@ const styles = StyleSheet.create({
         marginTop: 14,
         marginBottom: 6,
     },
-    weekText: {
+    weekNav: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    weekArrow: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: COLORS.line,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 6,
+    },
+    weekName: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '800',
         color: COLORS.text,
+    },
+    weekText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: COLORS.subText,
+        marginTop: 1,
+    },
+    planRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 8,
+        paddingBottom: 6,
+    },
+    planRowLabel: {
+        alignItems: 'flex-end',
+        paddingRight: 6,
+        paddingTop: 4,
+    },
+    planRowLabelText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: COLORS.pink,
+    },
+    planCell: {
+        flex: 1,
+        marginHorizontal: 2,
+    },
+    planChip: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 6,
+        borderLeftWidth: 3,
+        paddingHorizontal: 4,
+        paddingVertical: 3,
+        marginBottom: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    planChipText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+    planMore: {
+        fontSize: 10,
+        color: COLORS.subText,
+        textAlign: 'center',
     },
     toggle: {
         flexDirection: 'row',
-        backgroundColor: '#F5ECE3',
+        backgroundColor: '#EEF0E4',
         borderRadius: 999,
         padding: 3,
     },
@@ -515,7 +650,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 2,
     },
     todayColumn: {
-        backgroundColor: 'rgba(240, 98, 146, 0.05)',
+        backgroundColor: THEME.primaryTint,
         borderRadius: 10,
     },
     card: {
@@ -539,7 +674,7 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#2F2A26',
+        color: THEME.text,
         lineHeight: 14,
     },
     cardTime: {

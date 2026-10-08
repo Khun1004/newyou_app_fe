@@ -112,7 +112,7 @@ const AnniversaryScreen: React.FC = () => {
     // 나의 프로필 이미지 URI 가져오기
     const getMyAvatarUri = (): string => {
         const imagePath = currentUser?.profileImage;
-        const defaultAvatar = 'https://via.placeholder.com/120?text=Me';
+        const defaultAvatar = '';
 
         if (imagePath) {
             if (imagePath.startsWith('/uploads/')) {
@@ -133,7 +133,7 @@ const AnniversaryScreen: React.FC = () => {
     const partnerProfile: Profile = {
         id: partnerFriend?.id || '2',
         nickname: partnerNickname,
-        avatar: 'https://via.placeholder.com/120?text=Partner', // 기본값 URI
+        avatar: '', // 사진 없음 → 첫 글자로 표시
         profileImageKey: partnerFriend?.profileImage, // 파트너의 동물 키
     };
 
@@ -163,21 +163,21 @@ const AnniversaryScreen: React.FC = () => {
         }
     };
 
-    const getGradientColors = () => {
-        if (settings.backgroundColors && settings.backgroundColors.length > 0) {
-            return settings.backgroundColors;
-        }
+    // 관계별 기본 배경 (앱의 '햇살' 색과 어울리는 부드러운 색)
+    const DEFAULT_GRADIENTS: Record<RelationshipType, [string, string, string]> = {
+        relationship: ['#FFB199', '#FF8FA3', '#F06292'], // 햇살 로즈
+        married: ['#FFD89B', '#FFB677', '#FF8C7A'], // 골드 선셋
+        friendship: ['#A9C9FF', '#B8A9F5', '#D6A4F0'], // 라벤더 하늘
+    };
+    // 예전 기본 색(진한 핑크)은 새 기본 색으로 바꿔서 보여줘요.
+    const OLD_DEFAULT = ['#FF6B9D', '#C44569', '#8B1538'].join();
 
-        switch (relationshipType) {
-            case 'married':
-                return ['#FFD700', '#FFA500', '#FF6347'];
-            case 'relationship':
-                return ['#FF6B9D', '#C44569', '#8B1538'];
-            case 'friendship':
-                return ['#6C5CE7', '#5F3DC4', '#4C2882'];
-            default:
-                return ['#FF6B9D', '#C44569', '#8B1538'];
+    const getGradientColors = (): [string, string, ...string[]] => {
+        const saved = settings.backgroundColors;
+        if (saved && saved.length >= 2 && saved.join() !== OLD_DEFAULT) {
+            return saved as [string, string, ...string[]];
         }
+        return DEFAULT_GRADIENTS[relationshipType] ?? DEFAULT_GRADIENTS.relationship;
     };
 
     // ⭐️ 프로필 이미지 렌더링 함수 (AnimalAvatar 또는 Image 사용)
@@ -187,6 +187,13 @@ const AnniversaryScreen: React.FC = () => {
         if (profile.profileImageKey) {
             // 연결된 친구가 있고, 이모지 키가 있을 경우 AnimalAvatar 사용
             return <AnimalAvatar animal={profile.profileImageKey} size={size} />;
+        } else if (!profile.avatar || profile.avatar.includes('via.placeholder.com')) {
+            // 사진이 없으면 이름 첫 글자를 보여줘요.
+            return (
+                <View style={styles.initialAvatar}>
+                    <Text style={styles.initialText}>{profile.nickname.charAt(0)}</Text>
+                </View>
+            );
         } else {
             // 나의 프로필 또는 연결되지 않은 파트너의 기본 프로필인 경우 Image 사용
             return (
@@ -391,12 +398,26 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     topButtonsContainer: {
-        position: 'absolute',
-        top: 60,
-        right: 20,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 20,
+        paddingTop: 8,
         zIndex: 10,
+    },
+    initialAvatar: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.35)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    initialText: {
+        fontSize: 44,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        textShadowColor: 'rgba(0, 0, 0, 0.15)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
     editButton: {
         width: 40,
@@ -414,7 +435,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     iconShadow: {
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(120, 40, 60, 0.35)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -455,7 +476,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 20,
-        paddingTop: 40,
+        paddingTop: 8,
     },
     titleContainer: {
         alignItems: 'center',
@@ -473,7 +494,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#FFFFFF',
         textAlign: 'center',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(120, 40, 60, 0.35)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
@@ -531,7 +552,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#FFFFFF',
         marginTop: 16,
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(120, 40, 60, 0.35)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -578,8 +599,8 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     relationshipCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.22)',
+        borderRadius: 24,
         padding: 24,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -605,7 +626,7 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: '700',
         color: '#FFFFFF',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowColor: 'rgba(120, 40, 60, 0.35)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -622,9 +643,9 @@ const styles = StyleSheet.create({
     },
     duration: {
         fontSize: 22,
-        fontWeight: '700',
-        color: '#FFE5B4',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        fontWeight: '800',
+        color: '#FFF6D6',
+        textShadowColor: 'rgba(120, 40, 60, 0.35)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
     },
@@ -646,7 +667,7 @@ const styles = StyleSheet.create({
     bottomDecoration: {
         alignItems: 'center',
         marginTop: 'auto',
-        paddingBottom: 30,
+        paddingBottom: 120,
     },
     decorativeText: {
         fontSize: 16,

@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlans } from '@/components/Plan/PlanContext';
 import { useRequireLogin } from '@/components/RequireLogin';
+import { THEME } from '@/constants/theme';
 
 /**
  * 시간표 화면 헤더의 달력 아이콘을 누르면 아래에서 올라오는 달력
@@ -23,12 +24,12 @@ interface ScheduleItem {
 }
 
 const COLORS = {
-    text: '#3F2A1E',
-    subText: '#8A7565',
-    line: '#F1E6DB',
-    pink: '#F06292',
+    text: THEME.text,
+    subText: THEME.subText,
+    line: THEME.line,
+    pink: THEME.primary,
     blue: '#3B82F6',
-    sunrise: ['#FFF3CF', '#FFE4EC'] as [string, string],
+    sunrise: THEME.headerGradient,
 };
 
 const WEEK_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -61,10 +62,10 @@ const buildMonth = (year: number, month: number) => {
 };
 
 export default function CalendarModal({
-                                          visible,
-                                          onClose,
-                                          schedules,
-                                      }: {
+    visible,
+    onClose,
+    schedules,
+}: {
     visible: boolean;
     onClose: () => void;
     schedules: ScheduleItem[];
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(30, 20, 10, 0.35)',
     },
     sheet: {
-        backgroundColor: '#FFFBF5',
+        backgroundColor: THEME.background,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
         paddingHorizontal: 16,
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 5,
         borderRadius: 3,
-        backgroundColor: '#E8DCD0',
+        backgroundColor: THEME.line,
         marginBottom: 10,
     },
     monthBar: {
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
     todayChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFE4EC',
+        backgroundColor: THEME.primarySoft,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 999,
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
     selectedCircle: {
         borderWidth: 2,
         borderColor: COLORS.pink,
-        backgroundColor: '#FFF0F5',
+        backgroundColor: THEME.primarySoft,
     },
     dayText: {
         fontSize: 15,

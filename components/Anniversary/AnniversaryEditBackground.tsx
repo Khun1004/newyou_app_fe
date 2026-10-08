@@ -34,7 +34,8 @@ const defaultBackgrounds: BackgroundOption[] = [
     { id: 'basic1', name: '클래식 블랙', colors: ['#000000', '#1a1a1a', '#333333'], type: 'basic' },
     { id: 'basic2', name: '딥 블랙', colors: ['#0c0c0c', '#1e1e1e', '#2d2d2d'], type: 'basic' },
     { id: 'basic3', name: '미드나이트 블랙', colors: ['#000000', '#191970', '#2f2f4f'], type: 'basic' },
-    { id: 'relationship1', name: '로맨틱 핑크', colors: ['#FF6B9D', '#C44569', '#8B1538'], type: 'relationship' },
+    { id: 'sunrise', name: '햇살 로즈 (기본)', colors: ['#FFB199', '#FF8FA3', '#F06292'], type: 'relationship' },
+    { id: 'relationship1', name: '로맨틱 핑크', colors: ['#FF6B9E', '#C44569', '#8B1538'], type: 'relationship' }, // 예전 기본색과 구분하려고 끝자리만 다르게
     { id: 'relationship2', name: '따뜻한 레드', colors: ['#FF416C', '#FF4B2B', '#D63031'], type: 'relationship' },
     { id: 'married1', name: '골든 선셋', colors: ['#FFD700', '#FFA500', '#FF6347'], type: 'married' },
     { id: 'married2', name: '로얄 골드', colors: ['#F7971E', '#FFD200', '#FF8C00'], type: 'married' },

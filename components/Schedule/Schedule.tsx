@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -7,328 +7,310 @@ import {
     StyleSheet,
     ScrollView,
     Platform,
-    Dimensions,
     Alert,
+    KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AppHeader from '@/components/AppHeader';
+import { useRequireLogin } from '@/components/RequireLogin';
+import { useSchedules, ScheduleItem } from '@/components/Schedule/scheduleStore';
+import { THEME } from '@/constants/theme';
 
-// Shared in-memory storage for schedules
-export const scheduleStorage: ScheduleItem[] = [];
+/**
+ * 시간표 일정 추가 / 수정 화면
+ *   router.push('/Schedule')                        → 새 일정
+ *   router.push({ pathname: '/Schedule', params: { day: 'Tue' } })  → 화요일로 시작
+ *   router.push({ pathname: '/Schedule', params: { id: '3' } })     → 3번 일정 수정
+ */
 
-interface ScheduleItem {
-    id: string;
-    title: string;
-    time: string;
-    day: string;
-    duration: number;
-    color: string;
-}
-
-const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-// Predefined color options for the schedule background
-const colorOptions = [
-    { color: '#B0E0E6', label: 'Light Blue' },
-    { color: '#FFE8E8', label: 'Light Red' },
-    { color: '#E8F8E8', label: 'Light Green' },
-    { color: '#FFF2E8', label: 'Light Orange' },
-    { color: '#E8D7FF', label: 'Light Purple' },
-];
-
-const generateTimeSlots = () => {
-    const times = [];
-    for (let hour = 6; hour <= 22; hour++) {
-        const timeString = `${hour.toString().padStart(2, '0')}:00`;
-        const ampm = hour < 12 ? 'AM' : 'PM';
-        const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-        const displayTime = `${displayHour.toString().padStart(2, '0')}:00${ampm}`;
-        times.push({ time: timeString, display: displayTime });
-    }
-    return times;
+const COLORS = {
+    background: THEME.background,
+    text: THEME.text,
+    subText: THEME.subText,
+    line: THEME.line,
+    pink: THEME.primary,
 };
 
-const timeSlots = generateTimeSlots();
+const DAYS = [
+    { key: 'Mon', label: '월' },
+    { key: 'Tue', label: '화' },
+    { key: 'Wed', label: '수' },
+    { key: 'Thu', label: '목' },
+    { key: 'Fri', label: '금' },
+    { key: 'Sat', label: '토' },
+    { key: 'Sun', label: '일' },
+];
 
-const { width } = Dimensions.get('window');
+const DURATIONS = [
+    { value: 0.5, label: '30분' },
+    { value: 1, label: '1시간' },
+    { value: 1.5, label: '1시간 30분' },
+    { value: 2, label: '2시간' },
+    { value: 3, label: '3시간' },
+];
 
-interface TimetableBodyProps {
-    selectedDay: string;
-    scheduleData: ScheduleItem[];
-    onEdit: (schedule: ScheduleItem) => void;
-    onDelete: (id: string) => void;
-}
+const CARD_COLORS = [THEME.primarySoft, '#FFF1E3', '#FFF6D1', '#E4F5EA', '#DFF6F2', '#E6F0FF', '#F1EAFF'];
 
-const TimetableBody: React.FC<TimetableBodyProps> = ({ selectedDay, scheduleData, onEdit, onDelete }) => {
-    const getScheduleForTimeAndDay = (time: string, day: string) => {
-        return scheduleData.filter(item => {
-            const [itemHour] = item.time.split(':').map(Number);
-            const [slotHour] = time.split(':').map(Number);
-            return item.day === day && itemHour === slotHour;
-        });
-    };
+const toTimeString = (d: Date) =>
+    `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
-    const renderScheduleCard = (schedule: ScheduleItem) => (
-        <TouchableOpacity
-            key={schedule.id}
-            style={[styles.scheduleCard, { backgroundColor: schedule.color, height: (schedule.duration * 60) - 4 }]}
-            onPress={() => onEdit(schedule)}
-            onLongPress={() => onDelete(schedule.id)}
-        >
-            <Text style={styles.scheduleText}>{schedule.title}</Text>
-        </TouchableOpacity>
-    );
+// "14:30" → "오후 2:30"
+const formatTime = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    const ampm = h < 12 ? '오전' : '오후';
+    const hh = h % 12 === 0 ? 12 : h % 12;
+    return `${ampm} ${hh}:${String(m || 0).padStart(2, '0')}`;
+};
 
-    const renderTimeCell = (timeSlot: { time: string; display: string }, day: string) => {
-        const schedules = getScheduleForTimeAndDay(timeSlot.time, day);
-        return (
-            <View key={`${timeSlot.time}-${day}`} style={styles.timeCell}>
-                {schedules.length > 0 && (
-                    <View style={styles.schedulesContainer}>
-                        {schedules.map(renderScheduleCard)}
-                    </View>
-                )}
-            </View>
-        );
-    };
+const durationLabel = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    if (h && m) return `${h}시간 ${m}분`;
+    if (h) return `${h}시간`;
+    return `${m}분`;
+};
 
-    const renderTimeRow = (timeSlot: { time: string; display: string }) => (
-        <View key={timeSlot.time} style={styles.timeRow}>
-            <View style={styles.timeHeaderCell}>
-                <Text style={styles.timeText}>{timeSlot.display}</Text>
-            </View>
-            {renderTimeCell(timeSlot, selectedDay)}
-        </View>
-    );
-
-    return (
-        <View style={styles.timetableContainer}>
-            <View style={styles.daysHeader}>
-                <View style={styles.timeHeaderPlaceholder} />
-                <View style={styles.dayHeaderCell}>
-                    <Text style={styles.dayHeaderText}>{selectedDay}</Text>
-                </View>
-            </View>
-            <ScrollView style={styles.timetableScroll} showsVerticalScrollIndicator={false}>
-                <View style={styles.timetable}>
-                    {timeSlots.map(renderTimeRow)}
-                </View>
-            </ScrollView>
-        </View>
-    );
+const defaultStart = () => {
+    const d = new Date();
+    d.setMinutes(0, 0, 0);
+    d.setHours(Math.min(Math.max(d.getHours() + 1, 6), 22));
+    return d;
 };
 
 export default function Schedule() {
+    const params = useLocalSearchParams<{ id?: string; day?: string }>();
+    const { schedules, addSchedule, updateSchedule, deleteSchedule } = useSchedules();
+    const requireLogin = useRequireLogin();
+
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [title, setTitle] = useState('');
-    const [selectedDay, setSelectedDay] = useState('Mon');
-    const [selectedTime, setSelectedTime] = useState(new Date());
-    const [duration, setDuration] = useState('1');
-    const [selectedColor, setSelectedColor] = useState(colorOptions[0].color);
-    const [showTimePicker, setShowTimePicker] = useState(false);
-    const [localSchedules, setLocalSchedules] = useState<ScheduleItem[]>(scheduleStorage);
-    const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
+    const [day, setDay] = useState<string>(params.day && DAYS.some((d) => d.key === params.day) ? params.day : 'Mon');
+    const [startTime, setStartTime] = useState(defaultStart());
+    const [duration, setDuration] = useState(1);
+    const [color, setColor] = useState(CARD_COLORS[0]);
+    const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
+    const [saving, setSaving] = useState(false);
 
-    const handleTimeChange = (event: any, date: Date | undefined) => {
-        setShowTimePicker(Platform.OS === 'ios');
-        if (date) {
-            setSelectedTime(date);
-        }
-    };
-
-    const formattedDisplayTime = selectedTime.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    });
-
-    const handleSave = () => {
-        if (!title.trim() || !duration.trim()) {
-            alert('Please fill out all fields.');
-            return;
-        }
-
-        const hours = selectedTime.getHours().toString().padStart(2, '0');
-        const minutes = selectedTime.getMinutes().toString().padStart(2, '0');
-        const formattedTime = `${hours}:${minutes}`;
-
-        const newSchedule: ScheduleItem = {
-            id: editingScheduleId || Date.now().toString(),
-            title: title,
-            time: formattedTime,
-            day: selectedDay,
-            duration: parseFloat(duration),
-            color: selectedColor,
-        };
-
-        let updatedSchedules: ScheduleItem[];
-        if (editingScheduleId) {
-            // Update existing schedule
-            updatedSchedules = localSchedules.map(schedule =>
-                schedule.id === editingScheduleId ? newSchedule : schedule
-            );
-            // Update shared storage
-            const storageIndex = scheduleStorage.findIndex(s => s.id === editingScheduleId);
-            if (storageIndex !== -1) {
-                scheduleStorage[storageIndex] = newSchedule;
-            }
-        } else {
-            // Add new schedule
-            updatedSchedules = [...localSchedules, newSchedule];
-            scheduleStorage.push(newSchedule);
-        }
-
-        setLocalSchedules(updatedSchedules);
-        router.setParams({ newSchedule: JSON.stringify(newSchedule) });
-
-        // Reset form
-        resetForm();
-    };
-
-    const handleEdit = (schedule: ScheduleItem) => {
-        setTitle(schedule.title);
-        setSelectedDay(schedule.day);
-        const [hours, minutes] = schedule.time.split(':').map(Number);
-        const date = new Date();
-        date.setHours(hours, minutes);
-        setSelectedTime(date);
-        setDuration(schedule.duration.toString());
-        setSelectedColor(schedule.color);
-        setEditingScheduleId(schedule.id);
-    };
-
-    const handleDelete = (id: string) => {
-        Alert.alert(
-            'Delete Schedule',
-            'Are you sure you want to delete this schedule?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => {
-                        const updatedSchedules = localSchedules.filter(schedule => schedule.id !== id);
-                        setLocalSchedules(updatedSchedules);
-                        // Update shared storage
-                        const storageIndex = scheduleStorage.findIndex(s => s.id === id);
-                        if (storageIndex !== -1) {
-                            scheduleStorage.splice(storageIndex, 1);
-                        }
-                        router.setParams({ updatedSchedules: JSON.stringify(updatedSchedules) });
-                    },
-                },
-            ]
-        );
+    const fillForm = (s: ScheduleItem) => {
+        setEditingId(s.id);
+        setTitle(s.title);
+        setDay(s.day);
+        const [h, m] = s.time.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        setStartTime(d);
+        setDuration(s.duration);
+        setColor(s.color || CARD_COLORS[0]);
     };
 
     const resetForm = () => {
+        setEditingId(null);
         setTitle('');
-        setSelectedTime(new Date());
-        setDuration('1');
-        setSelectedColor(colorOptions[0].color);
-        setEditingScheduleId(null);
+        setStartTime(defaultStart());
+        setDuration(1);
+        setColor(CARD_COLORS[0]);
     };
+
+    // 수정하러 들어온 경우: 그 일정 정보를 채워요.
+    useEffect(() => {
+        if (!params.id) return;
+        const target = schedules.find((s) => s.id === String(params.id));
+        if (target && editingId !== target.id) fillForm(target);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [params.id, schedules]);
+
+    const handleSave = async () => {
+        if (!requireLogin('시간표 저장')) return;
+        if (!title.trim()) {
+            Alert.alert('알림', '일정 제목을 입력해 주세요.');
+            return;
+        }
+        const input = { title: title.trim(), day, time: toTimeString(startTime), duration, color };
+        setSaving(true);
+        try {
+            if (editingId) await updateSchedule(editingId, input);
+            else await addSchedule(input);
+            router.back();
+        } catch (e: any) {
+            Alert.alert('저장 실패', e?.response?.data?.message ?? '서버에 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = (s: ScheduleItem) => {
+        Alert.alert('일정 삭제', `"${s.title}" 일정을 삭제할까요?`, [
+            { text: '취소', style: 'cancel' },
+            {
+                text: '삭제',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await deleteSchedule(s.id);
+                        if (editingId === s.id) resetForm();
+                    } catch {
+                        Alert.alert('삭제 실패', '서버에서 삭제하지 못했어요.');
+                    }
+                },
+            },
+        ]);
+    };
+
+    const daySchedules = schedules
+        .filter((s) => s.day === day)
+        .sort((a, b) => a.time.localeCompare(b.time));
+    const dayLabel = DAYS.find((d) => d.key === day)?.label;
 
     return (
         <View style={styles.container}>
-            {/* 공통 헤더: < 일정 추가 [저장] 🔔 */}
             <AppHeader
-                title={editingScheduleId ? '일정 수정' : '일정 추가'}
-                right={[{ label: '저장', onPress: handleSave, color: '#6C63FF' }]}
+                title={editingId ? '일정 수정' : '일정 추가'}
+                right={[{ label: saving ? '저장 중' : '저장', onPress: handleSave, disabled: saving, color: COLORS.pink }]}
+                showBell={false}
             />
 
-            <ScrollView style={styles.formContainer}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Title</Text>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                    <Text style={styles.guide}>매주 반복되는 일정을 시간표에 넣어요.</Text>
+
+                    {/* 제목 */}
+                    <Text style={styles.label}>제목</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="e.g., Team Meeting"
+                        placeholder="예) 영어 회화, 헬스, 알바"
+                        placeholderTextColor={THEME.placeholder}
                         value={title}
                         onChangeText={setTitle}
+                        maxLength={100}
                     />
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Day</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayPicker}>
-                        {daysOfWeek.map((day) => (
+                    {/* 요일 */}
+                    <Text style={styles.label}>요일</Text>
+                    <View style={styles.dayRow}>
+                        {DAYS.map((d, i) => {
+                            const active = day === d.key;
+                            return (
+                                <TouchableOpacity
+                                    key={d.key}
+                                    onPress={() => setDay(d.key)}
+                                    style={[styles.dayChip, active && styles.dayChipActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.dayChipText,
+                                            i === 6 && { color: COLORS.pink },
+                                            i === 5 && { color: '#3B82F6' },
+                                            active && { color: '#fff' },
+                                        ]}
+                                    >
+                                        {d.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    {/* 시작 시간 */}
+                    <Text style={styles.label}>시작 시간</Text>
+                    {Platform.OS === 'android' && (
+                        <TouchableOpacity style={styles.timeButton} onPress={() => setShowPicker(true)}>
+                            <Ionicons name="time-outline" size={20} color={COLORS.pink} />
+                            <Text style={styles.timeButtonText}>{formatTime(toTimeString(startTime))}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {showPicker && (
+                        <View style={Platform.OS === 'ios' ? styles.pickerBox : undefined}>
+                            <DateTimePicker
+                                value={startTime}
+                                mode="time"
+                                minuteInterval={5}
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                locale="ko-KR"
+                                onChange={(_, date) => {
+                                    if (Platform.OS === 'android') setShowPicker(false);
+                                    if (date) setStartTime(date);
+                                }}
+                            />
+                        </View>
+                    )}
+
+                    {/* 시간 길이 */}
+                    <Text style={styles.label}>시간 길이</Text>
+                    <View style={styles.wrapRow}>
+                        {DURATIONS.map((d) => {
+                            const active = duration === d.value;
+                            return (
+                                <TouchableOpacity
+                                    key={d.value}
+                                    onPress={() => setDuration(d.value)}
+                                    style={[styles.chip, active && styles.chipActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{d.label}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    {/* 색 */}
+                    <Text style={styles.label}>색</Text>
+                    <View style={styles.wrapRow}>
+                        {CARD_COLORS.map((c) => (
                             <TouchableOpacity
-                                key={day}
-                                style={[
-                                    styles.dayButton,
-                                    selectedDay === day && styles.dayButtonActive,
-                                ]}
-                                onPress={() => setSelectedDay(day)}
+                                key={c}
+                                onPress={() => setColor(c)}
+                                style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorDotActive]}
                             >
-                                <Text style={[
-                                    styles.dayButtonText,
-                                    selectedDay === day && styles.dayButtonTextActive,
-                                ]}>{day}</Text>
+                                {color === c && <Ionicons name="checkmark" size={18} color={COLORS.text} />}
                             </TouchableOpacity>
                         ))}
-                    </ScrollView>
-                </View>
+                    </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Time</Text>
-                    <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.timeInput}>
-                        <Text style={styles.timeText}>{formattedDisplayTime}</Text>
-                        <Ionicons name="time-outline" size={20} color="#333" />
-                    </TouchableOpacity>
-                    {showTimePicker && (
-                        <DateTimePicker
-                        value={selectedTime}
-                        mode="time"
-                        is24Hour={true}
-                        display="default"
-                        onChange={handleTimeChange}
-                        />
+                    {/* 미리보기 */}
+                    <View style={[styles.preview, { backgroundColor: color }]}>
+                        <Text style={styles.previewTitle}>{title.trim() || '일정 제목'}</Text>
+                        <Text style={styles.previewSub}>
+                            매주 {dayLabel}요일 · {formatTime(toTimeString(startTime))} · {durationLabel(duration)}
+                        </Text>
+                    </View>
+
+                    {/* 그 요일의 일정 */}
+                    <View style={styles.listHeader}>
+                        <Text style={styles.listTitle}>{dayLabel}요일 시간표</Text>
+                        {editingId && (
+                            <TouchableOpacity onPress={resetForm}>
+                                <Text style={styles.newLink}>+ 새 일정으로</Text>
+                            </TouchableOpacity>
                         )}
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Duration (hours)</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g., 2"
-                        keyboardType="numeric"
-                        value={duration}
-                        onChangeText={(text) => setDuration(text)}
-                    />
-                </View>
-
-                <View style={styles.inputGroup}>
-                <Text style={styles.label}>Background Color</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorPicker}>
-                    {colorOptions.map((option) => (
-                        <TouchableOpacity
-                            key={option.color}
-                            style={[
-                                styles.colorButton,
-                                { backgroundColor: option.color },
-                                selectedColor === option.color && styles.colorButtonActive,
-                            ]}
-                            onPress={() => setSelectedColor(option.color)}
-                        >
-                            {selectedColor === option.color && (
-                                <Ionicons name="checkmark" size={20} color="#fff" />
-                            )}
-                        </TouchableOpacity>
-                    ))}
+                    </View>
+                    {daySchedules.length === 0 ? (
+                        <Text style={styles.emptyText}>아직 {dayLabel}요일 일정이 없어요.</Text>
+                    ) : (
+                        daySchedules.map((s) => (
+                            <TouchableOpacity
+                                key={s.id}
+                                style={[styles.item, editingId === s.id && styles.itemEditing]}
+                                onPress={() => fillForm(s)}
+                                activeOpacity={0.85}
+                            >
+                                <View style={[styles.itemColor, { backgroundColor: s.color }]} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.itemTitle}>{s.title}</Text>
+                                    <Text style={styles.itemSub}>
+                                        {formatTime(s.time)} · {durationLabel(s.duration)}
+                                    </Text>
+                                </View>
+                                <TouchableOpacity onPress={() => handleDelete(s)} hitSlop={8} style={styles.itemDelete}>
+                                    <Ionicons name="trash-outline" size={18} color={COLORS.subText} />
+                                </TouchableOpacity>
+                            </TouchableOpacity>
+                        ))
+                    )}
                 </ScrollView>
-            </View>
-
-                <View style={styles.timetableWrapper}>
-                    <Text style={styles.timetableLabel}>Schedule for {selectedDay}</Text>
-                    <TimetableBody
-                        selectedDay={selectedDay}
-                        scheduleData={localSchedules}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                    />
-                </View>
-            </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 }
@@ -336,188 +318,186 @@ export default function Schedule() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: COLORS.background,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        paddingTop: 50,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    backButton: {
-        padding: 5,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    saveButtonText: {
-        fontSize: 16,
-        color: '#007bff',
-        fontWeight: 'bold',
-    },
-    formContainer: {
-        flex: 1,
+    content: {
         padding: 20,
+        paddingBottom: 60,
     },
-    inputGroup: {
-        marginBottom: 20,
+    guide: {
+        fontSize: 13,
+        color: COLORS.subText,
+        marginBottom: 8,
     },
     label: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 14,
+        fontWeight: '700',
+        color: COLORS.text,
+        marginTop: 18,
         marginBottom: 8,
-        color: '#333',
     },
     input: {
+        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#e0e0e0',
-        borderRadius: 8,
-        padding: 12,
+        borderColor: COLORS.line,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
         fontSize: 16,
-        backgroundColor: '#fafafa',
+        color: COLORS.text,
     },
-    dayPicker: {
+    dayRow: {
         flexDirection: 'row',
-    },
-    dayButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        marginRight: 10,
-        backgroundColor: '#f0f0f0',
-    },
-    dayButtonActive: {
-        backgroundColor: '#007bff',
-    },
-    dayButtonText: {
-        color: '#666',
-        fontWeight: '500',
-    },
-    dayButtonTextActive: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    timeInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        borderRadius: 8,
-        padding: 12,
-        backgroundColor: '#fafafa',
     },
-    timeText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    colorPicker: {
-        flexDirection: 'row',
-    },
-    colorButton: {
+    dayChip: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        marginRight: 10,
-        justifyContent: 'center',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: COLORS.line,
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'transparent',
+        justifyContent: 'center',
     },
-    colorButtonActive: {
-        borderColor: '#333',
+    dayChipActive: {
+        backgroundColor: COLORS.pink,
+        borderColor: COLORS.pink,
     },
-    timetableWrapper: {
-        marginTop: 20,
-        marginBottom: 40,
+    dayChipText: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.text,
     },
-    timetableLabel: {
+    timeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: COLORS.line,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+    },
+    timeButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#333',
-        marginBottom: 12,
+        color: COLORS.text,
+        marginLeft: 8,
     },
-    timetableContainer: {
-        flex: 1,
+    pickerBox: {
         backgroundColor: '#fff',
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: COLORS.line,
+        overflow: 'hidden',
     },
-    timetableScroll: {
-        maxHeight: 300,
-    },
-    timetable: {
-        paddingBottom: 20,
-    },
-    daysHeader: {
+    wrapRow: {
         flexDirection: 'row',
-        backgroundColor: '#f8f9fa',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e9ecef',
+        flexWrap: 'wrap',
+        gap: 8,
     },
-    timeHeaderPlaceholder: {
-        width: 80,
-        paddingVertical: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
+    chip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: COLORS.line,
     },
-    dayHeaderCell: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
+    chipActive: {
+        backgroundColor: THEME.primarySoft,
+        borderColor: COLORS.pink,
     },
-    dayHeaderText: {
+    chipText: {
         fontSize: 14,
+        color: COLORS.subText,
         fontWeight: '600',
-        color: '#666',
     },
-    timeRow: {
-        flexDirection: 'row',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        minHeight: 60,
+    chipTextActive: {
+        color: COLORS.pink,
+        fontWeight: '800',
     },
-    timeHeaderCell: {
-        width: 80,
-        padding: 8,
+    colorDot: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f8f9fa',
-        borderRightWidth: 1,
-        borderRightColor: '#e9ecef',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
     },
-    timeText: {
+    colorDotActive: {
+        borderWidth: 2,
+        borderColor: COLORS.text,
+    },
+    preview: {
+        marginTop: 20,
+        borderRadius: 16,
+        padding: 14,
+    },
+    previewTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: THEME.text,
+    },
+    previewSub: {
+        fontSize: 13,
+        color: 'rgba(0,0,0,0.55)',
+        marginTop: 4,
+    },
+    listHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 28,
+        marginBottom: 8,
+    },
+    listTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: COLORS.text,
+    },
+    newLink: {
+        color: COLORS.pink,
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: COLORS.subText,
+        paddingVertical: 8,
+    },
+    item: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: COLORS.line,
+    },
+    itemEditing: {
+        borderColor: COLORS.pink,
+    },
+    itemColor: {
+        width: 10,
+        height: 36,
+        borderRadius: 5,
+        marginRight: 12,
+    },
+    itemTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+    itemSub: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#666',
+        color: COLORS.subText,
+        marginTop: 2,
     },
-    timeCell: {
-        flex: 1,
-        padding: 4,
-        borderRightWidth: 1,
-        borderRightColor: '#f0f0f0',
-        minHeight: 60,
-    },
-    schedulesContainer: {
-        flex: 1,
-        gap: 2,
-    },
-    scheduleCard: {
-        paddingHorizontal: 6,
-        paddingVertical: 4,
-        borderRadius: 4,
-        marginBottom: 2,
-    },
-    scheduleText: {
-        fontSize: 10,
-        color: '#333',
-        fontWeight: '500',
-        lineHeight: 12,
+    itemDelete: {
+        padding: 6,
     },
 });

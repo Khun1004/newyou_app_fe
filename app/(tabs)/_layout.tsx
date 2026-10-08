@@ -6,6 +6,7 @@ import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { THEME } from '@/constants/theme';
 
 // 스타일 1: 플로팅 하트 스타일 (기존 코드 유지)
 function HeartTabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
@@ -30,33 +31,19 @@ function HeartTabIcon({ name, color, focused }: { name: string; color: string; f
 
     return (
         <Animated.View style={{ transform: [{ scale }], alignItems: 'center' }}>
-            {/* 큰 하트 배경 */}
-            <Animated.View style={{
-                transform: [{ scale: heartScale }],
-                position: 'absolute',
-                top: -16,
-            }}>
-                <IconSymbol
-                    size={60}
-                    name="heart.fill"
-                    color={color}
-                    style={{ opacity: 0.12 }}
-                />
-            </Animated.View>
-
-            {/* 중간 하트 배경 */}
-            <Animated.View style={{
-                transform: [{ scale: heartScale }],
-                position: 'absolute',
-                top: -12,
-            }}>
-                <IconSymbol
-                    size={50}
-                    name="heart.fill"
-                    color={color}
-                    style={{ opacity: 0.2 }}
-                />
-            </Animated.View>
+            {/* 선택된 탭 뒤의 연한 동그라미 */}
+            <Animated.View
+                style={{
+                    transform: [{ scale: heartScale }],
+                    position: 'absolute',
+                    top: -8,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: color,
+                    opacity: 0.12,
+                }}
+            />
 
             {/* 메인 아이콘 */}
             <IconSymbol
@@ -88,7 +75,7 @@ function FloatingTabBarBackground() {
 
 export default function TabLayout() {
     const colorScheme = useColorScheme();
-    const tintColor = colorScheme === 'dark' ? '#FF69B4' : '#FF1493';
+    const tintColor = colorScheme === 'dark' ? '#9BC57A' : THEME.primary;
     const { bottom } = useSafeAreaInsets(); // Safe Area Insets 가져오기
 
     return (

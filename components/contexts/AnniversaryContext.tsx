@@ -52,7 +52,7 @@ interface AnniversaryContextType {
 }
 
 const defaultSettings: AnniversarySettings = {
-    backgroundColors: ['#FF6B9D', '#C44569', '#8B1538'],
+    backgroundColors: ['#FFB199', '#FF8FA3', '#F06292'], // 햇살 로즈
     celebrationMessage: '함께한 소중한 시간',
     partnerFriendId: null, // 초기값 설정
 };
