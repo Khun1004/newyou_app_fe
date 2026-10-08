@@ -7,6 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext';
 import { AppFriend } from '@/components/hooks/AppFriend'; // AppFriend 타입을 직접 import
+import AppHeader from '@/components/AppHeader';
 
 // 귀여운 동물 이모지 프로필 아바타 컴포넌트
 const AnimalAvatar = ({ animal, size = 64 }: { animal: string; size?: number }) => {
@@ -96,69 +97,45 @@ export default function AppFriendsSelect() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 선택</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color="#6C63FF" />
                     <Text style={styles.loadingText}>친구 목록을 불러오는 중...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 선택</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
                     <Text style={styles.errorEmoji}>😢</Text>
                     <Text style={styles.loadingText}>친구 목록을 불러오지 못했습니다.</Text>
                     <Text style={{ color: 'red', marginTop: 8 }}>{error}</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (friends.length === 0) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 선택</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
                     <Ionicons name="person-add-outline" size={60} color="#ccc" />
                     <Text style={styles.loadingText}>등록된 친구가 없습니다.</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>친구 선택</Text>
-                <View style={{ width: 24 }} />
-            </View>
+        <View style={styles.container}>
+            <AppHeader title="친구 선택" />
 
             <View style={styles.subHeader}>
                 <Text style={styles.subHeaderText}>총 {friends.length}명의 친구</Text>
@@ -177,7 +154,7 @@ export default function AppFriendsSelect() {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { giftData } from '@/components/Presents/GiftData';
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
+import AppHeader from '@/components/AppHeader';
 
 const { width, height } = Dimensions.get('window');
 
@@ -126,15 +127,18 @@ const ProductDetail = () => {
 
     if (!productInfo) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
-                    <Text style={styles.errorText}>상품을 찾을 수 없습니다.</Text>
-                    <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
-                        <Text style={styles.goBackText}>돌아가기</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="상품 상세" />
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.errorContainer}>
+                        <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
+                        <Text style={styles.errorText}>상품을 찾을 수 없습니다.</Text>
+                        <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
+                            <Text style={styles.goBackText}>돌아가기</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </View>
         );
     }
 
@@ -175,22 +179,17 @@ const ProductDetail = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>상품 상세</Text>
-                {/* Use the global toggleLike function here */}
-                <TouchableOpacity style={styles.headerButton} onPress={() => toggleLike(productInfo.id)}>
-                    <Ionicons
-                        name={isLiked ? "heart" : "heart-outline"}
-                        size={24}
-                        color={isLiked ? "#FF4757" : "#333"}
-                    />
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 상품 상세 [♥] 🔔 */}
+            <AppHeader
+                title="상품 상세"
+                right={[{
+                    icon: isLiked ? 'heart' : 'heart-outline',
+                    color: isLiked ? '#FF4757' : undefined,
+                    onPress: () => toggleLike(productInfo.id),
+                    accessibilityLabel: '좋아요',
+                }]}
+            />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* 상품 이미지 */}
@@ -390,7 +389,7 @@ const ProductDetail = () => {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

@@ -17,6 +17,7 @@ import { giftData } from '@/components/Presents/GiftData';
 
 // Import the custom hook for global state
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
+import AppHeader from '@/components/AppHeader';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -147,17 +148,9 @@ const Like = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>좋아요</Text>
-                <View style={styles.headerRight} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="좋아요" />
 
             {likedProducts.length > 0 ? (
                 <>
@@ -226,7 +219,7 @@ const Like = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

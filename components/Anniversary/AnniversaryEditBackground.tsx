@@ -18,6 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAnniversary } from '@/components/contexts/AnniversaryContext';
 import { Ionicons } from '@expo/vector-icons';
+import AppHeader from '@/components/AppHeader';
 
 type RelationshipType = 'married' | 'relationship' | 'friendship';
 
@@ -183,7 +184,7 @@ export default function AnniversaryEditBackground() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="light-content" />
 
             {selectedBg.imageUri ? (
@@ -194,15 +195,13 @@ export default function AnniversaryEditBackground() {
                 <LinearGradient colors={selectedBg.colors || ['#000']} style={StyleSheet.absoluteFill} />
             )}
 
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={styles.headerBtn}>취소</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>배경 · 메시지 편집</Text>
-                <TouchableOpacity onPress={handleSave}>
-                    <Text style={[styles.headerBtn, { color: '#FF6B9D' }]}>저장</Text>
-                </TouchableOpacity>
-            </View>
+            {/* 공통 헤더 (어두운 배경 위, 투명) */}
+            <AppHeader
+                title="배경 · 메시지 편집"
+                variant="dark"
+                backgroundColor="transparent"
+                right={[{ label: '저장', onPress: handleSave, color: '#FF6B9D' }]}
+            />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
                 <View style={styles.section}>
@@ -265,7 +264,7 @@ export default function AnniversaryEditBackground() {
 
                 <View style={{ height: 80 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 

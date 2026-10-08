@@ -11,21 +11,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 const PaymentDetail = () => {
     const params = useLocalSearchParams();
     const item = JSON.parse(params.item);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9f9f9" />
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="chevron-back" size={28} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>결제 상세</Text>
-                <View style={styles.headerRightPlaceholder} />
-            </View>
+            <AppHeader title="결제 상세" />
 
             <ScrollView contentContainerStyle={styles.contentContainer}>
                 <View style={styles.detailCard}>
@@ -64,7 +59,7 @@ const PaymentDetail = () => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

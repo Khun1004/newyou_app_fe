@@ -20,6 +20,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { giftData } from '@/components/Presents/GiftData';
 import { useSentGifts } from '@/components/contexts/SentGiftsContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import AppHeader from '@/components/AppHeader';
 
 // 행복 메시지 템플릿
 const happyMessageTemplates = [
@@ -103,7 +104,8 @@ const GiftPurchase = () => {
 
     if (!productInfo) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={styles.container}>
+                <AppHeader title="선물하기" />
                 <View style={styles.errorContainer}>
                     <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
                     <Text style={styles.errorText}>상품을 찾을 수 없습니다.</Text>
@@ -111,7 +113,7 @@ const GiftPurchase = () => {
                         <Text style={styles.goBackText}>돌아가기</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
@@ -219,15 +221,9 @@ const GiftPurchase = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>선물하기</Text>
-                <View style={styles.headerButton} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="선물하기" />
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -559,7 +555,7 @@ const GiftPurchase = () => {
                     />
                 </SafeAreaView>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

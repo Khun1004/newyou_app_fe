@@ -16,6 +16,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import AppHeader, { HEADER_HEIGHT } from '@/components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +31,7 @@ const initialMessages = [
 
 const ChattingRoom = () => {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { currentUser } = useAuth();
     const { chatData: chatDataJson } = useLocalSearchParams();
     const chatData = chatDataJson ? JSON.parse(chatDataJson) : null;
@@ -45,17 +48,20 @@ const ChattingRoom = () => {
 
     if (!chatData || !currentUser) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.errorContainer}>
-                    <View style={styles.errorIconContainer}>
-                        <Ionicons name="sad-outline" size={60} color="#FF6B6B" />
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="채팅방" />
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.errorContainer}>
+                        <View style={styles.errorIconContainer}>
+                            <Ionicons name="sad-outline" size={60} color="#FF6B6B" />
+                        </View>
+                        <Text style={styles.errorText}>채팅 정보를 불러올 수 없습니다.</Text>
+                        <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
+                            <Text style={styles.errorButtonText}>돌아가기</Text>
+                        </TouchableOpacity>
                     </View>
-                    <Text style={styles.errorText}>채팅 정보를 불러올 수 없습니다.</Text>
-                    <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
-                        <Text style={styles.errorButtonText}>돌아가기</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+                </SafeAreaView>
+            </View>
         );
     }
 
@@ -124,50 +130,24 @@ const ChattingRoom = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <View style={styles.headerCenter}>
-                    <Text style={styles.headerTitle}>채팅방</Text>
-                    <Text style={styles.headerSubtitle}>온라인</Text>
-                </View>
-                <View style={styles.headerRightButtons}>
-                    <TouchableOpacity style={styles.headerRightButton}>
-                        <View style={styles.headerRightButtonContainer}>
-                            <Ionicons name="call" size={20} color="#007AFF" />
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Navigates to the ChatsMain screen */}
-                    <TouchableOpacity
-                        style={styles.headerRightButton}
-                        onPress={() => router.push('/ChatMain')}
-                    >
-                        <View style={styles.headerRightButtonContainer}>
-                            <Ionicons name="chatbubble-ellipses" size={20} color="#007AFF" />
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Navigates to the ChattingRoomDetail screen, passing chatData */}
-                    <TouchableOpacity
-                        style={styles.headerRightButton}
-                        onPress={() => router.push({
-                            pathname: '/ChattingRoomDetail',
-                            params: { chatData: JSON.stringify(chatData) }
-                        })}
-                    >
-                        <View style={styles.headerRightButtonContainer}>
-                            <Ionicons name="ellipsis-horizontal" size={20} color="#007AFF" />
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 상대 이름 (온라인) [⋯] 🔔 */}
+            <AppHeader
+                title={chatData?.name || '채팅방'}
+                subtitle="온라인"
+                right={[{
+                    icon: 'ellipsis-horizontal',
+                    accessibilityLabel: '채팅방 정보',
+                    onPress: () => router.push({
+                        pathname: '/ChattingRoomDetail',
+                        params: { chatData: JSON.stringify(chatData) }
+                    }),
+                }]}
+            />
             <KeyboardAvoidingView
                 style={styles.keyboardAvoidingView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? HEADER_HEIGHT + insets.top : 0}
             >
                 <FlatList
                     ref={flatListRef}
@@ -208,7 +188,7 @@ const ChattingRoom = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 };
 

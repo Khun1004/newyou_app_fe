@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 // Mock data for friends
 const mockFriends = [
@@ -39,13 +40,7 @@ const renderFriendItem = ({ item }) => (
 export default function Friends() {
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButtonContainer}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Friends</Text>
-                <View style={{ width: 24 }} />
-            </View>
+            <AppHeader title="친구" />
 
             <FlatList
                 data={mockFriends}

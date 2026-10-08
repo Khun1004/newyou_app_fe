@@ -20,6 +20,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
     useAddressManage,
 } from '@/components/contexts/AddressManageContext'; // 실제 파일 경로에 맞게 수정
+import AppHeader from '@/components/AppHeader';
 
 // 전화번호 포맷팅 함수
 const formatPhoneNumber = (text: string) => {
@@ -141,21 +142,13 @@ const AddAddress = () => {
     };
 
     return (
-        <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                {/* 헤더 */}
-                <View style={styles.modalHeader}>
-                    <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                        <Ionicons name="chevron-back" size={28} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle}>
-                        {isEditing ? '배송지 수정' : '새 배송지 추가'}
-                    </Text>
-                    <View style={styles.headerButton} />
-                </View>
+                {/* 공통 헤더 */}
+                <AppHeader title={isEditing ? '배송지 수정' : '새 배송지 추가'} />
 
                 {/* 입력 폼 */}
                 <ScrollView style={styles.modalScrollView}>
@@ -286,7 +279,7 @@ const AddAddress = () => {
                     />
                 </SafeAreaView>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

@@ -2,8 +2,10 @@
 import { useAlarms } from "@/components/contexts/AlarmContext";
 import { useAnniversary } from "@/components/contexts/AnniversaryContext"; // 추가
 import { useAuth } from "@/components/contexts/AuthProvider";
+import { usePlans } from "@/components/Plan/PlanContext";
 import { SERVER_IP } from "@/config";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -22,6 +24,8 @@ export default function MyScreen() {
   const { currentUser, logout, isAuthenticated } = useAuth();
   const { alarms } = useAlarms();
   const { anniversaries, loadAnniversaries } = useAnniversary(); // 추가
+  const { plans } = usePlans();
+  const [streakDays, setStreakDays] = useState(0);
 
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
@@ -31,6 +35,38 @@ export default function MyScreen() {
   useEffect(() => {
     loadAnniversaries();
   }, []);
+
+  // 연속 사용일: 로그인한 사용자별로 앱을 연 날짜를 기록해서 계산
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.phoneNumber) {
+      setStreakDays(0);
+      return;
+    }
+    const key = `streak_${currentUser.phoneNumber}`;
+    const toDay = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const today = toDay(new Date());
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = toDay(yesterdayDate);
+
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem(key);
+        const prev = saved ? JSON.parse(saved) : null; // { lastDate, count }
+        let count = 1;
+        if (prev?.lastDate === today) count = prev.count;
+        else if (prev?.lastDate === yesterday) count = prev.count + 1;
+        await AsyncStorage.setItem(
+          key,
+          JSON.stringify({ lastDate: today, count }),
+        );
+        setStreakDays(count);
+      } catch {
+        setStreakDays(0);
+      }
+    })();
+  }, [isAuthenticated, currentUser?.phoneNumber]);
 
   const getFullProfileImageUri = (path: string | null) => {
     if (!path) return null;
@@ -51,36 +87,41 @@ export default function MyScreen() {
     profileImage: getFullProfileImageUri(currentUser?.profileImage || null),
   };
 
+  // 로그인하지 않았으면 모든 활동 숫자는 0으로 표시하고, 눌러도 이동하지 않아요.
   const statistics = [
     {
       id: "1",
-      label: "완료한 계획",
-      value: "24",
+      label: "내 계획",
+      value: isAuthenticated ? plans.length.toString() : "0",
       icon: "checkmark-circle",
       color: "#4ECDC4",
+      onPress: isAuthenticated ? () => router.push("/Plan") : undefined,
     },
     {
       id: "2",
       label: "설정한 알람",
-      value: alarms.length.toString(),
+      value: isAuthenticated ? alarms.length.toString() : "0",
       icon: "alarm",
       color: "#FF6B6B",
-      onPress: () => router.push("/AlarmList"),
+      onPress: isAuthenticated ? () => router.push("/AlarmList") : undefined,
     },
     {
       id: "3",
       label: "기념일 등록",
-      value: anniversaries.length.toString(),
+      value: isAuthenticated ? anniversaries.length.toString() : "0",
       icon: "gift",
       color: "#9B59B6",
-      onPress: () => router.push("/AnniversaryList"),
+      onPress: isAuthenticated
+        ? () => router.push("/AnniversaryList")
+        : undefined,
     },
     {
       id: "4",
       label: "연속 사용일",
-      value: "15일",
+      value: `${isAuthenticated ? streakDays : 0}일`,
       icon: "flame",
       color: "#FFA726",
+      onPress: undefined as undefined | (() => void),
     },
   ];
 

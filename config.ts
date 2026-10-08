@@ -10,7 +10,7 @@ import Constants from "expo-constants";
 //
 // 자동으로 안 될 때(예: 웹 브라우저, 다른 PC에서 서버 실행)는
 // 아래 FALLBACK_SERVER_IP 를 서버 PC의 IP로 바꿔 주세요.
-const FALLBACK_SERVER_IP = "192.168.0.43";
+const FALLBACK_SERVER_IP = "192.168.1.102";
 
 // 백엔드(Spring) 서버 포트 (application.properties 의 server.port)
 const SERVER_PORT = 8080;

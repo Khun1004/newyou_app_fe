@@ -22,6 +22,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useFriends } from '@/components/contexts/FriendContext';
 import { BASE_URL } from '@/config'; // ✨ 추가: BASE_URL 임포트
+import AppHeader from '@/components/AppHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -248,18 +249,11 @@ const AddFriBirthday: React.FC = () => {
     const buttonColors = isButtonDisabled ? ['#d1d5db', '#9ca3af'] : friendData.profileColor;
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="chevron-back" size={28} color="#1f2937" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>
-                    {isEditing ? '친구 정보 수정' : '새 친구 추가'}
-                </Text>
-            </View>
+            {/* 공통 헤더 */}
+            <AppHeader title={isEditing ? '친구 정보 수정' : '새 친구 추가'} />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
@@ -454,7 +448,7 @@ const AddFriBirthday: React.FC = () => {
                     </View>
                 </View>
             </Animated.View>
-        </SafeAreaView>
+        </View>
     );
 };
 

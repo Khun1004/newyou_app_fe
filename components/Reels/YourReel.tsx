@@ -19,6 +19,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 // ReelContext 임포트 (deleteReel, toggleHideReel 함수 사용)
 import { useReels } from '@/components/contexts/ReelContext'; // 경로는 프로젝트에 맞게 확인
+import AppHeader from '@/components/AppHeader';
 
 const { height } = Dimensions.get('window');
 
@@ -144,9 +145,12 @@ const YourReel = () => {
 
     if (!currentReel) {
         return (
-            <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#fff" />
-                <Text style={styles.loadingText}>릴 데이터를 로드하는 중이거나 찾을 수 없습니다.</Text>
+            <View style={{ flex: 1, backgroundColor: '#000' }}>
+                <AppHeader title="릴스" variant="dark" />
+                <View style={[styles.container, styles.center]}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={styles.loadingText}>릴 데이터를 로드하는 중이거나 찾을 수 없습니다.</Text>
+                </View>
             </View>
         );
     }
@@ -167,7 +171,7 @@ const YourReel = () => {
 
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* 비디오 뷰: pointerEvents="none"으로 터치 이벤트를 무시하게 하여 하단 레이어 클릭 방지 */}
             {/* zIndex를 낮춰 다른 요소 아래에 위치하도록 함 */}
             <VideoView
@@ -177,18 +181,9 @@ const YourReel = () => {
                 pointerEvents="none"
             />
 
-            {/* 헤더 컨테이너: zIndex: 100으로 최상단에 위치 */}
-            <View style={styles.headerContainer}>
-                {/* 뒤로 가기 버튼 (handleGoBack 호출) */}
-                <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                    <Icon name="chevron-back" size={28} color="#fff" />
-                </TouchableOpacity>
-
-                {/* 제목 (가운데 정렬) */}
-                <Text style={styles.headerTitle}>Your Reel</Text>
-
-                {/* 오른쪽 공간 확보 (제목을 중앙에 두기 위함) */}
-                <View style={styles.backButtonPlaceholder} />
+            {/* 공통 헤더: 영상 위에 투명하게 겹쳐서 표시 */}
+            <View style={styles.headerOverlay}>
+                <AppHeader title="릴스" variant="dark" backgroundColor="transparent" onBack={handleGoBack} />
             </View>
 
             {/* 오버레이 뷰 (제목 및 액션 버튼 포함) */}
@@ -224,7 +219,7 @@ const YourReel = () => {
                     </View>
                 )}
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -240,6 +235,13 @@ const styles = StyleSheet.create({
     loadingText: {
         color: '#fff',
         marginTop: 10,
+    },
+    headerOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
     },
     video: {
         width: '100%',

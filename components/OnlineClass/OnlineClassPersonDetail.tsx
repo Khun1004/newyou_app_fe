@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import { useOnlineClassReviews } from '@/components/contexts/OnlineClassReviewContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import AppHeader from '@/components/AppHeader';
 
 const OnlineClassPersonDetail = () => {
     const router = useRouter();
@@ -340,11 +341,10 @@ const OnlineClassPersonDetail = () => {
 
     return (
         <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="강사 정보" />
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHeader}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
                     <View style={styles.profileImageContainer}>
                         {instructorInfo.profileImage ? (
                             <Image source={{ uri: instructorInfo.profileImage }} style={styles.profileImage} />
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f9fa',
     },
     profileHeader: {
-        paddingTop: 60,
+        paddingTop: 20,
         alignItems: 'center',
         backgroundColor: '#fff',
         paddingVertical: 20,

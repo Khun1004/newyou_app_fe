@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePlans, Plan } from '@/components/Plan/PlanContext';
 import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AppHeader from '@/components/AppHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -189,16 +190,10 @@ const MakePlan = () => {
     }, [editingPlanId, deletePlan]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title={editingPlanId ? '계획 수정' : '새 계획'} />
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#2D3748" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>
-                        {editingPlanId ? '계획 수정' : '새 계획'}
-                    </Text>
-                </View>
 
                 <View style={styles.formContainer}>
                     {/* 날짜 선택 필드 */}
@@ -284,13 +279,13 @@ const MakePlan = () => {
                     )}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f7f7f7' },
-    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
     header: {
         flexDirection: 'row',
         alignItems: 'center',

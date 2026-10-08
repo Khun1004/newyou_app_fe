@@ -16,6 +16,7 @@ import {
     useAddressManage,
     Address,
 } from '@/components/contexts/AddressManageContext'; // 실제 파일 경로에 맞게 수정
+import AppHeader from '@/components/AppHeader';
 
 const AddressManagement = () => {
     const router = useRouter();
@@ -103,15 +104,9 @@ const AddressManagement = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>배송지 관리</Text>
-                <View style={styles.headerButton} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="배송지 관리" />
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
                 {addresses.length === 0 ? (
@@ -135,7 +130,7 @@ const AddressManagement = () => {
                     <Text style={styles.addButtonText}>새 배송지 추가</Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

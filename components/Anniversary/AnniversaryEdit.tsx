@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAnniversary } from '@/components/contexts/AnniversaryContext'; // 실제 Context 사용
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext'; // 실제 Context 사용
 import { AppFriend } from '@/components/hooks/AppFriend'; // AppFriend 타입을 직접 import
+import AppHeader from '@/components/AppHeader';
 
 // AnniversaryContext.tsx에 정의된 타입을 재사용
 type RelationshipType = 'married' | 'relationship' | 'friendship';
@@ -200,20 +201,13 @@ export default function AnniversaryEdit() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} disabled={isSaving}>
-                    <Ionicons name="close" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.title}>{isEditMode ? '기념일 수정' : '새 기념일 등록'}</Text>
-                <TouchableOpacity onPress={handleSave} disabled={isSaving || !partnerNickname.trim()}>
-                    <Text style={[styles.save, (isSaving || !partnerNickname.trim()) && { color: '#aaa' }]}>
-                        {isSaving ? (
-                            <ActivityIndicator color="#aaa" size="small" style={{ marginRight: 5 }} />
-                        ) : '저장'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 제목 [저장] 🔔 */}
+            <AppHeader
+                title={isEditMode ? '기념일 수정' : '새 기념일 등록'}
+                onBack={() => { if (!isSaving) router.back(); }}
+                right={[{ label: isSaving ? '저장 중' : '저장', onPress: handleSave, disabled: isSaving || !partnerNickname.trim(), color: '#6C63FF' }]}
+            />
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {/* 1. 파트너 닉네임 / 친구 선택 섹션 */}
                 <View style={styles.section}>
@@ -337,7 +331,7 @@ export default function AnniversaryEdit() {
                     </View>
                 )}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 

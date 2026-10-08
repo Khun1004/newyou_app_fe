@@ -4,6 +4,7 @@ import { NoteContext } from '@/components/contexts/NoteContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
+import AppHeader from '@/components/AppHeader';
 
 export default function AddNote() {
     const [title, setTitle] = useState('');
@@ -57,16 +58,11 @@ export default function AddNote() {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            {/* 공통 헤더 */}
+            <AppHeader title={noteId ? '노트 수정' : '새 노트 작성'} onBack={handleCancel} />
             <View style={styles.container}>
-                {/* Plan 스타일 헤더 */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#2D3748" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{noteId ? '노트 수정' : '새 노트 작성'}</Text>
-                </View>
 
                 <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                     <View style={styles.contentContainer}>
@@ -198,7 +194,7 @@ export default function AddNote() {
                     </View>
                 </ScrollView>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
 

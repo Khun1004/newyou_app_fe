@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AppHeader from '@/components/AppHeader';
 
 // Shared in-memory storage for schedules
 export const scheduleStorage: ScheduleItem[] = [];
@@ -231,17 +232,11 @@ export default function Schedule() {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>
-                    {editingScheduleId ? 'Edit Schedule' : 'Add Schedule'}
-                </Text>
-                <TouchableOpacity onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-            </View>
+            {/* 공통 헤더: < 일정 추가 [저장] 🔔 */}
+            <AppHeader
+                title={editingScheduleId ? '일정 수정' : '일정 추가'}
+                right={[{ label: '저장', onPress: handleSave, color: '#6C63FF' }]}
+            />
 
             <ScrollView style={styles.formContainer}>
                 <View style={styles.inputGroup}>

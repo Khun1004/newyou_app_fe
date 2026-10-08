@@ -7,6 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext';
 import { AppFriend } from '@/components/hooks/AppFriend';
+import AppHeader from '@/components/AppHeader';
 
 // 메인 컬러 정의 (일관성을 위해 사용)
 const PRIMARY_COLOR = '#6C63FF';
@@ -62,56 +63,36 @@ export default function AppFriendsInfo() {
     if (isLoading) {
         // ... (로딩 UI는 생략)
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 정보</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="친구 정보" />
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color={PRIMARY_COLOR} />
                     <Text style={styles.loadingText}>정보를 불러오는 중...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (!friend || error) {
         // ... (에러 UI는 생략)
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 정보</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="친구 정보" />
                 <View style={styles.centerContainer}>
                     <Text style={styles.errorEmoji}>⚠️</Text>
                     <Text style={styles.loadingText}>친구 정보를 찾을 수 없습니다.</Text>
                     {error && <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{error}</Text>}
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     const { nickname, phoneNumber, profileImage, isAppUser } = friend;
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{nickname}</Text>
-                <TouchableOpacity onPress={() => {/* More Options */}}>
-                    <Ionicons name="ellipsis-vertical" size={24} color="#333" />
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title={nickname} />
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* 1. 프로필 섹션: 카드 스타일 및 레이아웃 수정 */}
@@ -162,7 +143,7 @@ export default function AppFriendsInfo() {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 

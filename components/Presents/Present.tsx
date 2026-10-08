@@ -135,7 +135,7 @@ const Present = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <PresentHeader
                 searchText={searchText}
                 onSearchChange={setSearchText}
@@ -205,7 +205,7 @@ const Present = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

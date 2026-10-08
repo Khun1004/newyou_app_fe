@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useOnlineClassReviews } from '@/components/contexts/OnlineClassReviewContext';
+import AppHeader from '@/components/AppHeader';
 
 const OnlineClassWriteReview = () => {
     const router = useRouter();
@@ -123,13 +124,8 @@ const OnlineClassWriteReview = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>리뷰 작성</Text>
-                <View style={styles.placeholder} />
-            </View>
+            {/* 공통 헤더 */}
+            <AppHeader title="리뷰 작성" />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {currentUser && (

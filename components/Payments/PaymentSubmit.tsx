@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 const PaymentSubmit = () => {
     const [showForm, setShowForm] = useState(false);
@@ -113,15 +114,9 @@ const PaymentSubmit = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9f9f9" />
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="chevron-back" size={28} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>결제 수단 관리</Text>
-                <View style={styles.headerRightPlaceholder} />
-            </View>
+            <AppHeader title="결제 수단 관리" />
 
             <ScrollView contentContainerStyle={styles.contentContainer}>
                 {!showForm && (
@@ -310,7 +305,7 @@ const PaymentSubmit = () => {
                     </View>
                 )}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

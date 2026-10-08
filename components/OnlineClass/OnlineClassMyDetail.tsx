@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useOnlineClassReviews } from '@/components/contexts/OnlineClassReviewContext';
+import AppHeader from '@/components/AppHeader';
 
 const OnlineClassMyDetail = () => {
     const router = useRouter();
@@ -482,6 +483,8 @@ const OnlineClassMyDetail = () => {
 
     return (
         <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="내 클래스" />
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHeader}>
                     <View style={styles.profileImageContainer}>

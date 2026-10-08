@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 // 💡 수정된 부분: 서버 IP를 가져오기 위해 상수를 import 합니다.
 import { SERVER_IP } from '@/config';
+import AppHeader from '@/components/AppHeader';
 
 const ProfileEdit = () => {
     const { currentUser, updateProfile } = useAuth();
@@ -52,19 +53,22 @@ const ProfileEdit = () => {
     // currentUser가 없으면 에러 화면 표시
     if (!currentUser) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.content}>
-                    <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" style={styles.errorIcon} />
-                    <Text style={styles.errorText}>사용자 정보를 불러올 수 없습니다</Text>
-                    <Text style={styles.errorSubtext}>로그인 상태를 확인해주세요</Text>
-                    <TouchableOpacity
-                        style={styles.errorButton}
-                        onPress={() => router.back()}
-                    >
-                        <Text style={styles.errorButtonText}>돌아가기</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="프로필 편집" />
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.content}>
+                        <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" style={styles.errorIcon} />
+                        <Text style={styles.errorText}>사용자 정보를 불러올 수 없습니다</Text>
+                        <Text style={styles.errorSubtext}>로그인 상태를 확인해주세요</Text>
+                        <TouchableOpacity
+                            style={styles.errorButton}
+                            onPress={() => router.back()}
+                        >
+                            <Text style={styles.errorButtonText}>돌아가기</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </View>
         );
     }
 
@@ -259,26 +263,13 @@ const ProfileEdit = () => {
     const isButtonDisabled = !isFormValid || isLoading || isDataUnchanged;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoidingView}
             >
-                {/* Modern Header with Gradient */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        disabled={isLoading}
-                        style={styles.backButton}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="#1a1a1a" />
-                    </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>프로필 편집</Text>
-                        <View style={styles.headerUnderline} />
-                    </View>
-                    <View style={styles.headerPlaceholder} />
-                </View>
+                {/* 공통 헤더 */}
+                <AppHeader title="프로필 편집" onBack={() => { if (!isLoading) router.back(); }} />
 
                 <ScrollView
                     contentContainerStyle={styles.content}
@@ -438,7 +429,7 @@ const ProfileEdit = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 };
 

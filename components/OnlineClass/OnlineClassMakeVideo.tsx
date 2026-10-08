@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useOnlineClass, ClassData } from '@/components/contexts/OnlineClassContext';
+import AppHeader from '@/components/AppHeader';
 
 interface VideoData {
     id: string;
@@ -357,16 +358,13 @@ const OnlineClassMakeVideo = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>영상 등록</Text>
-                <TouchableOpacity onPress={handleSubmit} disabled={isLoading} style={styles.submitButton}>
-                    <Text style={styles.submitButtonText}>{isLoading ? '처리중...' : '결제하러 가기'}</Text>
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 영상 등록 [다음] 🔔 */}
+            <AppHeader
+                title="영상 등록"
+                onBack={() => { if (!isLoading) router.back(); }}
+                right={[{ label: isLoading ? '처리중' : '다음', onPress: handleSubmit, disabled: isLoading, color: '#6C63FF', accessibilityLabel: '결제하러 가기' }]}
+            />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
@@ -462,7 +460,7 @@ const OnlineClassMakeVideo = () => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

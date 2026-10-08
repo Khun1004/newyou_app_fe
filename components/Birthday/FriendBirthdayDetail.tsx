@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useFriends } from '@/components/contexts/FriendContext';
 import { BASE_URL } from '@/config';
+import AppHeader from '@/components/AppHeader';
 
 const { width, height } = Dimensions.get('window');
 
@@ -76,9 +77,12 @@ const FriendBirthdayDetail: React.FC = () => {
 
     if (!friendData) {
         return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={60} color="#ef4444" />
-                <Text style={styles.errorText}>친구 정보를 불러올 수 없습니다.</Text>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="친구 정보" />
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={60} color="#ef4444" />
+                    <Text style={styles.errorText}>친구 정보를 불러올 수 없습니다.</Text>
+                </View>
             </View>
         );
     }
@@ -172,18 +176,8 @@ const FriendBirthdayDetail: React.FC = () => {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-            {/* 고정 헤더 */}
-            <View style={styles.fixedHeader}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#1f2937" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>친구 정보</Text>
-                    <TouchableOpacity onPress={handleEdit} style={styles.editIconButton}>
-                        <Ionicons name="create-outline" size={24} color="#1f2937" />
-                    </TouchableOpacity>
-                </View>
-            </View>
+            {/* 공통 헤더: < 친구 정보 [편집] 🔔 */}
+            <AppHeader title="친구 정보" right={[{ icon: 'create-outline', onPress: handleEdit, accessibilityLabel: '편집' }]} />
 
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
@@ -391,7 +385,7 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     scrollContent: {
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 60 : 100,
+        paddingTop: 20,
         paddingBottom: 40,
     },
     profileSection: {

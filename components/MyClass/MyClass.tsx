@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 // ❤️ [수정] likedClassIds를 가져오기 위해 useOnlineClass를 사용
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
+import AppHeader from '@/components/AppHeader';
 
 // ClassItem 인터페이스 (OnlineClass와 동일하게 사용)
 interface ClassItem {
@@ -184,20 +185,9 @@ const MyClass: React.FC = () => {
     // --- 메인 컴포넌트 렌더링 ---
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.headerContent}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={handleBack}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>내 강의실</Text>
-                    <View style={styles.backButton} />
-                </View>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="내 강의실" onBack={handleBack} />
 
             {/* 탭 네비게이션 */}
             <View style={styles.tabContainer}>
@@ -226,7 +216,7 @@ const MyClass: React.FC = () => {
                     renderEmptyState()
                 )}
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

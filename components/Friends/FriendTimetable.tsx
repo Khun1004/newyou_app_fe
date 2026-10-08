@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 // Mock data for friends
 const mockFriends = [
@@ -29,21 +30,19 @@ export default function FriendTimetable() {
 
     if (!friend) {
         return (
-            <View style={styles.loadingContainer}>
-                <Text>Loading...</Text>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="친구 시간표" />
+                <View style={styles.loadingContainer}>
+                    <Text>Loading...</Text>
+                </View>
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButtonContainer}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{friend.name}'s Timetable</Text>
-                <View style={{ width: 24 }} />
-            </View>
+            {/* 공통 헤더 */}
+            <AppHeader title={`${friend.name}의 시간표`} />
 
             <View style={styles.weekHeader}>
                 <View style={styles.viewToggleContainer}>

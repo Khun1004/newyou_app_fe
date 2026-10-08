@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Modal, TextInput, Alert, FlatList, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 import * as Contacts from 'expo-contacts';
 import { ChatContext } from '@/components/contexts/ChatContext';
 import Chats from '@/components/Chats/Chats';
@@ -231,26 +232,15 @@ const ChatsMain = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
-                        <Ionicons name="chevron-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Chats</Text>
-                </View>
-                <View style={styles.headerIcons}>
-                    <TouchableOpacity style={styles.iconButton} onPress={handleNewGroupChat}>
-                        <Ionicons name="create-outline" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={handleAddFriendPress}>
-                        <Ionicons name="person-add-outline" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
-                        <Ionicons name="ellipsis-horizontal" size={24} color="#333" />
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 제목 [새 채팅][친구 추가] 🔔 */}
+            <AppHeader
+                title="채팅"
+                right={[
+                    { icon: 'create-outline', onPress: handleNewGroupChat, accessibilityLabel: '새 그룹 채팅' },
+                    { icon: 'person-add-outline', onPress: handleAddFriendPress, accessibilityLabel: '친구 추가' },
+                ]}
+            />
 
             <View style={styles.searchContainer}>
                 <View style={styles.searchBar}>
@@ -452,7 +442,7 @@ const ChatsMain = () => {
                     </TouchableOpacity>
                 </SafeAreaView>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

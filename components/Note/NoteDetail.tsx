@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { NoteContext } from '@/components/contexts/NoteContext';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
+import AppHeader from '@/components/AppHeader';
 
 export default function NoteDetail() {
     const router = useRouter();
@@ -48,8 +49,11 @@ export default function NoteDetail() {
 
     if (!note) {
         return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>노트를 불러오는 중...</Text>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="노트 상세" />
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>노트를 불러오는 중...</Text>
+                </View>
             </View>
         );
     }
@@ -77,18 +81,10 @@ export default function NoteDetail() {
     return (
         <>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <SafeAreaView style={styles.safeArea}>
+            <View style={styles.safeArea}>
+                {/* 공통 헤더 */}
+                <AppHeader title="노트 상세" />
                 <View style={styles.container}>
-                    {/* Plan 스타일 헤더 */}
-                    <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-                        <TouchableOpacity
-                            onPress={() => router.back()}
-                            style={styles.backButton}
-                        >
-                            <Ionicons name="chevron-back" size={28} color="#2D3748" />
-                        </TouchableOpacity>
-                        <Text style={styles.headerTitle}>노트 상세</Text>
-                    </Animated.View>
 
                     <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
                         <ScrollView
@@ -194,7 +190,7 @@ export default function NoteDetail() {
                         </TouchableOpacity>
                     </Animated.View>
                 </View>
-            </SafeAreaView>
+            </View>
         </>
     );
 }

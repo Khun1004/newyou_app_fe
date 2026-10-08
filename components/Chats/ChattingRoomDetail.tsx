@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import AppHeader from '@/components/AppHeader';
 
 const ChattingRoomDetail = () => {
     const router = useRouter();
@@ -21,17 +22,20 @@ const ChattingRoomDetail = () => {
 
     if (!chatData || !currentUser) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" />
-                    <Text style={styles.errorText}>
-                        채팅 상세 정보를 불러올 수 없습니다.
-                    </Text>
-                    <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-                        <Text style={styles.closeButtonText}>돌아가기</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="채팅방 정보" />
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.errorContainer}>
+                        <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" />
+                        <Text style={styles.errorText}>
+                            채팅 상세 정보를 불러올 수 없습니다.
+                        </Text>
+                        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+                            <Text style={styles.closeButtonText}>돌아가기</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </View>
         );
     }
 
@@ -76,23 +80,9 @@ const ChattingRoomDetail = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerIcon}>
-                    <Ionicons name="chevron-back" size={24} color="#333333" />
-                </TouchableOpacity>
-                <View style={styles.headerRightIcons}>
-                    <TouchableOpacity style={styles.headerIcon}>
-                        <Ionicons name="notifications-outline" size={24} color="#333333" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerIcon}>
-                        <Ionicons name="star-outline" size={24} color="#333333" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerIcon}>
-                        <Ionicons name="settings-outline" size={24} color="#333333" />
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="채팅방 정보" />
 
             <ScrollView contentContainerStyle={styles.scrollViewContent}>
                 <View style={styles.profileSection}>
@@ -186,7 +176,7 @@ const ChattingRoomDetail = () => {
                     ))}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

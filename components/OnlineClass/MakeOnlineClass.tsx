@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import * as ImagePicker from 'expo-image-picker';
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
+import AppHeader from '@/components/AppHeader';
 
 const MakeOnlineClass = () => {
     const { currentUser } = useAuth();
@@ -126,24 +127,13 @@ const MakeOnlineClass = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleCancel} disabled={isLoading}>
-                    <Ionicons name="close" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>온라인 클래스 등록</Text>
-                <View style={styles.headerButtons}>
-                    <TouchableOpacity
-                        onPress={handleRegisterAndNavigate}
-                        disabled={isLoading}
-                        style={styles.registerButton}
-                    >
-                        <Text style={styles.registerButtonText}>
-                            {isLoading ? '등록중...' : '등록하기'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더: < 클래스 등록 [등록] 🔔 */}
+            <AppHeader
+                title="클래스 등록"
+                onBack={() => { if (!isLoading) handleCancel(); }}
+                right={[{ label: isLoading ? '등록중' : '등록', onPress: handleRegisterAndNavigate, disabled: isLoading, color: '#6C63FF' }]}
+            />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
@@ -246,7 +236,7 @@ const MakeOnlineClass = () => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

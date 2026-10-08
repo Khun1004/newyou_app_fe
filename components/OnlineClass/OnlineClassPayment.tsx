@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import AppHeader from '@/components/AppHeader';
 
 interface PaymentMethod {
     id: string;
@@ -162,26 +163,19 @@ const OnlineClassPayment = () => {
     const classData = currentClassData || classDataFromParams;
     if (!classData) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>결제</Text>
-                </View>
+            <View style={styles.container}>
+                <AppHeader title="결제" />
                 <View style={styles.loadingContainer}>
                     <Text style={{ color: '#666' }}>클래스 정보를 불러오는 중...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} disabled={isLoading}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>결제</Text>
-                <View style={{ width: 24 }} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="결제" onBack={() => { if (!isLoading) router.back(); }} />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
@@ -243,7 +237,7 @@ const OnlineClassPayment = () => {
                     </Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

@@ -1,4 +1,4 @@
-import Note from '@/components/Note/Note';
-import { screen } from '@/components/screen';
+import Note from "@/components/Note/Note";
+import { screen } from "@/components/screen";
 
-export default screen(Note, { requireLogin: '노트' });
+export default screen(Note);

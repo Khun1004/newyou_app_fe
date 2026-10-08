@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AppHeader from '@/components/AppHeader';
 
 const AgreementMakeBoard = () => {
     const { currentUser } = useAuth();
@@ -43,14 +44,9 @@ const AgreementMakeBoard = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleCancel} disabled={isLoading}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>게시글 작성 동의</Text>
-                <View style={styles.headerPlaceholder} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="게시글 작성 동의" onBack={() => { if (!isLoading) handleCancel(); }} />
 
             <View style={styles.content}>
                 <View style={styles.profileContainer}>
@@ -107,7 +103,7 @@ const AgreementMakeBoard = () => {
                     </TouchableOpacity>
                 </View>
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

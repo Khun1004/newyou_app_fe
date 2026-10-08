@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { RequireLogin } from '@/components/RequireLogin';
+import AppHeader from '@/components/AppHeader';
 
 /**
  * app 폴더의 화면 파일을 짧게 만들어 주는 도우미.
@@ -11,13 +12,21 @@ import { RequireLogin } from '@/components/RequireLogin';
  * 사용 예)
  *   export default screen(Birthday);                               // 누구나 볼 수 있는 화면
  *   export default screen(Note, { requireLogin: '노트' });         // 로그인이 필요한 화면
+ *   export default screen(OnlineClass, { title: '온라인 클래스' });  // 자체 헤더가 없는 화면에 공통 헤더 추가
  */
 export function screen(
     Component: React.ComponentType<any>,
-    options: { requireLogin?: string } = {}
+    options: { requireLogin?: string; title?: string } = {}
 ) {
     function Screen() {
-        const content = <Component />;
+        const content = options.title ? (
+            <>
+                <AppHeader title={options.title} />
+                <Component />
+            </>
+        ) : (
+            <Component />
+        );
         return (
             <View style={styles.container}>
                 {options.requireLogin ? (

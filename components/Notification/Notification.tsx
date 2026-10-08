@@ -2,22 +2,19 @@ import React from 'react';
 import { StyleSheet, View, Text, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 export default function Notification() {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>알림</Text>
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 (알림 화면이라 알림 아이콘은 숨김) */}
+            <AppHeader title="알림" showBell={false} />
             <View style={styles.main}>
                 <Text style={styles.mainText}>이곳은 알림 페이지입니다.</Text>
                 {/* 알림 목록을 표시하는 UI를 여기에 추가하세요 */}
                 {/* <FlatList ... /> */}
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
 

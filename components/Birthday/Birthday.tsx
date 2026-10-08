@@ -1,522 +1,641 @@
-import React, { useEffect, useRef } from 'react';
+import AppHeader from "@/components/AppHeader";
+import { useRequireLogin } from "@/components/RequireLogin";
+import { useAuth } from "@/components/contexts/AuthProvider";
+import { useFriends } from "@/components/contexts/FriendContext";
+import { BASE_URL } from "@/config";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Alert,
-    StatusBar,
-    Dimensions,
-    Image,
-    Animated,
-    Platform,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useFriends } from '@/components/contexts/FriendContext';
-import { BASE_URL } from '@/config';
+  Alert,
+  Animated,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const { width } = Dimensions.get('window');
+// ============================================================
+// 생일 화면 색상 (헤더의 '햇살' 색과 어울리게)
+// ============================================================
+const COLORS = {
+  background: "#FFFBF5",
+  card: "#FFFFFF",
+  text: "#3F2A1E",
+  subText: "#8A7565",
+  border: "#F3E6DA",
+  pink: "#F06292",
+  orange: "#F59E0B",
+  sunrise: ["#FFF3CF", "#FFE4EC"] as [string, string],
+  button: ["#FFB75E", "#F06292"] as [string, string],
+};
 
 interface Friend {
-    id: string;
-    nickname: string;
-    birthdate: { day: number; month: number } | null;
-    profileColor: string[];
-    profileImage?: string;
-    memo?: string;
+  id: string;
+  nickname: string;
+  birthdate: { day: number; month: number } | null;
+  profileColor: string[];
+  profileImage?: string | null;
+  memo?: string;
 }
 
-const getAbsoluteImageUrl = (relativePath: string | null | undefined): string | null => {
-    if (!relativePath) return null;
-    const cleanBaseUrl = BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '');
-    const cleanRelativePath = relativePath.replace(/^\/+/g, '');
-    return `${cleanBaseUrl}/${cleanRelativePath}`;
+// 서버에 저장된 이미지 경로를 전체 주소로 바꿔요.
+const getAbsoluteImageUrl = (
+  relativePath: string | null | undefined,
+): string | null => {
+  if (!relativePath) return null;
+  if (relativePath.startsWith("http")) return relativePath;
+  const cleanBaseUrl = BASE_URL.replace(/\/+$/, "").replace(/\/api$/, "");
+  const cleanRelativePath = relativePath.replace(/^\/+/g, "");
+  return `${cleanBaseUrl}/${cleanRelativePath}`;
+};
+
+// 다음 생일까지 남은 날짜 (오늘이면 0)
+const daysUntilBirthday = (
+  birthdate: { day: number; month: number } | null,
+): number | null => {
+  if (!birthdate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let next = new Date(today.getFullYear(), birthdate.month - 1, birthdate.day);
+  if (next < today)
+    next = new Date(
+      today.getFullYear() + 1,
+      birthdate.month - 1,
+      birthdate.day,
+    );
+  return Math.round((next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const dDayLabel = (days: number | null) => {
+  if (days === null) return "";
+  if (days === 0) return "오늘!";
+  return `D-${days}`;
+};
+
+// 프로필 동그라미 (사진이 있으면 사진, 없으면 이름 첫 글자)
+const Avatar = ({ friend, size }: { friend: Friend; size: number }) => {
+  const uri = getAbsoluteImageUrl(friend.profileImage);
+  const circle = { width: size, height: size, borderRadius: size / 2 };
+  if (uri) {
+    return <Image source={{ uri }} style={[circle, styles.avatarImage]} />;
+  }
+  const colors = (
+    friend.profileColor?.length >= 2 ? friend.profileColor : COLORS.button
+  ) as [string, string];
+  return (
+    <LinearGradient colors={colors} style={[circle, styles.avatarCircle]}>
+      <Text style={[styles.avatarText, { fontSize: size * 0.4 }]}>
+        {friend.nickname?.charAt(0).toUpperCase()}
+      </Text>
+    </LinearGradient>
+  );
 };
 
 const Birthday: React.FC = () => {
-    const { friends, deleteFriend } = useFriends();
+  const { friends, deleteFriend } = useFriends();
+  const { isAuthenticated } = useAuth();
+  const requireLogin = useRequireLogin();
 
-    const handleEditFriend = (friend: Friend) => {
-        router.push({
-            pathname: '/AddFriBirthday',
-            params: { editFriend: JSON.stringify(friend) }
-        });
-    };
+  // 생일이 가까운 순서로 정렬 (생일 정보가 없는 친구는 맨 뒤)
+  const sortedFriends = useMemo(() => {
+    return [...(friends as Friend[])]
+      .map((f) => ({ friend: f, days: daysUntilBirthday(f.birthdate) }))
+      .sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999));
+  }, [friends]);
 
-    const handleDeleteFriend = (id: string) => {
-        Alert.alert(
-            '친구 삭제',
-            '정말로 이 친구를 삭제하시겠습니까?',
-            [
-                { text: '취소', style: 'cancel' },
-                { text: '삭제', style: 'destructive', onPress: () => deleteFriend(id) },
-            ]
-        );
-    };
+  const nextBirthday = sortedFriends.find((f) => f.days !== null);
+  const thisMonth = new Date().getMonth() + 1;
+  const thisMonthCount = (friends as Friend[]).filter(
+    (f) => f.birthdate?.month === thisMonth,
+  ).length;
 
-    const handleFriendDetail = (friend: Friend) => {
-        router.push({
-            pathname: '/FriendBirthdayDetail',
-            params: { friendData: JSON.stringify(friend) }
-        });
-    };
+  // 친구 추가: 로그인하지 않았으면 "로그인이 필요해요" 안내창을 띄워요.
+  const handleAddFriend = () => {
+    if (!requireLogin("생일 등록")) return;
+    router.push("/AddFriBirthday");
+  };
 
-    const getMonthName = (month: number) => {
-        const months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-        return months[month - 1];
-    };
+  const handleEditFriend = (friend: Friend) => {
+    router.push({
+      pathname: "/AddFriBirthday",
+      params: { editFriend: JSON.stringify(friend) },
+    });
+  };
 
-    const getInitials = (nickname: string) => {
-        return nickname.charAt(0).toUpperCase();
-    };
+  const handleDeleteFriend = (friend: Friend) => {
+    Alert.alert("친구 삭제", `${friend.nickname}님을 목록에서 삭제할까요?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: () => deleteFriend(friend.id),
+      },
+    ]);
+  };
 
-    const renderProfileContent = (friend: Friend) => {
-        if (friend.profileImage) {
-            console.log('🖼️ [renderProfileContent] 이미지 렌더링:', friend.profileImage);
-            const absoluteUrl = getAbsoluteImageUrl(friend.profileImage);
+  const handleFriendDetail = (friend: Friend) => {
+    router.push({
+      pathname: "/FriendBirthdayDetail",
+      params: { friendData: JSON.stringify(friend) },
+    });
+  };
 
-            return (
-                <View style={styles.profileImageContainer}>
-                    <Image
-                        source={{
-                            uri: absoluteUrl,
-                            cache: 'reload'
-                        }}
-                        style={styles.profileImage}
-                        onError={(e) => {
-                            console.error('❌ [Birthday] 이미지 로드 실패:', e.nativeEvent.error);
-                            console.error('❌ 실패한 URI:', friend.profileImage);
-                        }}
-                        onLoad={() => {
-                            console.log('✅ [Birthday] 이미지 로드 성공:', absoluteUrl);
-                        }}
-                    />
-                    <View style={styles.birthdayBadge}>
-                        <Text style={styles.birthdayBadgeText}>🎂</Text>
-                    </View>
-                </View>
-            );
-        } else {
-            return (
-                <View style={styles.profileImageContainer}>
-                    <LinearGradient colors={friend.profileColor} style={styles.profileCircle}>
-                        <Text style={styles.profileText}>{getInitials(friend.nickname)}</Text>
-                    </LinearGradient>
-                    <View style={styles.birthdayBadge}>
-                        <Text style={styles.birthdayBadgeText}>🎂</Text>
-                    </View>
-                </View>
-            );
-        }
-    };
-
-    const FriendCard = ({ friend, index }: { friend: Friend; index: number }) => {
-        const fadeAnim = useRef(new Animated.Value(0)).current;
-        const slideAnim = useRef(new Animated.Value(30)).current;
-        const scaleAnim = useRef(new Animated.Value(1)).current;
-
-        useEffect(() => {
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 500,
-                    delay: index * 100,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 500,
-                    delay: index * 100,
-                    useNativeDriver: true,
-                }),
-            ]).start();
-        }, []);
-
-        const handlePressIn = () => {
-            Animated.spring(scaleAnim, {
-                toValue: 0.95,
-                useNativeDriver: true,
-            }).start();
-        };
-
-        const handlePressOut = () => {
-            Animated.spring(scaleAnim, {
-                toValue: 1,
-                friction: 3,
-                useNativeDriver: true,
-            }).start();
-        };
-
-        return (
-            <Animated.View
-                style={[
-                    styles.friendCard,
-                    {
-                        opacity: fadeAnim,
-                        transform: [
-                            { translateY: slideAnim },
-                            { scale: scaleAnim }
-                        ],
-                    },
-                ]}
-            >
-                <TouchableOpacity
-                    style={styles.friendInfo}
-                    onPress={() => handleFriendDetail(friend)}
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    activeOpacity={0.9}
-                >
-                    {renderProfileContent(friend)}
-                    <View style={styles.friendDetails}>
-                        <Text style={styles.friendName}>{friend.nickname}</Text>
-                        {friend.birthdate ? (
-                            <View style={styles.birthdateContainer}>
-                                <Ionicons name="calendar-outline" size={16} color="#8b5cf6" />
-                                <Text style={styles.birthdateText}>
-                                    {friend.birthdate.day}일 / {getMonthName(friend.birthdate.month)}
-                                </Text>
-                            </View>
-                        ) : (
-                            <Text style={styles.noBirthdate}>생일 정보 없음</Text>
-                        )}
-                    </View>
-                </TouchableOpacity>
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                        onPress={() => handleEditFriend(friend)}
-                        style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="pencil" size={16} color="#ffffff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => handleDeleteFriend(friend.id)}
-                        style={[styles.actionButton, { backgroundColor: '#ef4444' }]}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="trash" size={16} color="#ffffff" />
-                    </TouchableOpacity>
-                </View>
-            </Animated.View>
-        );
-    };
-
+  // ---------------- 위쪽 큰 카드: 다가오는 생일 ----------------
+  const renderHero = () => {
+    if (!nextBirthday) {
+      return (
+        <LinearGradient
+          colors={COLORS.sunrise}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <Text style={styles.heroEmoji}>🎂</Text>
+          <Text style={styles.heroTitle}>소중한 사람의 생일을 기억해요</Text>
+          <Text style={styles.heroSub}>
+            친구를 등록하면 다가오는 생일을 알려드려요
+          </Text>
+        </LinearGradient>
+      );
+    }
+    const { friend, days } = nextBirthday;
+    const isToday = days === 0;
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-
-            {/* 고정 헤더 */}
-            <View style={styles.fixedHeader}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="chevron-back" size={28} color="#1f2937" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>생일</Text>
-                    <View style={styles.headerSpacer} />
-                </View>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => handleFriendDetail(friend)}
+      >
+        <LinearGradient
+          colors={COLORS.sunrise}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <Text style={styles.heroLabel}>
+            {isToday ? "🎉 오늘 생일이에요" : "🎈 다가오는 생일"}
+          </Text>
+          <View style={styles.heroRow}>
+            <View style={styles.heroAvatarRing}>
+              <Avatar friend={friend} size={64} />
             </View>
-
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={styles.heroName} numberOfLines={1}>
+                {friend.nickname}
+              </Text>
+              <Text style={styles.heroDate}>
+                {friend.birthdate!.month}월 {friend.birthdate!.day}일
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.heroDday,
+                isToday && { backgroundColor: COLORS.pink },
+              ]}
             >
-                <View style={styles.titleSection}>
-                    <View style={styles.titleRow}>
-                        <Text style={styles.sparkle}>✨</Text>
-                        <LinearGradient
-                            colors={['#3b82f6', '#8b5cf6']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.titleGradient}
-                        >
-                            <Text style={styles.title}>소중한 친구들의 생일</Text>
-                        </LinearGradient>
-                        <Text style={styles.sparkle}>✨</Text>
-                    </View>
-                    <Text style={styles.subtitle}>특별한 날을 함께 기억해보세요</Text>
-                </View>
-
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        onPress={() => router.push('/AddFriBirthday')}
-                        activeOpacity={0.9}
-                    >
-                        <LinearGradient
-                            colors={['#3b82f6', '#8b5cf6']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.addButton}
-                        >
-                            <Ionicons name="add" size={20} color="#ffffff" />
-                            <Text style={styles.addButtonText}>친구 추가하기</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.friendsList}>
-                    {friends.map((friend, index) => (
-                        <FriendCard key={friend.id} friend={friend} index={index} />
-                    ))}
-                    {friends.length === 0 && (
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyIconContainer}>
-                                <View style={styles.emptyIconCircle}>
-                                    <Text style={styles.emptyIcon}>🎁</Text>
-                                </View>
-                            </View>
-                            <Text style={styles.emptyStateText}>
-                                아직 등록된 친구가 없습니다.{'\n'}첫 번째 친구를 추가해보세요!
-                            </Text>
-                        </View>
-                    )}
-                </View>
-            </ScrollView>
-        </View>
+              <Text style={[styles.heroDdayText, isToday && { color: "#fff" }]}>
+                {dDayLabel(days)}
+              </Text>
+            </View>
+          </View>
+          {isToday && (
+            <Text style={styles.heroMessage}>
+              축하 메시지나 선물을 보내 보세요 🎁
+            </Text>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
     );
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <AppHeader
+        title="생일"
+        right={[
+          {
+            icon: "person-add-outline",
+            onPress: handleAddFriend,
+            accessibilityLabel: "친구 추가",
+          },
+        ]}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderHero()}
+
+        {/* 작은 요약 */}
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryNumber}>{friends.length}</Text>
+            <Text style={styles.summaryLabel}>등록한 친구</Text>
+          </View>
+          <View style={styles.summaryBox}>
+            <Text style={styles.summaryNumber}>{thisMonthCount}</Text>
+            <Text style={styles.summaryLabel}>{thisMonth}월 생일</Text>
+          </View>
+        </View>
+
+        {/* 친구 목록 */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>친구들의 생일</Text>
+          <TouchableOpacity
+            onPress={handleAddFriend}
+            style={styles.addChip}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={16} color={COLORS.pink} />
+            <Text style={styles.addChipText}>추가</Text>
+          </TouchableOpacity>
+        </View>
+
+        {sortedFriends.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>🎁</Text>
+            <Text style={styles.emptyTitle}>아직 등록된 친구가 없어요</Text>
+            <Text style={styles.emptySub}>
+              {isAuthenticated
+                ? "첫 번째 친구의 생일을 등록해 보세요!"
+                : "생일을 등록하려면 먼저 로그인해 주세요."}
+            </Text>
+            <TouchableOpacity onPress={handleAddFriend} activeOpacity={0.9}>
+              <LinearGradient
+                colors={COLORS.button}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.primaryButton}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+                <Text style={styles.primaryButtonText}>친구 추가하기</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          sortedFriends.map(({ friend, days }, index) => (
+            <FriendRow
+              key={friend.id}
+              friend={friend}
+              days={days}
+              index={index}
+              onPress={() => handleFriendDetail(friend)}
+              onEdit={() => handleEditFriend(friend)}
+              onDelete={() => handleDeleteFriend(friend)}
+            />
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ---------------- 친구 한 줄 카드 ----------------
+const FriendRow = ({
+  friend,
+  days,
+  index,
+  onPress,
+  onEdit,
+  onDelete,
+}: {
+  friend: Friend;
+  days: number | null;
+  index: number;
+  onPress: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, {
+        toValue: 1,
+        duration: 350,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slide, {
+        toValue: 0,
+        duration: 350,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const isToday = days === 0;
+  const isSoon = days !== null && days > 0 && days <= 7;
+  const pillStyle = isToday
+    ? styles.pillToday
+    : isSoon
+      ? styles.pillSoon
+      : styles.pillNormal;
+  const pillTextStyle = isToday
+    ? styles.pillTodayText
+    : isSoon
+      ? styles.pillSoonText
+      : styles.pillNormalText;
+
+  return (
+    <Animated.View
+      style={{ opacity: fade, transform: [{ translateY: slide }] }}
+    >
+      <TouchableOpacity
+        style={[styles.row, isToday && styles.rowToday]}
+        onPress={onPress}
+        activeOpacity={0.85}
+      >
+        <Avatar friend={friend} size={48} />
+        <View style={styles.rowInfo}>
+          <Text style={styles.rowName} numberOfLines={1}>
+            {friend.nickname}
+          </Text>
+          <Text style={styles.rowDate}>
+            {friend.birthdate
+              ? `${friend.birthdate.month}월 ${friend.birthdate.day}일`
+              : "생일 정보 없음"}
+          </Text>
+        </View>
+        {days !== null && (
+          <View style={[styles.pill, pillStyle]}>
+            <Text style={[styles.pillText, pillTextStyle]}>
+              {dDayLabel(days)}
+            </Text>
+          </View>
+        )}
+        <TouchableOpacity
+          onPress={onEdit}
+          style={styles.iconButton}
+          hitSlop={6}
+          accessibilityLabel="수정"
+        >
+          <Ionicons name="pencil-outline" size={18} color={COLORS.subText} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onDelete}
+          style={styles.iconButton}
+          hitSlop={6}
+          accessibilityLabel="삭제"
+        >
+          <Ionicons name="trash-outline" size={18} color={COLORS.subText} />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+const shadow = {
+  shadowColor: "#C9A68A",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 2,
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    fixedHeader: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        backgroundColor: '#ffffff',
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 44,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        position: 'absolute',
-        left: 16,
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    headerSpacer: {
-        position: 'absolute',
-        right: 16,
-        width: 36,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 60 : 100,
-        paddingHorizontal: 20,
-        paddingBottom: 40,
-    },
-    titleSection: {
-        alignItems: 'center',
-        marginTop: 24,
-        marginBottom: 20,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    sparkle: {
-        fontSize: 20,
-        marginHorizontal: 8,
-    },
-    titleGradient: {
-        paddingHorizontal: 2,
-        paddingVertical: 2,
-        borderRadius: 8,
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#ffffff',
-        textAlign: 'center',
-    },
-    subtitle: {
-        fontSize: 15,
-        color: '#6b7280',
-        textAlign: 'center',
-    },
-    buttonContainer: {
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 28,
-        paddingVertical: 14,
-        borderRadius: 25,
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-        gap: 8,
-    },
-    addButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    friendsList: {
-        paddingBottom: 20,
-    },
-    friendCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 20,
-        padding: 18,
-        marginBottom: 12,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 4,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    friendInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    profileImageContainer: {
-        position: 'relative',
-        marginRight: 15,
-    },
-    profileCircle: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 4,
-        borderWidth: 3,
-        borderColor: '#ffffff',
-    },
-    profileImage: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        borderWidth: 3,
-        borderColor: '#ffffff',
-    },
-    birthdayBadge: {
-        position: 'absolute',
-        bottom: -4,
-        right: -4,
-        backgroundColor: '#ec4899',
-        borderRadius: 12,
-        width: 24,
-        height: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        shadowColor: '#ec4899',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    birthdayBadgeText: {
-        fontSize: 12,
-    },
-    profileText: {
-        color: '#ffffff',
-        fontSize: 26,
-        fontWeight: 'bold',
-    },
-    friendDetails: {
-        flex: 1,
-    },
-    friendName: {
-        fontSize: 19,
-        fontWeight: '700',
-        color: '#1f2937',
-        marginBottom: 6,
-    },
-    birthdateContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    birthdateText: {
-        fontSize: 14,
-        color: '#6b7280',
-        fontWeight: '500',
-    },
-    noBirthdate: {
-        fontSize: 14,
-        color: '#9ca3af',
-        fontStyle: 'italic',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    actionButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: 60,
-    },
-    emptyIconContainer: {
-        marginBottom: 20,
-    },
-    emptyIconCircle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#f3f4f6',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyIcon: {
-        fontSize: 50,
-    },
-    emptyStateText: {
-        fontSize: 16,
-        color: '#6b7280',
-        textAlign: 'center',
-        lineHeight: 24,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+  },
+
+  // 다가오는 생일 카드
+  hero: {
+    borderRadius: 24,
+    padding: 20,
+    alignItems: "stretch",
+    ...shadow,
+  },
+  heroEmoji: {
+    fontSize: 44,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  heroTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+    textAlign: "center",
+  },
+  heroSub: {
+    fontSize: 14,
+    color: COLORS.subText,
+    textAlign: "center",
+    marginTop: 6,
+  },
+  heroLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.subText,
+    marginBottom: 12,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  heroAvatarRing: {
+    padding: 3,
+    borderRadius: 40,
+    backgroundColor: "#FFFFFF",
+  },
+  heroName: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  heroDate: {
+    fontSize: 14,
+    color: COLORS.subText,
+    marginTop: 4,
+  },
+  heroDday: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  heroDdayText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: COLORS.pink,
+  },
+  heroMessage: {
+    marginTop: 14,
+    fontSize: 14,
+    color: COLORS.text,
+  },
+
+  // 요약
+  summaryRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+  },
+  summaryBox: {
+    flex: 1,
+    backgroundColor: COLORS.card,
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  summaryNumber: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    color: COLORS.subText,
+    marginTop: 2,
+  },
+
+  // 목록 제목
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 28,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  addChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFE4EC",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  addChipText: {
+    color: COLORS.pink,
+    fontWeight: "700",
+    fontSize: 13,
+    marginLeft: 2,
+  },
+
+  // 친구 카드
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  rowToday: {
+    borderColor: COLORS.pink,
+    backgroundColor: "#FFF5F8",
+  },
+  rowInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  rowName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  rowDate: {
+    fontSize: 13,
+    color: COLORS.subText,
+    marginTop: 3,
+  },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginRight: 4,
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  pillToday: { backgroundColor: COLORS.pink },
+  pillTodayText: { color: "#FFFFFF" },
+  pillSoon: { backgroundColor: "#FFF1D6" },
+  pillSoonText: { color: "#B45309" },
+  pillNormal: { backgroundColor: "#F5EFE9" },
+  pillNormalText: { color: COLORS.subText },
+  iconButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // 프로필
+  avatarImage: {
+    backgroundColor: "#F5EFE9",
+  },
+  avatarCircle: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+  },
+
+  // 비어 있을 때
+  emptyCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: "dashed",
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  emptySub: {
+    fontSize: 14,
+    color: COLORS.subText,
+    marginTop: 6,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    borderRadius: 999,
+  },
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 4,
+  },
 });
 
 export default Birthday;

@@ -13,6 +13,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker'; // 갤러리 접근 라이브러리 import
 import { useReels } from '@/components/contexts/ReelContext';
+import AppHeader from '@/components/AppHeader';
 
 const CreateReel = () => {
     const { addReel } = useReels();
@@ -94,15 +95,9 @@ const CreateReel = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                    <Icon name="close" size={28} color="#222" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Reel 등록</Text>
-                <View style={styles.spacer} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="릴스 등록" onBack={handleGoBack} />
 
             <View style={styles.content}>
 
@@ -163,7 +158,7 @@ const CreateReel = () => {
                 </TouchableOpacity>
 
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

@@ -10,6 +10,7 @@ import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppHeader from '@/components/AppHeader';
 
 // Daum 우편번호 검색 결과 데이터 타입
 interface DaumAddressData {
@@ -60,18 +61,8 @@ const SearchAddress = () => {
 
     return (
         <View style={styles.container}>
-            <View style={{ paddingTop: insets.top, backgroundColor: '#fff' }}>
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => router.back()}
-                    >
-                        <Ionicons name="chevron-back" size={28} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>주소 검색</Text>
-                    <View style={styles.headerButton} />
-                </View>
-            </View>
+            {/* 공통 헤더 */}
+            <AppHeader title="주소 검색" />
 
             <WebView
                 source={{ html: daumPostcodeHTML }}

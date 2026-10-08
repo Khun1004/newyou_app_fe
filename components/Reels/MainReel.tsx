@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 // 경로 수정 (MainReel 내부에서 컴포넌트 import)
 import Reels from './Reels';
 import MyReels from './MyReels';
+import AppHeader from '@/components/AppHeader';
 
 const MainReel = () => {
     const [activeTab, setActiveTab] = useState('reels');
@@ -42,15 +43,14 @@ const MainReel = () => {
 
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-            {/* Header: 뒤로 가기 버튼과 탭 네비게이션 */}
-            <View style={styles.headerContainer}>
-                <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-                    <Icon name="chevron-back" size={28} color="#fff" />
-                </TouchableOpacity>
+            {/* 공통 헤더 (어두운 화면용) */}
+            <AppHeader title="릴스" variant="dark" onBack={handleGoBack} />
 
+            {/* 탭: Reels / My Reels */}
+            <View style={styles.headerContainer}>
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === 'reels' && styles.activeTab]}
@@ -73,7 +73,6 @@ const MainReel = () => {
                         </Text>
                     </TouchableOpacity>
                 </View>
-                <View style={styles.spacer} />
             </View>
 
             {/* Content: Reels 컴포넌트가 flex: 1 공간을 가득 채웁니다. */}
@@ -86,7 +85,7 @@ const MainReel = () => {
                     <MyReels onReelSelect={handleReelSelect} />
                 )}
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

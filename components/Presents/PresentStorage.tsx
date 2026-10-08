@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSentGifts } from '@/components/contexts/SentGiftsContext';
+import AppHeader from '@/components/AppHeader';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
@@ -151,18 +152,9 @@ const PresentStorage = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => router.back()}
-                >
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>선물함</Text>
-                <View style={styles.headerRight} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="선물함" />
 
             {/* 탭 */}
             <View style={styles.tabContainer}>
@@ -234,7 +226,7 @@ const PresentStorage = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 

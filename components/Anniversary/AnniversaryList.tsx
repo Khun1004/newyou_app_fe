@@ -20,6 +20,7 @@ import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext
 import { AppFriend } from '@/components/hooks/AppFriend';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '@/config';
+import AppHeader from '@/components/AppHeader';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -325,37 +326,23 @@ export default function AnniversaryList() {
 
     if (isLoading && anniversaries.length === 0) {
         return (
-            <SafeAreaView style={styles.loadingContainer}>
+            <View style={styles.loadingContainer}>
                 <StatusBar barStyle="dark-content" />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#333" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>기념일 관리</Text>
-                    <View style={styles.placeholderButton} />
-                </View>
+                <AppHeader title="기념일 관리" />
                 <View style={styles.loadingContent}>
                     <ActivityIndicator size="large" color="#6C63FF" />
                     <Text style={styles.loadingText}>데이터를 불러오는 중입니다...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             <StatusBar barStyle="dark-content" />
 
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>기념일 관리</Text>
-                <TouchableOpacity onPress={handleAddPress} style={styles.addButton}>
-                    <Ionicons name="add-circle" size={28} color="#6C63FF" />
-                </TouchableOpacity>
-            </View>
+            {/* 공통 헤더: < 기념일 관리 [+] 🔔 */}
+            <AppHeader title="기념일 관리" right={[{ icon: 'add-circle-outline', onPress: handleAddPress, accessibilityLabel: '기념일 추가' }]} />
 
             {/* 스크롤 가능한 콘텐츠 영역 */}
             <ScrollView style={styles.scrollView}>
@@ -379,7 +366,7 @@ export default function AnniversaryList() {
                     )}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 

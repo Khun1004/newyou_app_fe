@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 
 const PaymentFinish = () => {
     const router = useRouter();
@@ -63,7 +64,9 @@ const PaymentFinish = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
+            {/* 공통 헤더 (결제 완료 후 뒤로 가면 결제 화면이 다시 나오지 않게 홈으로) */}
+            <AppHeader title={isGift ? '선물 완료' : '결제 완료'} onBack={handleGoHome} />
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
@@ -201,7 +204,7 @@ const PaymentFinish = () => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 

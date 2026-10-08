@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { giftData } from '@/components/Presents/GiftData'; // 상품 데이터 경로 확인 필요
 // ❗️ AddressManageContext import (경로 확인 필요)
 import { useAddressManage, Address } from '@/components/contexts/AddressManageContext';
+import AppHeader from '@/components/AppHeader';
 
 // 결제 수단
 const paymentMethods = [
@@ -73,14 +74,17 @@ const ProductPurchase = () => {
 
     if (!productInfo) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>상품 정보를 찾을 수 없습니다. (ID: {productId})</Text>
-                    <TouchableOpacity style={{ marginTop: 20 }} onPress={() => router.back()}>
-                        <Text style={styles.changeButton}>뒤로 가기</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="주문/결제" />
+                <SafeAreaView style={styles.container}>
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>상품 정보를 찾을 수 없습니다. (ID: {productId})</Text>
+                        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => router.back()}>
+                            <Text style={styles.changeButton}>뒤로 가기</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </View>
         );
     }
 
@@ -114,15 +118,9 @@ const ProductPurchase = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="chevron-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>주문/결제</Text>
-                <View style={{ width: 24 }} />
-            </View>
+        <View style={styles.container}>
+            {/* 공통 헤더 */}
+            <AppHeader title="주문/결제" />
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* 주문 상품 */}
@@ -329,7 +327,7 @@ const ProductPurchase = () => {
                     </Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }
 
