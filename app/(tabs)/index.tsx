@@ -238,9 +238,7 @@ export default function HomeScreen() {
             <HeroBackground>
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
-                        <View style={styles.logoContainer}>
-                            <Image source={NewYouLogo} style={styles.newYouLogoImage} resizeMode="contain" />
-                        </View>
+                        <Image source={NewYouLogo} style={styles.newYouLogoImage} resizeMode="contain" />
                     </View>
                     <View style={styles.centerTimeContainer}>
                         <Ionicons name="calendar-outline" size={18} color="#666" />
@@ -486,5 +484,5 @@ const styles = StyleSheet.create({
     dateTimeWrapper: { alignItems: 'center', marginHorizontal: 5 },
     currentDateText: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 2 },
     currentTimeText: { fontSize: 14, fontWeight: '600', color: '#666' },
-    logoContainer: { backgroundColor: '#FFFFFF', borderRadius: 16, overflow: 'hidden', marginRight: 6 },
+
 });

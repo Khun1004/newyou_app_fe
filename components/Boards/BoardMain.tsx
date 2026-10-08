@@ -9,13 +9,12 @@ import {
     SafeAreaView,
     Image,
 } from 'react-native';
-import { useNavigation } from "expo-router/react-navigation";
+import { router } from "expo-router";
 import { useBoard, BoardPost } from '@/components/contexts/BoardContext';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '@/constants/theme';
 
 const BoardMain = () => {
-    const navigation = useNavigation();
     const { posts } = useBoard();
     const [selectedCategory, setSelectedCategory] = useState<string>('전체');
     const [searchText, setSearchText] = useState<string>('');
@@ -133,7 +132,7 @@ const BoardMain = () => {
             {/* 글쓰기 버튼 (오른쪽 아래) */}
             <TouchableOpacity
                 style={styles.addButton}
-                onPress={() => navigation.navigate('AgreementMakeBoard')}
+                onPress={() => router.push('/AgreementMakeBoard')}
                 activeOpacity={0.85}
                 accessibilityLabel="글쓰기"
             >

@@ -17,6 +17,7 @@ import { useAnniversary } from '@/components/contexts/AnniversaryContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext'; // 친구 Context import
 import { SERVER_IP } from '@/config';
+import { useRequireLogin } from '@/components/RequireLogin';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,7 +64,8 @@ const AnimalAvatar = ({ animal, size }: { animal: string; size: number }) => {
 const AnniversaryScreen: React.FC = () => {
     const router = useRouter();
     const { settings, loadSettings } = useAnniversary();
-    const { currentUser } = useAuth();
+    const { currentUser, isAuthenticated } = useAuth();
+    const requireLogin = useRequireLogin();
     const { friends } = useAppFriendsContext();
 
     const [duration, setDuration] = useState('123일');
@@ -174,7 +176,7 @@ const AnniversaryScreen: React.FC = () => {
 
     const getGradientColors = (): [string, string, ...string[]] => {
         const saved = settings.backgroundColors;
-        if (saved && saved.length >= 2 && saved.join() !== OLD_DEFAULT) {
+        if (isAuthenticated && saved && saved.length >= 2 && saved.join() !== OLD_DEFAULT) {
             return saved as [string, string, ...string[]];
         }
         return DEFAULT_GRADIENTS[relationshipType] ?? DEFAULT_GRADIENTS.relationship;
@@ -206,11 +208,16 @@ const AnniversaryScreen: React.FC = () => {
         }
     };
 
+    // 로그인했고, 기념일(시작 날짜)을 등록했을 때만 내용을 보여줘요.
+    const hasAnniversary = isAuthenticated && !!settings.startDate;
+
     const handleEditPress = () => {
+        if (!requireLogin('기념일')) return;
         router.push('/AnniversaryList');
     };
 
     const handleBackgroundEditPress = () => {
+        if (!requireLogin('기념일 꾸미기')) return;
         router.push('/AnniversaryEditBackground');
     };
 
@@ -219,7 +226,8 @@ const AnniversaryScreen: React.FC = () => {
     };
 
     const renderBackground = () => {
-        if (settings.backgroundImageUri) {
+        // 로그인하지 않았으면 이전 사용자가 꾸민 배경 대신 기본 배경을 보여줘요.
+        if (isAuthenticated && settings.backgroundImageUri) {
             return (
                 <ImageBackground
                     source={{ uri: settings.backgroundImageUri }}
@@ -282,76 +290,94 @@ const AnniversaryScreen: React.FC = () => {
                     ))}
                 </View>
 
-                <View style={styles.content}>
-                    <View style={styles.titleContainer}>
-                        <Text style={styles.titleEmoji}>{getRelationshipEmoji()}</Text>
+                {!hasAnniversary ? (
+                    // 등록된 기념일이 없을 때 (로그인 안 했을 때도 여기)
+                    <View style={styles.emptyWrap}>
+                        <Text style={styles.emptyEmoji}>💝</Text>
                         <Text style={styles.title}>우리의 특별한 날</Text>
-                    </View>
-
-                    <View style={styles.profilesContainer}>
-                        {/* 나의 프로필 */}
-                        <TouchableOpacity style={styles.profileSection} onPress={handleLeftProfilePress}>
-                            <View style={styles.profileImageContainer}>
-                                <View style={styles.profileImageBorder}>
-                                    {renderProfileContent(myProfile)}
-                                </View>
-                                <View style={styles.profileGlow} />
-                            </View>
-                            <Text style={styles.nickname}>{myProfile.nickname}</Text>
+                        <Text style={styles.emptyText}>
+                            아직 등록된 기념일이 없어요.{'\n'}
+                            {isAuthenticated
+                                ? '소중한 사람과 함께한 날을 등록해 보세요.'
+                                : '기념일을 등록하려면 먼저 로그인해 주세요.'}
+                        </Text>
+                        <TouchableOpacity style={styles.emptyButton} onPress={handleEditPress} activeOpacity={0.85}>
+                            <Ionicons name="add" size={20} color="#F06292" />
+                            <Text style={styles.emptyButtonText}>기념일 등록하기</Text>
                         </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={styles.content}>
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.titleEmoji}>{getRelationshipEmoji()}</Text>
+                            <Text style={styles.title}>우리의 특별한 날</Text>
+                        </View>
 
-                        <View style={styles.connectionContainer}>
-                            <View style={styles.connectionLine} />
-                            <View style={styles.heartContainer}>
-                                <Text style={styles.connectionHeart}>
-                                    {relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
+                        <View style={styles.profilesContainer}>
+                            {/* 나의 프로필 */}
+                            <TouchableOpacity style={styles.profileSection} onPress={handleLeftProfilePress}>
+                                <View style={styles.profileImageContainer}>
+                                    <View style={styles.profileImageBorder}>
+                                        {renderProfileContent(myProfile)}
+                                    </View>
+                                    <View style={styles.profileGlow} />
+                                </View>
+                                <Text style={styles.nickname}>{myProfile.nickname}</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.connectionContainer}>
+                                <View style={styles.connectionLine} />
+                                <View style={styles.heartContainer}>
+                                    <Text style={styles.connectionHeart}>
+                                        {relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
+                                    </Text>
+                                </View>
+                                <View style={styles.connectionLine} />
+                            </View>
+
+                            {/* ⭐️ 파트너 프로필 (수정된 부분) */}
+                            <View style={styles.profileSection}>
+                                <View style={styles.profileImageContainer}>
+                                    <View style={styles.profileImageBorder}>
+                                        {/* ⭐️ renderProfileContent 함수를 사용하여 파트너 이미지 렌더링 */}
+                                        {renderProfileContent(partnerProfile)}
+                                    </View>
+                                    <View style={styles.profileGlow} />
+                                </View>
+                                <Text style={styles.nickname}>{partnerProfile.nickname}</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.relationshipContainer}>
+                            <View style={[
+                                styles.relationshipCard,
+                                settings.backgroundImageUri && styles.relationshipCardWithImage
+                            ]}>
+                                <View style={styles.relationshipHeader}>
+                                    <Text style={styles.relationshipType}>{getRelationshipText()}</Text>
+                                    <View style={styles.divider} />
+                                    <Text style={styles.duration}>{duration}</Text>
+                                </View>
+
+                                <Text style={[
+                                    styles.celebrationText,
+                                    settings.backgroundImageUri && styles.celebrationTextWithImage
+                                ]}>
+                                    {settings.celebrationMessage}
                                 </Text>
                             </View>
-                            <View style={styles.connectionLine} />
                         </View>
 
-                        {/* ⭐️ 파트너 프로필 (수정된 부분) */}
-                        <View style={styles.profileSection}>
-                            <View style={styles.profileImageContainer}>
-                                <View style={styles.profileImageBorder}>
-                                    {/* ⭐️ renderProfileContent 함수를 사용하여 파트너 이미지 렌더링 */}
-                                    {renderProfileContent(partnerProfile)}
-                                </View>
-                                <View style={styles.profileGlow} />
-                            </View>
-                            <Text style={styles.nickname}>{partnerProfile.nickname}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.relationshipContainer}>
-                        <View style={[
-                            styles.relationshipCard,
-                            settings.backgroundImageUri && styles.relationshipCardWithImage
-                        ]}>
-                            <View style={styles.relationshipHeader}>
-                                <Text style={styles.relationshipType}>{getRelationshipText()}</Text>
-                                <View style={styles.divider} />
-                                <Text style={styles.duration}>{duration}</Text>
-                            </View>
-
+                        <View style={styles.bottomDecoration}>
                             <Text style={[
-                                styles.celebrationText,
-                                settings.backgroundImageUri && styles.celebrationTextWithImage
+                                styles.decorativeText,
+                                settings.backgroundImageUri && styles.decorativeTextWithImage
                             ]}>
-                                {settings.celebrationMessage}
+                                ✨ 더 많은 추억을 만들어가요 ✨
                             </Text>
                         </View>
                     </View>
-
-                    <View style={styles.bottomDecoration}>
-                        <Text style={[
-                            styles.decorativeText,
-                            settings.backgroundImageUri && styles.decorativeTextWithImage
-                        ]}>
-                            ✨ 더 많은 추억을 만들어가요 ✨
-                        </Text>
-                    </View>
-                </View>
+                )}
             </SafeAreaView>
         </View>
     );
@@ -472,6 +498,47 @@ const styles = StyleSheet.create({
     floatingIcon: {
         position: 'absolute',
         fontSize: 24,
+    },
+    emptyWrap: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+        paddingBottom: 120,
+    },
+    emptyEmoji: {
+        fontSize: 56,
+        marginBottom: 12,
+    },
+    emptyText: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: 'rgba(255, 255, 255, 0.95)',
+        textAlign: 'center',
+        marginTop: 12,
+        marginBottom: 24,
+        textShadowColor: 'rgba(120, 40, 60, 0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+    },
+    emptyButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 22,
+        paddingVertical: 13,
+        borderRadius: 999,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    emptyButtonText: {
+        color: '#F06292',
+        fontSize: 16,
+        fontWeight: '800',
+        marginLeft: 4,
     },
     content: {
         flex: 1,

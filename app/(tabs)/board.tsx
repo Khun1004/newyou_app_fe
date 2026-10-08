@@ -7,8 +7,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from "expo-router/react-navigation";
-import { useLocalSearchParams } from 'expo-router'; // Import this hook
+import { useLocalSearchParams, router } from 'expo-router';
 import BoardMain from '@/components/Boards/BoardMain';
 import OnlineClass from '@/components/OnlineClass/OnlineClass';
 import AppHeader from '@/components/AppHeader';
@@ -38,7 +37,6 @@ const Board: React.FC = () => {
     const params = useLocalSearchParams();
     // 초기 상태를 'board'로 설정
     const [activeTab, setActiveTab] = useState<'board' | 'onlineClass'>('board');
-    const navigation = useNavigation();
 
     // 초기 activeTab 설정 로직 개선
     // 컴포넌트가 마운트될 때, params에 'activeTab'이 'onlineClass'로 명시되어 있으면 설정합니다.
@@ -79,8 +77,8 @@ const Board: React.FC = () => {
     };
 
     const handleMyBoardPress = () => {
-        // @ts-ignore - navigation 타입 이슈 임시 해결
-        navigation.navigate('MyBoard');
+        // 탭 화면에서는 navigation.navigate 대신 router.push 를 써야 해요.
+        router.push('/MyBoard');
     };
 
     return (
