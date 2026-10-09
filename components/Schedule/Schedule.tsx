@@ -17,6 +17,7 @@ import AppHeader from '@/components/AppHeader';
 import { useRequireLogin } from '@/components/RequireLogin';
 import { useSchedules, ScheduleItem } from '@/components/Schedule/scheduleStore';
 import { THEME } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 /**
  * 시간표 일정 추가 / 수정 화면
@@ -51,7 +52,7 @@ const DURATIONS = [
     { value: 3, label: '3시간' },
 ];
 
-const CARD_COLORS = [THEME.primarySoft, '#FFF1E3', '#FFF6D1', '#E4F5EA', '#DFF6F2', '#E6F0FF', '#F1EAFF'];
+const CARD_COLORS = ['#E4F5EA', '#FFF6D1', '#FFF1E3', '#FFE4EC', '#F1EAFF', '#E6F0FF', '#DFF6F2'];
 
 const toTimeString = (d: Date) =>
     `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -90,7 +91,7 @@ export default function Schedule() {
     const [startTime, setStartTime] = useState(defaultStart());
     const [duration, setDuration] = useState(1);
     const [color, setColor] = useState(CARD_COLORS[0]);
-    const [showPicker, setShowPicker] = useState(Platform.OS === 'ios');
+    const [showPicker, setShowPicker] = useState(false);
     const [saving, setSaving] = useState(false);
 
     const fillForm = (s: ScheduleItem) => {
@@ -167,115 +168,158 @@ export default function Schedule() {
         <View style={styles.container}>
             <AppHeader
                 title={editingId ? '일정 수정' : '일정 추가'}
-                right={[{ label: saving ? '저장 중' : '저장', onPress: handleSave, disabled: saving, color: COLORS.pink }]}
+                right={[{ label: saving ? '저장 중' : '저장', onPress: handleSave, disabled: saving, color: THEME.primary }]}
                 showBell={false}
             />
 
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-                    <Text style={styles.guide}>매주 반복되는 일정을 시간표에 넣어요.</Text>
-
-                    {/* 제목 */}
-                    <Text style={styles.label}>제목</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="예) 영어 회화, 헬스, 알바"
-                        placeholderTextColor={THEME.placeholder}
-                        value={title}
-                        onChangeText={setTitle}
-                        maxLength={100}
-                    />
-
-                    {/* 요일 */}
-                    <Text style={styles.label}>요일</Text>
-                    <View style={styles.dayRow}>
-                        {DAYS.map((d, i) => {
-                            const active = day === d.key;
-                            return (
-                                <TouchableOpacity
-                                    key={d.key}
-                                    onPress={() => setDay(d.key)}
-                                    style={[styles.dayChip, active && styles.dayChipActive]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.dayChipText,
-                                            i === 6 && { color: COLORS.pink },
-                                            i === 5 && { color: '#3B82F6' },
-                                            active && { color: '#fff' },
-                                        ]}
-                                    >
-                                        {d.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-
-                    {/* 시작 시간 */}
-                    <Text style={styles.label}>시작 시간</Text>
-                    {Platform.OS === 'android' && (
-                        <TouchableOpacity style={styles.timeButton} onPress={() => setShowPicker(true)}>
-                            <Ionicons name="time-outline" size={20} color={COLORS.pink} />
-                            <Text style={styles.timeButtonText}>{formatTime(toTimeString(startTime))}</Text>
-                        </TouchableOpacity>
-                    )}
-                    {showPicker && (
-                        <View style={Platform.OS === 'ios' ? styles.pickerBox : undefined}>
-                            <DateTimePicker
-                                value={startTime}
-                                mode="time"
-                                minuteInterval={5}
-                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                locale="ko-KR"
-                                onChange={(_, date) => {
-                                    if (Platform.OS === 'android') setShowPicker(false);
-                                    if (date) setStartTime(date);
-                                }}
-                            />
-                        </View>
-                    )}
-
-                    {/* 시간 길이 */}
-                    <Text style={styles.label}>시간 길이</Text>
-                    <View style={styles.wrapRow}>
-                        {DURATIONS.map((d) => {
-                            const active = duration === d.value;
-                            return (
-                                <TouchableOpacity
-                                    key={d.value}
-                                    onPress={() => setDuration(d.value)}
-                                    style={[styles.chip, active && styles.chipActive]}
-                                    activeOpacity={0.8}
-                                >
-                                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{d.label}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-
-                    {/* 색 */}
-                    <Text style={styles.label}>색</Text>
-                    <View style={styles.wrapRow}>
-                        {CARD_COLORS.map((c) => (
-                            <TouchableOpacity
-                                key={c}
-                                onPress={() => setColor(c)}
-                                style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorDotActive]}
-                            >
-                                {color === c && <Ionicons name="checkmark" size={18} color={COLORS.text} />}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* 미리보기 */}
+                    {/* 미리보기: 시간표에 이렇게 보여요 */}
                     <View style={[styles.preview, { backgroundColor: color }]}>
-                        <Text style={styles.previewTitle}>{title.trim() || '일정 제목'}</Text>
-                        <Text style={styles.previewSub}>
-                            매주 {dayLabel}요일 · {formatTime(toTimeString(startTime))} · {durationLabel(duration)}
-                        </Text>
+                        <View style={styles.previewIcon}>
+                            <Ionicons name="time" size={22} color={THEME.primaryDark} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.previewTitle} numberOfLines={1}>
+                                {title.trim() || '새 일정'}
+                            </Text>
+                            <Text style={styles.previewSub}>
+                                매주 {dayLabel}요일 · {formatTime(toTimeString(startTime))} · {durationLabel(duration)}
+                            </Text>
+                        </View>
+                        <View style={styles.repeatBadge}>
+                            <Ionicons name="repeat" size={12} color={THEME.primaryDark} />
+                            <Text style={styles.repeatText}>매주</Text>
+                        </View>
                     </View>
+
+                    {/* 1. 무엇을 */}
+                    <View style={styles.card}>
+                        <View style={styles.cardHead}>
+                            <Ionicons name="create-outline" size={18} color={THEME.primary} />
+                            <Text style={styles.cardTitle}>무엇을 하나요?</Text>
+                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="예) 영어 회화, 헬스, 알바"
+                            placeholderTextColor={THEME.placeholder}
+                            value={title}
+                            onChangeText={setTitle}
+                            maxLength={100}
+                        />
+                    </View>
+
+                    {/* 2. 언제 */}
+                    <View style={styles.card}>
+                        <View style={styles.cardHead}>
+                            <Ionicons name="calendar-outline" size={18} color={THEME.primary} />
+                            <Text style={styles.cardTitle}>언제 하나요?</Text>
+                        </View>
+
+                        <Text style={styles.label}>요일</Text>
+                        <View style={styles.dayRow}>
+                            {DAYS.map((d, i) => {
+                                const active = day === d.key;
+                                return (
+                                    <TouchableOpacity
+                                        key={d.key}
+                                        onPress={() => setDay(d.key)}
+                                        style={[styles.dayChip, active && styles.dayChipActive]}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.dayChipText,
+                                                i === 6 && { color: '#E05A5A' },
+                                                i === 5 && { color: '#3B82F6' },
+                                                active && { color: '#fff' },
+                                            ]}
+                                        >
+                                            {d.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        <Text style={styles.label}>시작 시간</Text>
+                        <TouchableOpacity
+                            style={styles.timeButton}
+                            onPress={() => setShowPicker(Platform.OS === 'ios' ? !showPicker : true)}
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="alarm-outline" size={20} color={THEME.primary} />
+                            <Text style={styles.timeButtonText}>{formatTime(toTimeString(startTime))}</Text>
+                            <Ionicons name={showPicker && Platform.OS === 'ios' ? 'chevron-up' : 'chevron-down'} size={18} color={THEME.icon} />
+                        </TouchableOpacity>
+                        {showPicker && (
+                            <View style={Platform.OS === 'ios' ? styles.pickerBox : undefined}>
+                                <DateTimePicker
+                                    value={startTime}
+                                    mode="time"
+                                    minuteInterval={5}
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    // 휴대폰이 다크 모드여도 밝은 배경에 검은 글씨로 보이게 해요
+                                    themeVariant="light"
+                                    textColor={THEME.text}
+                                    locale="ko-KR"
+                                    onChange={(_, date) => {
+                                        if (Platform.OS === 'android') setShowPicker(false);
+                                        if (date) setStartTime(date);
+                                    }}
+                                />
+                            </View>
+                        )}
+
+                        <Text style={styles.label}>얼마나 하나요?</Text>
+                        <View style={styles.wrapRow}>
+                            {DURATIONS.map((d) => {
+                                const active = duration === d.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={d.value}
+                                        onPress={() => setDuration(d.value)}
+                                        style={[styles.chip, active && styles.chipActive]}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[styles.chipText, active && styles.chipTextActive]}>{d.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+
+                    {/* 3. 색 */}
+                    <View style={styles.card}>
+                        <View style={styles.cardHead}>
+                            <Ionicons name="color-palette-outline" size={18} color={THEME.primary} />
+                            <Text style={styles.cardTitle}>카드 색</Text>
+                        </View>
+                        <View style={styles.colorRow}>
+                            {CARD_COLORS.map((c) => (
+                                <TouchableOpacity
+                                    key={c}
+                                    onPress={() => setColor(c)}
+                                    style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorDotActive]}
+                                >
+                                    {color === c && <Ionicons name="checkmark" size={18} color={THEME.primaryDark} />}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 저장 버튼 */}
+                    <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85} style={{ marginTop: 6 }}>
+                        <LinearGradient
+                            colors={THEME.buttonGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.saveButton}
+                        >
+                            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                            <Text style={styles.saveText}>{saving ? '저장 중...' : editingId ? '수정 완료' : '시간표에 추가'}</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
 
                     {/* 그 요일의 일정 */}
                     <View style={styles.listHeader}>
@@ -287,7 +331,10 @@ export default function Schedule() {
                         )}
                     </View>
                     {daySchedules.length === 0 ? (
-                        <Text style={styles.emptyText}>아직 {dayLabel}요일 일정이 없어요.</Text>
+                        <View style={styles.emptyBox}>
+                            <Text style={styles.emptyEmoji}>🗓️</Text>
+                            <Text style={styles.emptyText}>아직 {dayLabel}요일 일정이 없어요.</Text>
+                        </View>
                     ) : (
                         daySchedules.map((s) => (
                             <TouchableOpacity
@@ -304,7 +351,7 @@ export default function Schedule() {
                                     </Text>
                                 </View>
                                 <TouchableOpacity onPress={() => handleDelete(s)} hitSlop={8} style={styles.itemDelete}>
-                                    <Ionicons name="trash-outline" size={18} color={COLORS.subText} />
+                                    <Ionicons name="trash-outline" size={18} color={THEME.subText} />
                                 </TouchableOpacity>
                             </TouchableOpacity>
                         ))
@@ -318,79 +365,142 @@ export default function Schedule() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: THEME.background,
     },
     content: {
-        padding: 20,
+        padding: 16,
         paddingBottom: 60,
     },
-    guide: {
+
+    // 미리보기
+    preview: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.04)',
+    },
+    previewIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(255,255,255,0.75)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    previewTitle: {
+        fontSize: 17,
+        fontWeight: '800',
+        color: THEME.text,
+    },
+    previewSub: {
         fontSize: 13,
-        color: COLORS.subText,
-        marginBottom: 8,
+        color: 'rgba(0,0,0,0.55)',
+        marginTop: 3,
+    },
+    repeatBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 999,
+        marginLeft: 8,
+    },
+    repeatText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: THEME.primaryDark,
+        marginLeft: 3,
+    },
+
+    // 카드
+    card: {
+        backgroundColor: THEME.card,
+        borderRadius: 20,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: THEME.line,
+    },
+    cardHead: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: THEME.text,
+        marginLeft: 6,
     },
     label: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '700',
-        color: COLORS.text,
-        marginTop: 18,
+        color: THEME.subText,
+        marginTop: 6,
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#fff',
+        backgroundColor: THEME.background,
         borderWidth: 1,
-        borderColor: COLORS.line,
+        borderColor: THEME.line,
         borderRadius: 14,
         paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 16,
-        color: COLORS.text,
+        color: THEME.text,
     },
     dayRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginBottom: 8,
     },
     dayChip: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: THEME.background,
         borderWidth: 1,
-        borderColor: COLORS.line,
+        borderColor: THEME.line,
         alignItems: 'center',
         justifyContent: 'center',
     },
     dayChipActive: {
-        backgroundColor: COLORS.pink,
-        borderColor: COLORS.pink,
+        backgroundColor: THEME.primary,
+        borderColor: THEME.primary,
     },
     dayChipText: {
         fontSize: 15,
         fontWeight: '700',
-        color: COLORS.text,
+        color: THEME.text,
     },
     timeButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: THEME.background,
         borderWidth: 1,
-        borderColor: COLORS.line,
+        borderColor: THEME.line,
         borderRadius: 14,
         paddingHorizontal: 14,
         paddingVertical: 12,
+        marginBottom: 8,
     },
     timeButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: COLORS.text,
+        flex: 1,
+        fontSize: 17,
+        fontWeight: '700',
+        color: THEME.text,
         marginLeft: 8,
     },
     pickerBox: {
-        backgroundColor: '#fff',
+        backgroundColor: THEME.background,
         borderRadius: 14,
-        borderWidth: 1,
-        borderColor: COLORS.line,
         overflow: 'hidden',
+        marginBottom: 8,
     },
     wrapRow: {
         flexDirection: 'row',
@@ -401,27 +511,31 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 999,
-        backgroundColor: '#fff',
+        backgroundColor: THEME.background,
         borderWidth: 1,
-        borderColor: COLORS.line,
+        borderColor: THEME.line,
     },
     chipActive: {
         backgroundColor: THEME.primarySoft,
-        borderColor: COLORS.pink,
+        borderColor: THEME.primary,
     },
     chipText: {
         fontSize: 14,
-        color: COLORS.subText,
+        color: THEME.subText,
         fontWeight: '600',
     },
     chipTextActive: {
-        color: COLORS.pink,
+        color: THEME.primaryDark,
         fontWeight: '800',
     },
+    colorRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
     colorDot: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
@@ -429,57 +543,68 @@ const styles = StyleSheet.create({
     },
     colorDotActive: {
         borderWidth: 2,
-        borderColor: COLORS.text,
+        borderColor: THEME.primary,
     },
-    preview: {
-        marginTop: 20,
-        borderRadius: 16,
-        padding: 14,
+    saveButton: {
+        height: 54,
+        borderRadius: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    previewTitle: {
+    saveText: {
+        color: '#fff',
         fontSize: 16,
         fontWeight: '800',
-        color: THEME.text,
+        marginLeft: 6,
     },
-    previewSub: {
-        fontSize: 13,
-        color: 'rgba(0,0,0,0.55)',
-        marginTop: 4,
-    },
+
+    // 그 요일 목록
     listHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 28,
-        marginBottom: 8,
+        marginTop: 26,
+        marginBottom: 10,
     },
     listTitle: {
         fontSize: 16,
         fontWeight: '800',
-        color: COLORS.text,
+        color: THEME.text,
     },
     newLink: {
-        color: COLORS.pink,
+        color: THEME.primary,
         fontWeight: '700',
         fontSize: 13,
     },
+    emptyBox: {
+        alignItems: 'center',
+        paddingVertical: 24,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: THEME.line,
+    },
+    emptyEmoji: {
+        fontSize: 28,
+        marginBottom: 6,
+    },
     emptyText: {
         fontSize: 14,
-        color: COLORS.subText,
-        paddingVertical: 8,
+        color: THEME.subText,
     },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 14,
+        backgroundColor: THEME.card,
+        borderRadius: 16,
         padding: 12,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: COLORS.line,
+        borderColor: THEME.line,
     },
     itemEditing: {
-        borderColor: COLORS.pink,
+        borderColor: THEME.primary,
     },
     itemColor: {
         width: 10,
@@ -490,11 +615,11 @@ const styles = StyleSheet.create({
     itemTitle: {
         fontSize: 15,
         fontWeight: '700',
-        color: COLORS.text,
+        color: THEME.text,
     },
     itemSub: {
         fontSize: 12,
-        color: COLORS.subText,
+        color: THEME.subText,
         marginTop: 2,
     },
     itemDelete: {

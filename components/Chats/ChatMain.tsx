@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Modal, TextInpu
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
+import { THEME } from '@/constants/theme';
 import * as Contacts from 'expo-contacts';
 import { ChatContext } from '@/components/contexts/ChatContext';
 import Chats from '@/components/Chats/Chats';
@@ -225,7 +226,7 @@ const ChatsMain = () => {
                     )}
                 </View>
                 {isSelected && (
-                    <Ionicons name="checkmark-circle" size={24} color="#007AFF" style={styles.checkIcon} />
+                    <Ionicons name="checkmark-circle" size={24} color={THEME.primary} style={styles.checkIcon} />
                 )}
             </TouchableOpacity>
         );
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     activeTabButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: THEME.primary,
     },
     tabText: {
         fontSize: 16,
@@ -536,7 +537,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#007AFF',
+        backgroundColor: THEME.primary,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 8,
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeAddFriendTab: {
-        borderBottomColor: '#007AFF',
+        borderBottomColor: THEME.primary,
     },
     addFriendTabText: {
         fontSize: 16,
@@ -594,7 +595,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     activeAddFriendTabText: {
-        color: '#007AFF',
+        color: THEME.primary,
     },
     inputSection: {
         paddingHorizontal: 16,
@@ -695,7 +696,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     activeAddButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: THEME.primary,
     },
     addFriendsButtonText: {
         fontSize: 16,
@@ -757,7 +758,7 @@ const styles = StyleSheet.create({
         marginLeft: 'auto',
     },
     createButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: THEME.primary,
         borderRadius: 10,
         paddingVertical: 15,
         margin: 20,

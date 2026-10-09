@@ -39,10 +39,8 @@ export default function MyScreen() {
 
     // 연속 사용일: 로그인한 사용자별로 앱을 연 날짜를 기록해서 계산
     useEffect(() => {
-        if (!isAuthenticated || !currentUser?.phoneNumber) {
-            setStreakDays(0);
-            return;
-        }
+        // 로그인 안 했으면 아무것도 안 해요. (화면에는 아래 statistics 에서 0일로 보여줘요)
+        if (!isAuthenticated || !currentUser?.phoneNumber) return;
         const key = `streak_${currentUser.phoneNumber}`;
         const toDay = (d: Date) =>
             `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -138,6 +136,7 @@ export default function MyScreen() {
         {
             title: '알림 설정',
             items: [
+                { id: '12', title: '홈 알람 설정', subtitle: '홈 화면에 보여줄 알람 3개 고르기', icon: 'home-outline', hasArrow: true, onPress: () => router.push('/HomeAlarmSettings') },
                 { id: '4', title: '푸시 알림', icon: 'notifications-outline', hasSwitch: true, value: notifications, onToggle: setNotifications },
                 { id: '5', title: '알림음', icon: 'volume-high-outline', hasSwitch: true, value: soundEnabled, onToggle: setSoundEnabled },
                 { id: '6', title: '다크 모드', icon: 'moon-outline', hasSwitch: true, value: darkMode, onToggle: setDarkMode },

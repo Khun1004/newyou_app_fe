@@ -17,7 +17,8 @@ import Reels from './Reels';
 import MyReels from './MyReels';
 import AppHeader from '@/components/AppHeader';
 
-const MainReel = () => {
+// bottomInset: 아래쪽 탭 바에 가리지 않게 둘 여백 (채팅 화면 안에서 쓸 때)
+const MainReel = ({ bottomInset = 0 }: { bottomInset?: number }) => {
     const [activeTab, setActiveTab] = useState('reels');
     // ⭐️ 선택된 릴의 ID를 저장하는 상태 추가
     const [initialReelId, setInitialReelId] = useState(null);
@@ -46,8 +47,13 @@ const MainReel = () => {
         <View style={styles.safeArea}>
             <StatusBar barStyle="light-content" backgroundColor="#000" />
 
-            {/* 공통 헤더 (어두운 화면용) */}
-            <AppHeader title="릴스" variant="dark" onBack={handleGoBack} />
+            {/* 공통 헤더 (어두운 화면용): < 릴스 [+ 새 릴스] 🔔 */}
+            <AppHeader
+                title="릴스"
+                variant="dark"
+                onBack={handleGoBack}
+                right={[{ icon: 'add-circle-outline', onPress: () => router.push('/CreateReel'), accessibilityLabel: '새 릴스 올리기' }]}
+            />
 
             {/* 탭: Reels / My Reels */}
             <View style={styles.headerContainer}>
@@ -76,7 +82,8 @@ const MainReel = () => {
             </View>
 
             {/* Content: Reels 컴포넌트가 flex: 1 공간을 가득 채웁니다. */}
-            <View style={styles.contentContainer}>
+            {/* 아래 탭 바에 가리지 않게 여백을 둬요 */}
+            <View style={[styles.contentContainer, bottomInset > 0 && { marginBottom: bottomInset }]}>
                 {activeTab === 'reels' ? (
                     // ⭐️ Reels 컴포넌트에 initialReelId 상태를 전달
                     <Reels {...reelProps} onScrollFinished={() => setInitialReelId(null)} />
