@@ -14,6 +14,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useReels } from '@/components/contexts/ReelContext';
 import { router } from 'expo-router'; // expo-router를 사용하여 라우팅
+import { THEME } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -39,9 +40,9 @@ const MyReels = () => {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={styles.container}>
                 <Text style={styles.loadingText}>프로필 로딩 중...</Text>
-            </SafeAreaView>
+            </View>
         );
     }
 
@@ -100,7 +101,7 @@ const MyReels = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>{nickname}</Text>
@@ -242,7 +243,7 @@ const MyReels = () => {
                 </View>
 
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#ccc',
+        backgroundColor: '#C9D6BC',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -328,13 +329,13 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     addReelButton: {
-        backgroundColor: '#1e90ff',
+        backgroundColor: THEME.primary,
         borderRadius: 6,
         paddingVertical: 8,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#1e90ff',
+        shadowColor: THEME.primary,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,

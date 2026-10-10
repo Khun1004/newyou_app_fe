@@ -15,11 +15,13 @@ import { router } from 'expo-router';
 // 경로 수정 (MainReel 내부에서 컴포넌트 import)
 import Reels from './Reels';
 import MyReels from './MyReels';
-import AppHeader from '@/components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { THEME } from '@/constants/theme';
 
 // bottomInset: 아래쪽 탭 바에 가리지 않게 둘 여백 (채팅 화면 안에서 쓸 때)
 const MainReel = ({ bottomInset = 0 }: { bottomInset?: number }) => {
     const [activeTab, setActiveTab] = useState('reels');
+    const insets = useSafeAreaInsets();
     // ⭐️ 선택된 릴의 ID를 저장하는 상태 추가
     const [initialReelId, setInitialReelId] = useState(null);
 
@@ -43,102 +45,118 @@ const MainReel = ({ bottomInset = 0 }: { bottomInset?: number }) => {
     const reelProps = activeTab === 'reels' ? { initialReelId } : {};
 
 
+    const isReels = activeTab === 'reels';
+    const headerHeight = insets.top + 54;
+
     return (
-        <View style={styles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <View style={[styles.container, !isReels && { backgroundColor: '#FFFFFF' }]}>
+            <StatusBar barStyle={isReels ? 'light-content' : 'dark-content'} />
 
-            {/* 공통 헤더 (어두운 화면용): < 릴스 [+ 새 릴스] 🔔 */}
-            <AppHeader
-                title="릴스"
-                variant="dark"
-                onBack={handleGoBack}
-                right={[{ icon: 'add-circle-outline', onPress: () => router.push('/CreateReel'), accessibilityLabel: '새 릴스 올리기' }]}
-            />
-
-            {/* 탭: Reels / My Reels */}
-            <View style={styles.headerContainer}>
-                <View style={styles.tabContainer}>
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'reels' && styles.activeTab]}
-                        onPress={() => {
-                            setActiveTab('reels');
-                            setInitialReelId(null); // 탭 전환 시 초기 릴 ID 초기화
-                        }}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'reels' && styles.activeTabText]}>
-                            Reels
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'myReels' && styles.activeTab]}
-                        onPress={() => setActiveTab('myReels')}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'myReels' && styles.activeTabText]}>
-                            My Reels
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Content: Reels 컴포넌트가 flex: 1 공간을 가득 채웁니다. */}
-            {/* 아래 탭 바에 가리지 않게 여백을 둬요 */}
-            <View style={[styles.contentContainer, bottomInset > 0 && { marginBottom: bottomInset }]}>
-                {activeTab === 'reels' ? (
-                    // ⭐️ Reels 컴포넌트에 initialReelId 상태를 전달
-                    <Reels {...reelProps} onScrollFinished={() => setInitialReelId(null)} />
+            {/* 내용: 릴스는 화면 전체(헤더 뒤까지), 내 릴스는 헤더 아래부터 */}
+            <View style={[styles.contentContainer, !isReels && { paddingTop: headerHeight }, bottomInset > 0 && { marginBottom: bottomInset }]}>
+                {isReels ? (
+                    <Reels {...reelProps} topInset={headerHeight} onScrollFinished={() => setInitialReelId(null)} />
                 ) : (
-                    // ⭐️ MyReels 컴포넌트에 릴 선택 시 호출될 콜백 함수를 전달
                     <MyReels onReelSelect={handleReelSelect} />
                 )}
+            </View>
+
+            {/* 떠 있는 헤더:  <   추천 · 내 릴스   ⊕ */}
+            <View style={[styles.header, { paddingTop: insets.top, height: headerHeight }, !isReels && styles.headerLight]}>
+                <TouchableOpacity onPress={handleGoBack} style={styles.headerButton} accessibilityLabel="뒤로 가기">
+                    <Icon name="chevron-back" size={26} color={isReels ? '#fff' : THEME.text} />
+                </TouchableOpacity>
+
+                <View style={styles.segment}>
+                    {[
+                        { key: 'reels', label: '추천' },
+                        { key: 'myReels', label: '내 릴스' },
+                    ].map((t) => {
+                        const active = activeTab === t.key;
+                        return (
+                            <TouchableOpacity
+                                key={t.key}
+                                onPress={() => {
+                                    setActiveTab(t.key);
+                                    if (t.key === 'reels') setInitialReelId(null);
+                                }}
+                                style={styles.segmentItem}
+                            >
+                                <Text
+                                    style={[
+                                        styles.segmentText,
+                                        { color: isReels ? 'rgba(255,255,255,0.6)' : THEME.icon },
+                                        active && { color: isReels ? '#fff' : THEME.text, fontWeight: '800' },
+                                    ]}
+                                >
+                                    {t.label}
+                                </Text>
+                                <View style={[styles.segmentDot, active && { backgroundColor: isReels ? '#fff' : THEME.primary }]} />
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
+                <TouchableOpacity
+                    onPress={() => router.push('/CreateReel')}
+                    style={styles.headerButton}
+                    accessibilityLabel="새 릴스 올리기"
+                >
+                    <Icon name="add-circle-outline" size={26} color={isReels ? '#fff' : THEME.text} />
+                </TouchableOpacity>
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    safeArea: {
+    container: {
         flex: 1,
         backgroundColor: '#000',
     },
-    headerContainer: {
+    contentContainer: {
+        flex: 1,
+    },
+    header: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#000',
-        paddingHorizontal: 10,
+        paddingHorizontal: 8,
+        zIndex: 20,
     },
-    backButton: {
-        padding: 5,
-        width: 40,
+    headerLight: {
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: THEME.line,
     },
-    spacer: {
-        width: 40,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        flex: 1,
+    headerButton: {
+        width: 44,
+        height: 44,
+        alignItems: 'center',
         justifyContent: 'center',
     },
-    tab: {
-        paddingHorizontal: 15,
-        paddingVertical: 12,
+    segment: {
+        flexDirection: 'row',
+        gap: 22,
+    },
+    segmentItem: {
         alignItems: 'center',
+        paddingVertical: 4,
     },
-    activeTab: {
-        borderBottomWidth: 2,
-        borderBottomColor: '#fff',
-    },
-    tabText: {
-        fontSize: 16,
-        color: '#888',
+    segmentText: {
+        fontSize: 17,
         fontWeight: '600',
     },
-    activeTabText: {
-        color: '#fff',
-    },
-    contentContainer: {
-        flex: 1, // 남은 공간 모두 차지
+    segmentDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 3,
+        marginTop: 4,
+        backgroundColor: 'transparent',
     },
 });
 

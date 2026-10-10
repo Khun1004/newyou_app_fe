@@ -13,7 +13,6 @@ import { router } from "expo-router";
 import { useBoard, BoardPost } from '@/components/contexts/BoardContext';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '@/constants/theme';
-import { toImageUrl } from '@/config';
 
 const BoardMain = () => {
     const { posts } = useBoard();
@@ -40,7 +39,7 @@ const BoardMain = () => {
                 <View style={styles.authorAvatar}>
                     {/* 게시글 작성자의 프로필 이미지를 렌더링 */}
                     {post.profileImage ? (
-                        <Image source={{ uri: toImageUrl(post.profileImage) }} style={styles.avatarImage} />
+                        <Image source={{ uri: post.profileImage }} style={styles.avatarImage} />
                     ) : (
                         <View style={styles.defaultAvatar}>
                             <Ionicons name="person-circle-outline" size={40} color={THEME.placeholder} />
@@ -118,7 +117,7 @@ const BoardMain = () => {
                 </ScrollView>
             </View>
 
-            <ScrollView style={styles.postsScrollView} contentContainerStyle={{ paddingBottom: 170 }}>
+            <ScrollView style={styles.postsScrollView}>
                 {filteredPosts.map((post) => (
                     <PostItem key={post.id} post={post} />
                 ))}

@@ -46,7 +46,7 @@ const OnlineClassWriteReview = () => {
                     <Ionicons
                         name={i <= rating ? "star" : "star-outline"}
                         size={32}
-                        color={i <= rating ? "#ffc107" : "#E6E8DA"}
+                        color={i <= rating ? "#ffc107" : "#e0e0e0"}
                     />
                 </TouchableOpacity>
             );
@@ -198,11 +198,11 @@ const OnlineClassWriteReview = () => {
                 <View style={styles.guidelineSection}>
                     <Text style={styles.guidelineTitle}>리뷰 작성 가이드라인</Text>
                     <View style={styles.guidelineItem}>
-                        <Ionicons name="checkmark-circle" size={16} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={16} color="#28a745" />
                         <Text style={styles.guidelineText}>클래스 내용과 품질에 대해 솔직하게 작성해주세요</Text>
                     </View>
                     <View style={styles.guidelineItem}>
-                        <Ionicons name="checkmark-circle" size={16} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={16} color="#28a745" />
                         <Text style={styles.guidelineText}>구체적인 경험과 느낀 점을 공유해주세요</Text>
                     </View>
                     <View style={styles.guidelineItem}>
@@ -241,7 +241,7 @@ const OnlineClassWriteReview = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
     },
     header: {
         flexDirection: 'row',
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#e9ecef',
     },
     backButton: {
         padding: 5,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     placeholder: {
         width: 34,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
         marginRight: 15,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#EEF0E4',
+        borderColor: '#e9ecef',
     },
     userProfileImage: {
         width: '100%',
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 24,
-        backgroundColor: '#A3A794',
+        backgroundColor: '#adb5bd',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     userNickname: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     classInfoCard: {
         backgroundColor: '#fff',
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 30,
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -358,12 +358,12 @@ const styles = StyleSheet.create({
     className: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 5,
     },
     instructorNameText: {
         fontSize: 14,
-        color: '#7C8070',
+        color: '#666',
     },
     ratingSection: {
         backgroundColor: '#fff',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 20,
         textAlign: 'center',
     },
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     ratingText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#A3A794',
+        color: '#999',
     },
     ratedText: {
         color: '#ffc107',
@@ -413,18 +413,18 @@ const styles = StyleSheet.create({
     },
     reviewTextInput: {
         borderWidth: 1,
-        borderColor: '#EEF0E4',
+        borderColor: '#e9ecef',
         borderRadius: 10,
         padding: 15,
         fontSize: 16,
         minHeight: 120,
-        color: '#2E3326',
-        backgroundColor: '#FBFAF4',
+        color: '#333',
+        backgroundColor: '#f8f9fa',
     },
     characterCount: {
         textAlign: 'right',
         fontSize: 12,
-        color: '#7C8070',
+        color: '#666',
         marginTop: 8,
     },
     guidelineSection: {
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     },
     guidelineText: {
         fontSize: 14,
-        color: '#7C8070',
+        color: '#666',
         marginLeft: 8,
         flex: 1,
         lineHeight: 20,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 20,
         borderTopWidth: 1,
-        borderTopColor: '#EEF0E4',
+        borderTopColor: '#e9ecef',
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
         }),
     },
     submitButton: {
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     submitButtonDisabled: {
-        backgroundColor: '#C9CCB8',
+        backgroundColor: '#ccc',
     },
     submitButtonText: {
         color: '#fff',

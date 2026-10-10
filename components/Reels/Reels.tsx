@@ -11,6 +11,8 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { THEME } from '@/constants/theme';
 // 컨텍스트 경로가 정확한지 확인하세요.
 import { useReels } from '@/components/contexts/ReelContext';
 // expo-video 임포트
@@ -25,7 +27,8 @@ const ResizeMode = {
 
 const { width } = Dimensions.get('window');
 
-const Reels = ({ initialReelId, onScrollFinished }) => {
+// topInset: 위쪽에 겹쳐 있는 헤더 높이 (그만큼 아래에 배지를 둬요)
+const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelId?: any; onScrollFinished?: any; topInset?: number }) => {
     // ReelContext에서 데이터 및 액션 함수를 가져옵니다.
     const { allReels, toggleLike, toggleSave } = useReels();
 
@@ -224,100 +227,112 @@ const Reels = ({ initialReelId, onScrollFinished }) => {
                                     style={styles.video}
                                     player={player}
                                     contentFit={ResizeMode.COVER}
+                                    nativeControls={false}
                                 />
 
+                                {/* 위·아래 어둡게 (글자가 잘 보이게) */}
                                 <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.9)']}
-                                    style={styles.gradient}
+                                    colors={['rgba(0,0,0,0.55)', 'transparent']}
+                                    style={[styles.topShade, { height: topInset + 90 }]}
+                                    pointerEvents="none"
+                                />
+                                <LinearGradient
+                                    colors={['transparent', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0.85)']}
+                                    style={styles.bottomShade}
+                                    pointerEvents="none"
                                 />
 
-                                {/* ----------------------- 헤더 (상단) ----------------------- */}
-                                <View style={styles.header}>
-                                    <View style={styles.headerContent}>
-                                        <View style={styles.categoryBadge}>
-                                            <Text style={styles.categoryText}>
-                                                {short.title ? short.title.split(' ')[0] : '릴스'}
-                                            </Text>
-                                        </View>
+                                {/* 화면 아무 곳이나 누르면 재생/일시정지 */}
+                                <TouchableOpacity
+                                    activeOpacity={1}
+                                    style={StyleSheet.absoluteFill}
+                                    onPress={handleTogglePlayPause}
+                                    disabled={!isActive}
+                                />
+
+                                {/* 위쪽: 분류 배지 + 몇 번째인지 */}
+                                <View style={[styles.topRow, { top: topInset + 10 }]} pointerEvents="none">
+                                    <View style={styles.glassPill}>
+                                        <Ionicons name="sparkles" size={12} color="#fff" />
+                                        <Text style={styles.glassPillText}>
+                                            {short.title ? short.title.split(' ')[0] : '릴스'}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.glassPill}>
+                                        <Text style={styles.glassPillText}>
+                                            {index + 1} / {allReels.length}
+                                        </Text>
                                     </View>
                                 </View>
 
-                                {/* ----------------------- 재생/일시정지 버튼 (중앙) ----------------------- */}
-                                <TouchableOpacity
-                                    style={[
-                                        styles.playButton,
-                                        // 현재 활성화된 릴이고 재생 중일 때만 버튼을 숨김 (isPlaying이 false일 때 보임)
-                                        (isActive && isPlaying) && { opacity: 0 }
-                                    ]}
-                                    onPress={handleTogglePlayPause}
-                                    disabled={!isActive} // 현재 릴이 아니면 비활성화
-                                >
-                                    <View style={styles.playButtonCircle}>
-                                        <Text style={styles.playIcon}>
-                                            {isPlaying ? '⏸' : '▶'}
-                                        </Text>
+                                {/* 가운데: 멈췄을 때만 재생 표시 */}
+                                {isActive && !isPlaying && (
+                                    <View style={styles.pausedIcon} pointerEvents="none">
+                                        <Ionicons name="play" size={44} color="rgba(255,255,255,0.95)" />
                                     </View>
-                                </TouchableOpacity>
+                                )}
 
-                                {/* ----------------------- 액션 버튼 (우측) ----------------------- */}
-                                <View style={styles.actionButtons}>
-                                    <TouchableOpacity onPress={handleToggleLike} style={styles.actionButton}>
-                                        <View style={[
-                                            styles.actionCircle,
-                                            short.isLiked && styles.likedCircle
-                                        ]}>
-                                            <Text style={styles.actionIcon}>
-                                                {short.isLiked ? '❤️' : '🤍'}
+                                {/* 오른쪽: 만든 사람 + 좋아요 · 저장 · 공유 */}
+                                <View style={styles.actionColumn}>
+                                    <View style={styles.creatorAvatarWrap}>
+                                        <LinearGradient colors={['#A9C58A', THEME.primary]} style={styles.creatorAvatar}>
+                                            <Text style={styles.creatorAvatarText}>
+                                                {short.creatorId ? short.creatorId[0].toUpperCase() : 'U'}
                                             </Text>
+                                        </LinearGradient>
+                                        <View style={styles.followBadge}>
+                                            <Ionicons name="add" size={12} color="#fff" />
                                         </View>
+                                    </View>
+
+                                    <TouchableOpacity onPress={handleToggleLike} style={styles.action} accessibilityLabel="좋아요">
+                                        <Ionicons
+                                            name={short.isLiked ? 'heart' : 'heart-outline'}
+                                            size={32}
+                                            color={short.isLiked ? '#FF4D6D' : '#fff'}
+                                            style={styles.iconShadow}
+                                        />
                                         <Text style={styles.actionText}>{short.likes}</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={handleToggleSave} style={styles.actionButton}>
-                                        <View style={[
-                                            styles.actionCircle,
-                                            short.isSaved && styles.savedCircle
-                                        ]}>
-                                            <Text style={styles.actionIcon}>
-                                                {short.isSaved ? '📌' : '📑'}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.actionText}>저장</Text>
+                                    <TouchableOpacity onPress={handleToggleSave} style={styles.action} accessibilityLabel="저장">
+                                        <Ionicons
+                                            name={short.isSaved ? 'bookmark' : 'bookmark-outline'}
+                                            size={29}
+                                            color={short.isSaved ? '#F2B705' : '#fff'}
+                                            style={styles.iconShadow}
+                                        />
+                                        <Text style={styles.actionText}>{short.isSaved ? '저장됨' : '저장'}</Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity style={styles.actionButton}>
-                                        <View style={styles.actionCircle}>
-                                            <Text style={styles.actionIcon}>🔗</Text>
-                                        </View>
+                                    <TouchableOpacity style={styles.action} accessibilityLabel="공유">
+                                        <Ionicons name="paper-plane-outline" size={28} color="#fff" style={styles.iconShadow} />
                                         <Text style={styles.actionText}>공유</Text>
                                     </TouchableOpacity>
                                 </View>
 
-                                {/* ----------------------- 하단 정보 (좌측) ----------------------- */}
-                                <View style={styles.bottomInfo}>
-                                    <View style={styles.creatorInfo}>
-                                        <View style={styles.avatar}>
-                                            <Text style={styles.avatarText}>
-                                                {short.creatorId ? short.creatorId[0].toUpperCase() : 'U'}
-                                            </Text>
-                                        </View>
-                                        <Text style={styles.creatorName}>{short.creatorId || 'User'}</Text>
+                                {/* 아래 왼쪽: 만든 사람 · 제목 · 소리 */}
+                                <View style={styles.bottomInfo} pointerEvents="none">
+                                    <Text style={styles.creatorName}>@{short.creatorId || 'user'}</Text>
+                                    <Text style={styles.title} numberOfLines={2}>
+                                        {short.title}
+                                    </Text>
+                                    <View style={styles.musicRow}>
+                                        <Ionicons name="musical-notes" size={13} color="rgba(255,255,255,0.9)" />
+                                        <Text style={styles.musicText} numberOfLines={1}>
+                                            원본 오디오 · {short.creatorId || 'user'}
+                                        </Text>
                                     </View>
+                                </View>
 
-                                    <Text style={styles.title}>{short.title}</Text>
-
-                                    {/* ----------------------- 페이지 표시기 (하단 중앙) ----------------------- */}
-                                    <View style={styles.progressContainer}>
-                                        {allReels.map((_, idx) => (
-                                            <View
-                                                key={idx}
-                                                style={[
-                                                    styles.dotIndicator,
-                                                    idx === currentIndex && styles.dotIndicatorActive
-                                                ]}
-                                            />
-                                        ))}
-                                    </View>
+                                {/* 맨 아래: 지금 몇 번째인지 얇은 막대 */}
+                                <View style={styles.progressTrack} pointerEvents="none">
+                                    <View
+                                        style={[
+                                            styles.progressFill,
+                                            { width: `${((index + 1) / Math.max(allReels.length, 1)) * 100}%` },
+                                        ]}
+                                    />
                                 </View>
                             </View>
                         );
@@ -342,164 +357,169 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     loadingText: {
-        color: '#fff',
+        color: 'rgba(255,255,255,0.8)',
         marginTop: 10,
     },
     videoContainer: {
         width: width,
         position: 'relative',
+        backgroundColor: '#000',
     },
-    // VideoView 스타일 (컨테이너에 꽉 차게)
     video: {
         width: '100%',
         height: '100%',
     },
-    gradient: {
+    topShade: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+    },
+    bottomShade: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        height: '100%',
+        height: '45%',
     },
-    header: {
+    topRow: {
         position: 'absolute',
-        top: 40, // StatusBar를 고려하여 조정
-        left: 0,
-        right: 0,
-        paddingHorizontal: 20,
-        zIndex: 10,
-    },
-    headerContent: {
+        left: 16,
+        right: 16,
         flexDirection: 'row',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
+    },
+    glassPill: {
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 4,
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255,255,255,0.5)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
     },
-    categoryBadge: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderWidth: 1,
-        borderColor: '#fff',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 20,
-    },
-    categoryText: {
+    glassPillText: {
         color: '#fff',
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '700',
     },
-    playButton: {
+    pausedIcon: {
         position: 'absolute',
         top: '50%',
         left: '50%',
-        transform: [{ translateX: -35 }, { translateY: -35 }],
-        zIndex: 10,
-    },
-    playButtonCircle: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
+        width: 84,
+        height: 84,
+        marginLeft: -42,
+        marginTop: -42,
+        borderRadius: 42,
+        backgroundColor: 'rgba(0,0,0,0.35)',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingLeft: 6,
     },
-    playIcon: {
-        fontSize: 30,
-        color: '#fff',
-    },
-    actionButtons: {
+    actionColumn: {
         position: 'absolute',
-        right: 16,
-        bottom: 120, // 하단 정보와 겹치지 않도록 조정
-        gap: 20,
-        zIndex: 5,
-    },
-    actionButton: {
+        right: 12,
+        bottom: 70,
         alignItems: 'center',
+        gap: 18,
     },
-    actionCircle: {
-        width: 55,
-        height: 55,
-        borderRadius: 27.5,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        justifyContent: 'center',
-        alignItems: 'center',
+    creatorAvatarWrap: {
         marginBottom: 6,
+        alignItems: 'center',
     },
-    likedCircle: {
-        backgroundColor: '#FF4141', // 좋아요 시 색상 변경
+    creatorAvatar: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        borderWidth: 2,
+        borderColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    savedCircle: {
-        backgroundColor: '#FFC107', // 저장 시 색상 변경
+    creatorAvatarText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '800',
     },
-    actionIcon: {
-        fontSize: 26,
+    followBadge: {
+        position: 'absolute',
+        bottom: -8,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: THEME.primary,
+        borderWidth: 2,
+        borderColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    action: {
+        alignItems: 'center',
+    },
+    iconShadow: {
+        textShadowColor: 'rgba(0,0,0,0.35)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
     },
     actionText: {
         color: '#fff',
         fontSize: 12,
-        fontWeight: '600',
-        textShadowColor: 'rgba(0, 0, 0, 0.5)',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+        fontWeight: '700',
+        marginTop: 3,
+        textShadowColor: 'rgba(0,0,0,0.4)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
     bottomInfo: {
         position: 'absolute',
-        bottom: 40,
-        left: 20,
-        right: 80,
-        zIndex: 5,
-    },
-    creatorInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#4C4A4C',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 10,
-        borderWidth: 2,
-        borderColor: '#fff',
-    },
-    avatarText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        left: 16,
+        right: 86,
+        bottom: 26,
     },
     creatorName: {
         color: '#fff',
-        fontSize: 15,
-        fontWeight: '700',
+        fontSize: 16,
+        fontWeight: '800',
+        marginBottom: 6,
     },
     title: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '500',
-        marginBottom: 20,
+        color: 'rgba(255,255,255,0.95)',
+        fontSize: 14,
+        lineHeight: 20,
     },
-    progressContainer: {
+    musicRow: {
         flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 6,
+        alignItems: 'center',
+        marginTop: 10,
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.14)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        maxWidth: '100%',
+    },
+    musicText: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 12,
+        marginLeft: 5,
+    },
+    progressTrack: {
         position: 'absolute',
-        bottom: -20,
-        left: 0,
-        right: 0,
+        left: 16,
+        right: 16,
+        bottom: 12,
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        overflow: 'hidden',
     },
-    dotIndicator: {
-        width: 6,
-        height: 6,
-        backgroundColor: 'rgba(255,255,255,0.4)',
-        borderRadius: 3,
-    },
-    dotIndicatorActive: {
+    progressFill: {
+        height: 3,
+        borderRadius: 2,
         backgroundColor: '#fff',
-        width: 10,
-        borderRadius: 5,
     },
 });
 

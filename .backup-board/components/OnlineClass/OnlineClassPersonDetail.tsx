@@ -90,7 +90,7 @@ const OnlineClassPersonDetail = () => {
     const renderVideoThumbnail = () => (
         <View style={styles.videoThumbnail}>
             <View style={styles.thumbnailPlaceholder}>
-                <Ionicons name="play-circle" size={40} color="#4E7D32" />
+                <Ionicons name="play-circle" size={40} color="#007bff" />
             </View>
             <View style={styles.videoBadge}>
                 <Text style={styles.videoBadgeText}>HD</Text>
@@ -128,7 +128,7 @@ const OnlineClassPersonDetail = () => {
                     <View style={styles.tabContent}>
                         <View style={styles.introCard}>
                             <View style={styles.introHeader}>
-                                <Ionicons name="person-circle" size={24} color="#4E7D32" />
+                                <Ionicons name="person-circle" size={24} color="#007bff" />
                                 <Text style={styles.cardTitle}>강사 소개</Text>
                             </View>
                             <Text style={styles.bioText}>{instructorInfo.bio}</Text>
@@ -143,7 +143,7 @@ const OnlineClassPersonDetail = () => {
 
                         <View style={styles.infoCard}>
                             <View style={styles.introHeader}>
-                                <Ionicons name="book" size={24} color="#4E7D32" />
+                                <Ionicons name="book" size={24} color="#28a745" />
                                 <Text style={styles.cardTitle}>강의 정보</Text>
                             </View>
                             <View style={styles.infoRow}>
@@ -184,7 +184,7 @@ const OnlineClassPersonDetail = () => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="videocam" size={24} color="#4E7D32" />
+                                <Ionicons name="videocam" size={24} color="#28a745" />
                                 <Text style={styles.sectionTitle}>무료 영상</Text>
                                 <View style={styles.freeBadge}>
                                     <Text style={styles.freeBadgeText}>FREE</Text>
@@ -202,11 +202,11 @@ const OnlineClassPersonDetail = () => {
                                                 <Text style={styles.videoTitle}>{video.videoTitle}</Text>
                                                 <View style={styles.videoMetadata}>
                                                     <View style={styles.metaItem}>
-                                                        <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                        <Ionicons name="time-outline" size={16} color="#666" />
                                                         <Text style={styles.metaText}>{video.duration}</Text>
                                                     </View>
                                                     <View style={styles.metaItem}>
-                                                        <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                        <Ionicons name="bar-chart-outline" size={16} color="#666" />
                                                         <Text style={styles.metaText}>{video.level}</Text>
                                                     </View>
                                                 </View>
@@ -219,7 +219,7 @@ const OnlineClassPersonDetail = () => {
                                     ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="videocam-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="videocam-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>무료 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>곧 흥미로운 콘텐츠가 업데이트됩니다!</Text>
                                 </View>
@@ -232,7 +232,7 @@ const OnlineClassPersonDetail = () => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="diamond" size={24} color="#3B5A24" />
+                                <Ionicons name="diamond" size={24} color="#6f42c1" />
                                 <Text style={styles.sectionTitle}>MVP 영상</Text>
                                 <View style={styles.mvpBadge}>
                                     <Text style={styles.mvpBadgeText}>PREMIUM</Text>
@@ -253,11 +253,11 @@ const OnlineClassPersonDetail = () => {
                                                 <Text style={styles.videoTitle}>{video.videoTitle}</Text>
                                                 <View style={styles.videoMetadata}>
                                                     <View style={styles.metaItem}>
-                                                        <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                        <Ionicons name="time-outline" size={16} color="#666" />
                                                         <Text style={styles.metaText}>{video.duration}</Text>
                                                     </View>
                                                     <View style={styles.metaItem}>
-                                                        <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                        <Ionicons name="bar-chart-outline" size={16} color="#666" />
                                                         <Text style={styles.metaText}>{video.level}</Text>
                                                     </View>
                                                     <View style={styles.priceTag}>
@@ -273,7 +273,7 @@ const OnlineClassPersonDetail = () => {
                                     ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="diamond-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="diamond-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>MVP 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>프리미엄 콘텐츠가 곧 출시됩니다!</Text>
                                 </View>
@@ -322,7 +322,7 @@ const OnlineClassPersonDetail = () => {
                                 ))
                             ) : (
                                 <View style={styles.reviewPlaceholder}>
-                                    <Ionicons name="chatbubbles-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="chatbubbles-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>아직 작성된 리뷰가 없어요!</Text>
                                     <Text style={styles.placeholderSubtitle}>첫 번째 리뷰를 남겨주세요</Text>
                                 </View>
@@ -356,7 +356,7 @@ const OnlineClassPersonDetail = () => {
                     </View>
                     <Text style={styles.profileName}>{instructorInfo.name}</Text>
                     <TouchableOpacity style={styles.messageButton} onPress={handleSendMessage}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#4E7D32" />
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#007bff" />
                         <Text style={styles.messageButtonText}>메시지 보내기</Text>
                     </TouchableOpacity>
                 </View>
@@ -385,7 +385,7 @@ const OnlineClassPersonDetail = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
     },
     profileHeader: {
         paddingTop: 20,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#e9ecef',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
     },
     profileInitial: {
         fontSize: 40,
@@ -444,13 +444,13 @@ const styles = StyleSheet.create({
     profileName: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 5,
     },
     messageButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E8F2DE',
+        backgroundColor: '#e9f5ff',
         paddingHorizontal: 15,
         paddingVertical: 8,
         borderRadius: 20,
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     messageButtonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#4E7D32',
+        color: '#007bff',
     },
     tabsContainer: {
         flexDirection: 'row',
@@ -482,12 +482,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     activeTab: {
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
     },
     tabText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#7C8070',
+        color: '#666',
     },
     activeTabText: {
         color: '#fff',
@@ -537,16 +537,16 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     bioText: {
         fontSize: 15,
         lineHeight: 22,
-        color: '#5C604F',
+        color: '#555',
     },
     divider: {
         height: 1,
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#e9ecef',
         marginVertical: 20,
     },
     descriptionSection: {
@@ -555,13 +555,13 @@ const styles = StyleSheet.create({
     descriptionLabel: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 8,
     },
     descriptionText: {
         fontSize: 15,
         lineHeight: 22,
-        color: '#7C8070',
+        color: '#666',
         fontStyle: 'italic',
     },
     infoRow: {
@@ -570,16 +570,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
     infoLabel: {
         fontSize: 15,
         fontWeight: '500',
-        color: '#7C8070',
+        color: '#666',
     },
     infoValue: {
         fontSize: 15,
-        color: '#2E3326',
+        color: '#333',
         flexShrink: 1,
         marginLeft: 10,
     },
@@ -606,10 +606,10 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     freeBadge: {
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#28a745',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 10,
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     mvpBadge: {
-        backgroundColor: '#3B5A24',
+        backgroundColor: '#6f42c1',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 10,
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     },
     videoCard: {
         flexDirection: 'row',
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         borderRadius: 10,
         overflow: 'hidden',
         marginBottom: 15,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#e9ecef',
     },
     thumbnailPlaceholder: {
         position: 'absolute',
@@ -673,7 +673,7 @@ const styles = StyleSheet.create({
     videoTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 5,
     },
     videoMetadata: {
@@ -689,11 +689,11 @@ const styles = StyleSheet.create({
     },
     metaText: {
         fontSize: 12,
-        color: '#7C8070',
+        color: '#666',
     },
     playButton: {
         flexDirection: 'row',
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -726,7 +726,7 @@ const styles = StyleSheet.create({
     },
     purchaseButton: {
         flexDirection: 'row',
-        backgroundColor: '#3B5A24',
+        backgroundColor: '#6f42c1',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -748,12 +748,12 @@ const styles = StyleSheet.create({
     placeholderTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#A3A794',
+        color: '#999',
         marginTop: 10,
     },
     placeholderSubtitle: {
         fontSize: 14,
-        color: '#7C8070',
+        color: '#666',
         marginTop: 5,
         textAlign: 'center',
     },
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         paddingVertical: 12,
         borderRadius: 10,
         marginBottom: 15,
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
         paddingVertical: 30,
     },
     reviewItem: {
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         padding: 15,
         borderRadius: 10,
         marginBottom: 10,
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: '#A3A794',
+        backgroundColor: '#adb5bd',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 8,
@@ -848,7 +848,7 @@ const styles = StyleSheet.create({
     reviewUserNickname: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333',
     },
     reviewRating: {
         flexDirection: 'row',
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
     reviewText: {
         fontSize: 15,
         lineHeight: 22,
-        color: '#5C604F',
+        color: '#555',
     },
 });
 

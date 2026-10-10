@@ -90,7 +90,7 @@ const OnlineClassPayment = () => {
             const finalClassData = {
                 ...classData,
                 id: classId,
-                createdBy: currentUser.name,
+                createdBy: currentUser.nickname || currentUser.email,
                 createdAt: new Date().toISOString(),
                 paymentStatus: 'paid',
                 paymentDetails: {
@@ -138,7 +138,7 @@ const OnlineClassPayment = () => {
                 <Ionicons
                     name={method.icon as any}
                     size={24}
-                    color={selectedPaymentMethod === method.id ? '#4E7D32' : '#7C8070'}
+                    color={selectedPaymentMethod === method.id ? '#007bff' : '#666'}
                 />
                 <View style={styles.paymentMethodInfo}>
                     <Text
@@ -153,7 +153,7 @@ const OnlineClassPayment = () => {
                 </View>
                 <View style={styles.radioButton}>
                     {selectedPaymentMethod === method.id && (
-                        <Ionicons name="checkmark-circle" size={20} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={20} color="#007bff" />
                     )}
                 </View>
             </View>
@@ -166,7 +166,7 @@ const OnlineClassPayment = () => {
             <View style={styles.container}>
                 <AppHeader title="결제" />
                 <View style={styles.loadingContainer}>
-                    <Text style={{ color: '#7C8070' }}>클래스 정보를 불러오는 중...</Text>
+                    <Text style={{ color: '#666' }}>클래스 정보를 불러오는 중...</Text>
                 </View>
             </View>
         );
@@ -251,52 +251,52 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
-    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E3326' },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
     scrollContainer: { flex: 1 },
     content: { padding: 20 },
     classInfoContainer: {
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         borderRadius: 12,
         padding: 16,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
     },
-    classTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E3326', marginBottom: 8 },
-    classInstructor: { fontSize: 14, color: '#7C8070', marginBottom: 4 },
-    videoCount: { fontSize: 14, color: '#7C8070' },
+    classTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+    classInstructor: { fontSize: 14, color: '#666', marginBottom: 4 },
+    videoCount: { fontSize: 14, color: '#666' },
     paymentSummaryContainer: {
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
     },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E3326', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 },
     feeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
-    feeLabel: { fontSize: 14, color: '#7C8070' },
-    feeValue: { fontSize: 14, fontWeight: '500', color: '#2E3326' },
+    feeLabel: { fontSize: 14, color: '#666' },
+    feeValue: { fontSize: 14, fontWeight: '500', color: '#333' },
     paymentMethodSection: {
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -306,14 +306,14 @@ const styles = StyleSheet.create({
     paymentMethodContainer: {
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
-    selectedPaymentMethod: { backgroundColor: '#F4F8EE' },
+    selectedPaymentMethod: { backgroundColor: '#f8fbff' },
     paymentMethodContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     paymentMethodInfo: { flex: 1 },
-    paymentMethodName: { fontSize: 16, fontWeight: '500', color: '#2E3326' },
-    selectedPaymentMethodText: { color: '#4E7D32', fontWeight: 'bold' },
-    paymentMethodDescription: { fontSize: 12, color: '#A3A794', marginTop: 4 },
+    paymentMethodName: { fontSize: 16, fontWeight: '500', color: '#333' },
+    selectedPaymentMethodText: { color: '#007bff', fontWeight: 'bold' },
+    paymentMethodDescription: { fontSize: 12, color: '#999', marginTop: 4 },
     radioButton: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
     bankInfoContainer: {
         backgroundColor: '#fff',
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -332,15 +332,15 @@ const styles = StyleSheet.create({
         padding: 20,
         backgroundColor: '#fff',
         borderTopWidth: 1,
-        borderTopColor: '#EEF0E4',
+        borderTopColor: '#f0f0f0',
     },
     payButton: {
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
     },
-    disabledButton: { backgroundColor: '#C9CCB8' },
+    disabledButton: { backgroundColor: '#ccc' },
     payButtonText: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

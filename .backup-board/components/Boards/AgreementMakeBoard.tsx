@@ -30,7 +30,7 @@ const AgreementMakeBoard = () => {
         setIsLoading(true);
         try {
             // "동의" 버튼을 누른 후, 바로 'MakeBoard' 화면으로 이동합니다.
-            router.replace('/MakeBoard');
+            router.replace('MakeBoard');
         } catch (error) {
             console.error('동의 처리 오류:', error);
             Alert.alert('오류', '동의 처리 중 문제가 발생했습니다.');
@@ -54,7 +54,7 @@ const AgreementMakeBoard = () => {
                         <Image source={{ uri: profileImage }} style={styles.profileImage} />
                     ) : (
                         <View style={styles.defaultProfileImage}>
-                            <Ionicons name="person" size={40} color="#4E7D32" />
+                            <Ionicons name="person" size={40} color="#6C63FF" />
                         </View>
                     )}
                 </View>
@@ -64,14 +64,14 @@ const AgreementMakeBoard = () => {
                         style={[styles.textInput, styles.disabledInput]}
                         value={nickname}
                         placeholder="닉네임"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor="#999"
                         editable={false}
                     />
                     <TextInput
                         style={[styles.textInput, styles.disabledInput]}
                         value={formattedPhoneNumber}
                         placeholder="전화번호"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor="#999"
                         editable={false}
                     />
                 </View>
@@ -120,12 +120,12 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     headerPlaceholder: {
         width: 24,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         borderColor: '#000',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#f0f0f0',
     },
     inputContainer: {
         width: '100%',
@@ -173,13 +173,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     disabledInput: {
-        backgroundColor: '#EEF0E4',
-        color: '#7C8070',
+        backgroundColor: '#f0f0f0',
+        color: '#666',
     },
     descriptionText: {
         fontSize: 14,
         textAlign: 'center',
-        color: '#7C8070',
+        color: '#666',
         lineHeight: 22,
         marginBottom: 40,
     },
@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
     },
     buttonInactive: {
-        backgroundColor: '#EEF0E4',
-        borderColor: '#DADDCB',
+        backgroundColor: '#f0f0f0',
+        borderColor: '#ddd',
     },
     buttonText: {
         fontSize: 16,
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
     buttonTextInactive: {
-        color: '#A3A794',
+        color: '#999',
     },
     cancelButton: {
         backgroundColor: '#fff',

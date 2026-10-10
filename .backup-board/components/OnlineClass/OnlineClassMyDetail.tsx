@@ -30,11 +30,8 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
     const [activeTab, setActiveTab] = useState<'intro' | 'free' | 'mvp' | 'review'>('intro');
 
     const currentClass = useMemo(() => {
-        // id가 없으면(내 게시판 안) 내가 만든 수업을 먼저 보여줘요
-        return classes.find(cls => cls.id === id)
-            || classes.find(cls => cls.createdBy === currentUser?.name)
-            || classes[classes.length - 1];
-    }, [classes, id, currentUser?.name]);
+        return classes.find(cls => cls.id === id) || classes[classes.length - 1];
+    }, [classes, id]);
 
     const classId = id as string;
 
@@ -113,7 +110,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
     const renderVideoThumbnail = () => (
         <View style={styles.videoThumbnail}>
             <View style={styles.thumbnailPlaceholder}>
-                <Ionicons name="play-circle" size={40} color="#4E7D32" />
+                <Ionicons name="play-circle" size={40} color="#007bff" />
             </View>
             <View style={styles.videoBadge}>
                 <Text style={styles.videoBadgeText}>HD</Text>
@@ -248,7 +245,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                             <>
                                 <View style={styles.actionButtonsContainer}>
                                     <TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={handleClassEdit}>
-                                        <Ionicons name="create-outline" size={18} color="#4E7D32" />
+                                        <Ionicons name="create-outline" size={18} color="#007bff" />
                                         <Text style={styles.editButtonText}>수정</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleClassDelete}>
@@ -259,7 +256,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
 
                                 <View style={styles.introCard}>
                                     <View style={styles.introHeader}>
-                                        <Ionicons name="person-circle" size={24} color="#4E7D32" />
+                                        <Ionicons name="person-circle" size={24} color="#007bff" />
                                         <Text style={styles.cardTitle}>강사 소개</Text>
                                     </View>
                                     <Text style={styles.bioText}>{instructorInfo.bio}</Text>
@@ -272,7 +269,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
 
                                 <View style={styles.infoCard}>
                                     <View style={styles.introHeader}>
-                                        <Ionicons name="book" size={24} color="#4E7D32" />
+                                        <Ionicons name="book" size={24} color="#28a745" />
                                         <Text style={styles.cardTitle}>강의 정보</Text>
                                     </View>
                                     <View style={styles.infoRow}>
@@ -322,7 +319,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                             </>
                         ) : (
                             <View style={styles.noInfoCard}>
-                                <Ionicons name="information-circle-outline" size={50} color="#C9CCB8" />
+                                <Ionicons name="information-circle-outline" size={50} color="#ccc" />
                                 <Text style={styles.noInfoTitle}>아직 등록된 클래스 소개가 없습니다.</Text>
                                 <Text style={styles.noInfoSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 정보를 추가해 주세요.</Text>
                             </View>
@@ -335,7 +332,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="videocam" size={24} color="#4E7D32" />
+                                <Ionicons name="videocam" size={24} color="#28a745" />
                                 <Text style={styles.sectionTitle}>무료 영상</Text>
                                 <View style={styles.freeBadge}>
                                     <Text style={styles.freeBadgeText}>FREE</Text>
@@ -356,11 +353,11 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                             </View>
                                             <View style={styles.videoMetadata}>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="time-outline" size={16} color="#666" />
                                                     <Text style={styles.metaText}>{video.duration || '시간 미정'}</Text>
                                                 </View>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="bar-chart-outline" size={16} color="#666" />
                                                     <Text style={styles.metaText}>{video.level || '난이도 미정'}</Text>
                                                 </View>
                                             </View>
@@ -373,7 +370,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="videocam-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="videocam-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>무료 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 영상을 추가해 주세요.</Text>
                                 </View>
@@ -387,7 +384,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="diamond" size={24} color="#3B5A24" />
+                                <Ionicons name="diamond" size={24} color="#6f42c1" />
                                 <Text style={styles.sectionTitle}>MVP 영상</Text>
                                 <View style={styles.mvpBadge}>
                                     <Text style={styles.mvpBadgeText}>PREMIUM</Text>
@@ -411,11 +408,11 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                             </View>
                                             <View style={styles.videoMetadata}>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="time-outline" size={16} color="#666" />
                                                     <Text style={styles.metaText}>{video.duration || '시간 미정'}</Text>
                                                 </View>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="bar-chart-outline" size={16} color="#666" />
                                                     <Text style={styles.metaText}>{video.level || '난이도 미정'}</Text>
                                                 </View>
                                                 <View style={styles.priceTag}>
@@ -431,7 +428,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="diamond-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="diamond-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>MVP 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 프리미엄 영상을 추가해 주세요.</Text>
                                 </View>
@@ -474,7 +471,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.reviewPlaceholder}>
-                                    <Ionicons name="chatbubbles-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="chatbubbles-outline" size={50} color="#ccc" />
                                     <Text style={styles.placeholderTitle}>아직 작성된 리뷰가 없어요!</Text>
                                     <Text style={styles.placeholderSubtitle}>수강생의 첫 번째 리뷰를 기다립니다. ✨</Text>
                                 </View>
@@ -504,7 +501,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     </View>
                     <Text style={styles.profileName}>{instructorInfo.name}</Text>
                     <TouchableOpacity style={styles.messageButton} onPress={handleSendMessage}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#4E7D32" />
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#007bff" />
                         <Text style={styles.messageButtonText}>받은 메시지</Text>
                     </TouchableOpacity>
                 </View>
@@ -537,13 +534,13 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FBFAF4' },
+    container: { flex: 1, backgroundColor: '#f8f9fa' },
     profileHeader: {
         padding: 20,
         alignItems: 'center',
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#eee',
     },
     profileImageContainer: { marginBottom: 10 },
     profileImage: {
@@ -551,41 +548,41 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         borderWidth: 3,
-        borderColor: '#4E7D32',
+        borderColor: '#007bff',
     },
     defaultProfileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#C9CCB8',
+        backgroundColor: '#ccc',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
-        borderColor: '#4E7D32',
+        borderColor: '#007bff',
     },
     profileInitial: { fontSize: 40, color: '#fff', fontWeight: 'bold' },
-    profileName: { fontSize: 22, fontWeight: 'bold', color: '#2E3326', marginBottom: 8 },
+    profileName: { fontSize: 22, fontWeight: 'bold', color: '#333', marginBottom: 8 },
     messageButton: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 5,
         paddingHorizontal: 15,
         borderRadius: 20,
-        backgroundColor: '#E8F2DE',
+        backgroundColor: '#e9f5ff',
     },
-    messageButtonText: { marginLeft: 5, color: '#4E7D32', fontWeight: '600' },
+    messageButtonText: { marginLeft: 5, color: '#007bff', fontWeight: '600' },
     tabsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#eee',
         paddingTop: 10,
     },
     tab: { paddingBottom: 10, flex: 1, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 3, borderBottomColor: '#4E7D32' },
-    tabText: { fontSize: 16, color: '#7C8070', fontWeight: '500' },
-    activeTabText: { color: '#4E7D32', fontWeight: 'bold' },
+    activeTab: { borderBottomWidth: 3, borderBottomColor: '#007bff' },
+    tabText: { fontSize: 16, color: '#666', fontWeight: '500' },
+    activeTabText: { color: '#007bff', fontWeight: 'bold' },
     tabContent: { padding: 15 },
     actionButtonsContainer: {
         flexDirection: 'row',
@@ -602,8 +599,8 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         borderWidth: 1,
     },
-    editButton: { borderColor: '#4E7D32', backgroundColor: '#fff' },
-    editButtonText: { marginLeft: 4, color: '#4E7D32', fontWeight: '600' },
+    editButton: { borderColor: '#007bff', backgroundColor: '#fff' },
+    editButtonText: { marginLeft: 4, color: '#007bff', fontWeight: '600' },
     deleteButton: { borderColor: '#dc3545', backgroundColor: '#fff' },
     deleteButtonText: { marginLeft: 4, color: '#dc3545', fontWeight: '600' },
     introCard: {
@@ -637,15 +634,15 @@ const styles = StyleSheet.create({
         }),
     },
     introHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 8, color: '#2E3326' },
-    bioText: { fontSize: 14, color: '#5C604F', lineHeight: 20, marginBottom: 10, paddingHorizontal: 5 },
-    divider: { height: 1, backgroundColor: '#EEF0E4', marginVertical: 10 },
+    cardTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 8, color: '#333' },
+    bioText: { fontSize: 14, color: '#555', lineHeight: 20, marginBottom: 10, paddingHorizontal: 5 },
+    divider: { height: 1, backgroundColor: '#eee', marginVertical: 10 },
     descriptionSection: { marginTop: 10 },
-    descriptionLabel: { fontSize: 15, fontWeight: 'bold', color: '#2E3326', marginBottom: 5 },
-    descriptionText: { fontSize: 14, color: '#5C604F', lineHeight: 20 },
-    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F6F5EC' },
-    infoLabel: { fontSize: 14, color: '#7C8070' },
-    infoValue: { fontSize: 14, fontWeight: '500', color: '#2E3326' },
+    descriptionLabel: { fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 5 },
+    descriptionText: { fontSize: 14, color: '#555', lineHeight: 20 },
+    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+    infoLabel: { fontSize: 14, color: '#666' },
+    infoValue: { fontSize: 14, fontWeight: '500', color: '#333' },
     paymentInfo: { marginTop: 5 },
     noInfoCard: {
         backgroundColor: '#fff',
@@ -656,10 +653,10 @@ const styles = StyleSheet.create({
         marginTop: 20,
         borderStyle: 'dashed',
         borderWidth: 1,
-        borderColor: '#C9CCB8',
+        borderColor: '#ccc',
     },
-    noInfoTitle: { fontSize: 18, fontWeight: 'bold', color: '#8E9280', marginTop: 15 },
-    noInfoSubtitle: { fontSize: 14, color: '#A3A794', marginTop: 5, textAlign: 'center' },
+    noInfoTitle: { fontSize: 18, fontWeight: 'bold', color: '#888', marginTop: 15 },
+    noInfoSubtitle: { fontSize: 14, color: '#aaa', marginTop: 5, textAlign: 'center' },
     videoSection: {
         backgroundColor: '#fff',
         borderRadius: 10,
@@ -671,10 +668,10 @@ const styles = StyleSheet.create({
         }),
     },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 8, color: '#2E3326' },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 8, color: '#333' },
     freeBadge: {
         marginLeft: 10,
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#28a745',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 15,
@@ -682,20 +679,20 @@ const styles = StyleSheet.create({
     freeBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
     mvpBadge: {
         marginLeft: 10,
-        backgroundColor: '#3B5A24',
+        backgroundColor: '#6f42c1',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 15,
     },
     mvpBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    videoCard: { flexDirection: 'row', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F6F5EC' },
+    videoCard: { flexDirection: 'row', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
     videoLeft: { marginRight: 15 },
     videoRight: { flex: 1, justifyContent: 'space-between' },
     videoThumbnail: {
         width: 100,
         height: 60,
         borderRadius: 8,
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#e9ecef',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -712,14 +709,14 @@ const styles = StyleSheet.create({
     },
     videoBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
     videoTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 },
-    videoTitle: { fontSize: 15, fontWeight: '600', color: '#2E3326', flex: 1, marginRight: 10 },
+    videoTitle: { fontSize: 15, fontWeight: '600', color: '#333', flex: 1, marginRight: 10 },
     videoMetadata: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
     metaItem: { flexDirection: 'row', alignItems: 'center', marginRight: 15 },
-    metaText: { marginLeft: 4, fontSize: 13, color: '#7C8070' },
+    metaText: { marginLeft: 4, fontSize: 13, color: '#666' },
     playButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -729,7 +726,7 @@ const styles = StyleSheet.create({
     purchaseButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#3B5A24',
+        backgroundColor: '#6f42c1',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -748,18 +745,18 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     priceTag: { backgroundColor: '#ffc107', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5, marginLeft: 'auto' },
-    priceText: { fontSize: 13, fontWeight: 'bold', color: '#2E3326' },
+    priceText: { fontSize: 13, fontWeight: 'bold', color: '#333' },
     videoPlaceholder: {
         alignItems: 'center',
         padding: 30,
         borderWidth: 1,
-        borderColor: '#EEF0E4',
+        borderColor: '#eee',
         borderStyle: 'dashed',
         borderRadius: 10,
         marginTop: 10,
     },
-    placeholderTitle: { fontSize: 16, fontWeight: 'bold', color: '#8E9280', marginTop: 10 },
-    placeholderSubtitle: { fontSize: 13, color: '#A3A794', marginTop: 5, textAlign: 'center' },
+    placeholderTitle: { fontSize: 16, fontWeight: 'bold', color: '#888', marginTop: 10 },
+    placeholderSubtitle: { fontSize: 13, color: '#aaa', marginTop: 5, textAlign: 'center' },
     reviewSection: {
         backgroundColor: '#fff',
         borderRadius: 10,
@@ -781,8 +778,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ffc107',
     },
-    ratingBadgeText: { color: '#2E3326', fontSize: 14, fontWeight: 'bold', marginLeft: 4 },
-    reviewItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F6F5EC' },
+    ratingBadgeText: { color: '#333', fontSize: 14, fontWeight: 'bold', marginLeft: 4 },
+    reviewItem: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
     reviewUserHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
     reviewUserProfile: { flexDirection: 'row', alignItems: 'center' },
     reviewUserProfileImage: { width: 30, height: 30, borderRadius: 15, marginRight: 8 },
@@ -790,18 +787,18 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 15,
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 8,
     },
     reviewUserInitial: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    reviewUserNickname: { fontSize: 14, fontWeight: 'bold', color: '#2E3326' },
+    reviewUserNickname: { fontSize: 14, fontWeight: 'bold', color: '#333' },
     reviewRating: { flexDirection: 'row' },
-    reviewText: { fontSize: 14, color: '#5C604F', lineHeight: 20 },
+    reviewText: { fontSize: 14, color: '#555', lineHeight: 20 },
     reviewPlaceholder: { alignItems: 'center', padding: 30, marginTop: 10 },
-    bottomBar: { padding: 15, borderTopWidth: 1, borderTopColor: '#EEF0E4', backgroundColor: '#fff' },
-    bottomJoinButton: { backgroundColor: '#4E7D32', padding: 15, borderRadius: 10, alignItems: 'center' },
+    bottomBar: { padding: 15, borderTopWidth: 1, borderTopColor: '#eee', backgroundColor: '#fff' },
+    bottomJoinButton: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center' },
     bottomJoinButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
 

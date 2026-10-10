@@ -13,25 +13,20 @@ import {
     Platform,
     Image,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { toImageUrl } from '@/config';
+import { useNavigation } from "expo-router/react-navigation";
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useBoard } from '@/components/contexts/BoardContext';
 import AppHeader from '@/components/AppHeader';
 
 const MakeBoard = () => {
+    const navigation = useNavigation();
     const { currentUser } = useAuth();
-    const { posts, addPost, updatePost } = useBoard();
+    const { addPost } = useBoard();
 
-    // 내 게시판에서 '수정'을 누르면 ?id=글번호 로 들어와요 → 수정 모드
-    const params = useLocalSearchParams<{ id?: string }>();
-    const editingPost = params.id ? posts.find((p) => String(p.id) === String(params.id)) : undefined;
-    const isEdit = !!editingPost;
-
-    const [title, setTitle] = useState(editingPost?.title ?? '');
-    const [content, setContent] = useState(editingPost?.content ?? '');
-    const [selectedCategory, setSelectedCategory] = useState<'교육' | '운동' | '활동' | ''>(editingPost?.category ?? '');
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<'교육' | '운동' | '활동' | ''>('');
     const [isLoading, setIsLoading] = useState(false);
 
     const categories: { key: '교육' | '운동' | '활동'; label: string }[] = [
@@ -47,11 +42,11 @@ const MakeBoard = () => {
                 '작성 중인 내용이 있습니다. 정말 나가시겠습니까?',
                 [
                     { text: '계속 작성', style: 'cancel' },
-                    { text: '나가기', style: 'destructive', onPress: () => router.back() },
+                    { text: '나가기', style: 'destructive', onPress: () => navigation.goBack() },
                 ]
             );
         } else {
-            router.back();
+            navigation.goBack();
         }
     };
 
@@ -84,30 +79,24 @@ const MakeBoard = () => {
 
         setIsLoading(true);
         try {
-            const fields = {
+            const newPost = {
+                author: currentUser?.nickname || '익명',
+                profileImage: currentUser?.profileImage || null, // 프로필 이미지 추가
                 title: title.trim(),
                 content: content.trim(),
                 category: selectedCategory as '교육' | '운동' | '활동',
             };
 
-            if (isEdit && editingPost) {
-                updatePost(editingPost.id, fields);
-            } else {
-                addPost({
-                    author: currentUser?.name || '익명',
-                    profileImage: currentUser?.profileImage || null,
-                    ...fields,
-                });
-            }
+            addPost(newPost);
 
             Alert.alert(
-                isEdit ? '게시글 수정 완료' : '게시글 등록 완료',
-                isEdit ? '게시글이 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
+                '게시글 등록 완료',
+                '게시글이 성공적으로 등록되었습니다.',
                 [
                     {
                         text: '확인',
                         onPress: () => {
-                            router.back();
+                            navigation.goBack();
                         },
                     },
                 ]
@@ -130,9 +119,9 @@ const MakeBoard = () => {
             >
                 {/* 공통 헤더: < 게시글 작성 [등록] 🔔 */}
                 <AppHeader
-                    title={isEdit ? '게시글 수정' : '게시글 작성'}
+                    title="게시글 작성"
                     onBack={() => { if (!isLoading) handleBack(); }}
-                    right={[{ label: isEdit ? '저장' : '등록', onPress: handleSubmit, disabled: isSubmitDisabled, color: '#4E7D32' }]}
+                    right={[{ label: '등록', onPress: handleSubmit, disabled: isSubmitDisabled, color: '#6C63FF' }]}
                 />
 
                 <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -141,15 +130,15 @@ const MakeBoard = () => {
                         <Text style={styles.sectionTitle}>작성자 정보</Text>
                         <View style={styles.authorInfoContainer}>
                             {currentUser?.profileImage ? (
-                                <Image source={{ uri: toImageUrl(currentUser.profileImage) }} style={styles.profileImage} />
+                                <Image source={{ uri: currentUser.profileImage }} style={styles.profileImage} />
                             ) : (
                                 <View style={styles.defaultProfileImage}>
-                                    <Ionicons name="person" size={24} color="#4E7D32" />
+                                    <Ionicons name="person" size={24} color="#6C63FF" />
                                 </View>
                             )}
                             <View>
                                 <Text style={styles.authorInfo}>
-                                    닉네임: {currentUser?.name || '익명'}
+                                    닉네임: {currentUser?.nickname || '익명'}
                                 </Text>
                                 <Text style={styles.authorInfo}>
                                     전화번호: {currentUser?.phoneNumber
@@ -199,7 +188,7 @@ const MakeBoard = () => {
                             onChangeText={setTitle}
                             maxLength={50}
                             editable={!isLoading}
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor="#999"
                         />
                     </View>
 
@@ -217,7 +206,7 @@ const MakeBoard = () => {
                             multiline
                             textAlignVertical="top"
                             editable={!isLoading}
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor="#999"
                         />
                     </View>
                 </ScrollView>
@@ -229,29 +218,29 @@ const MakeBoard = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     keyboardAvoidingView: { flex: 1 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#EEF0E4' },
-    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#2E3326' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#333' },
     submitButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#000', borderRadius: 8 },
-    submitButtonDisabled: { backgroundColor: '#C9CCB8' },
+    submitButtonDisabled: { backgroundColor: '#ccc' },
     submitButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    submitButtonTextDisabled: { color: '#A3A794' },
+    submitButtonTextDisabled: { color: '#999' },
     content: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
     sectionContainer: { marginBottom: 30 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#2E3326', marginBottom: 12 },
+    sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 12 },
     required: { color: '#ff4444' },
     titleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    charCount: { fontSize: 12, color: '#A3A794' },
+    charCount: { fontSize: 12, color: '#999' },
     categoryContainer: { flexDirection: 'row', gap: 10 },
-    categoryButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#DADDCB', backgroundColor: '#fff' },
+    categoryButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
     selectedCategoryButton: { backgroundColor: '#000', borderColor: '#000' },
-    categoryButtonText: { fontSize: 14, color: '#7C8070', fontWeight: '500' },
+    categoryButtonText: { fontSize: 14, color: '#666', fontWeight: '500' },
     selectedCategoryButtonText: { color: '#fff' },
-    titleInput: { borderWidth: 1, borderColor: '#DADDCB', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, backgroundColor: '#FBFAF4' },
-    contentInput: { borderWidth: 1, borderColor: '#DADDCB', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, backgroundColor: '#FBFAF4', minHeight: 150 },
-    authorInfoContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FBFAF4', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#DADDCB' },
+    titleInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, backgroundColor: '#f8f8f8' },
+    contentInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 15, paddingVertical: 12, fontSize: 16, backgroundColor: '#f8f8f8', minHeight: 150 },
+    authorInfoContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8f8f8', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#ddd' },
     profileImage: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
-    defaultProfileImage: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#E6E8DA', marginRight: 10 },
-    authorInfo: { fontSize: 14, color: '#7C8070', marginBottom: 5 },
+    defaultProfileImage: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e0e0e0', marginRight: 10 },
+    authorInfo: { fontSize: 14, color: '#666', marginBottom: 5 },
 });
 
 export default MakeBoard;

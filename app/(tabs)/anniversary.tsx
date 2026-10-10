@@ -117,7 +117,8 @@ const AnniversaryScreen: React.FC = () => {
         const defaultAvatar = '';
 
         if (imagePath) {
-            if (imagePath.startsWith('/uploads/')) {
+            // 서버에 저장된 사진 (/images/profile/... 또는 예전 /uploads/...)
+            if (imagePath.startsWith('/')) {
                 return `${IMAGE_BASE_URL}${imagePath}`;
             }
             return imagePath;

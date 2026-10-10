@@ -287,7 +287,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.classTitle}
                     onChangeText={text => handleUpdateVideo(video.id, 'classTitle', text)}
                     placeholder="수업 제목을 입력하세요"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor="#999"
                     maxLength={50}
                 />
             </View>
@@ -299,7 +299,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.duration}
                     onChangeText={text => handleUpdateVideo(video.id, 'duration', text)}
                     placeholder="예: 2시간 30분"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor="#999"
                 />
             </View>
 
@@ -315,7 +315,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.videoTitle}
                     onChangeText={text => handleUpdateVideo(video.id, 'videoTitle', text)}
                     placeholder="영상 제목을 입력하세요"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor="#999"
                     maxLength={50}
                 />
             </View>
@@ -331,7 +331,7 @@ const OnlineClassMakeVideo = () => {
                             handleUpdateVideo(video.id, 'price', price);
                         }}
                         placeholder="0"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor="#999"
                         keyboardType="numeric"
                     />
                 </View>
@@ -343,7 +343,7 @@ const OnlineClassMakeVideo = () => {
                     <Ionicons
                         name={video.uri ? 'checkmark-circle' : 'videocam-outline'}
                         size={24}
-                        color={video.uri ? '#4E7D32' : '#4E7D32'}
+                        color={video.uri ? '#28a745' : '#007bff'}
                     />
                     <Text style={[styles.videoPickerText, video.uri && styles.videoPickerTextSelected]}>
                         {video.fileName || '갤러리 또는 파일에서 영상 선택'}
@@ -363,7 +363,7 @@ const OnlineClassMakeVideo = () => {
             <AppHeader
                 title="영상 등록"
                 onBack={() => { if (!isLoading) router.back(); }}
-                right={[{ label: isLoading ? '처리중' : '다음', onPress: handleSubmit, disabled: isLoading, color: '#4E7D32', accessibilityLabel: '결제하러 가기' }]}
+                right={[{ label: isLoading ? '처리중' : '다음', onPress: handleSubmit, disabled: isLoading, color: '#6C63FF', accessibilityLabel: '결제하러 가기' }]}
             />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -374,22 +374,22 @@ const OnlineClassMakeVideo = () => {
                             onPress={() => handleAddVideo('free')}
                             disabled={isLoading}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color="#4E7D32" />
-                            <Text style={[styles.addButtonText, { color: '#4E7D32' }]}>무료 영상 추가</Text>
+                            <Ionicons name="add-circle-outline" size={24} color="#28a745" />
+                            <Text style={[styles.addButtonText, { color: '#28a745' }]}>무료 영상 추가</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.addButton, styles.mvpButton]}
                             onPress={() => handleAddVideo('mvp')}
                             disabled={isLoading}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color="#4E7D32" />
-                            <Text style={[styles.addButtonText, { color: '#4E7D32' }]}>MVP 영상 추가</Text>
+                            <Ionicons name="add-circle-outline" size={24} color="#007bff" />
+                            <Text style={[styles.addButtonText, { color: '#007bff' }]}>MVP 영상 추가</Text>
                         </TouchableOpacity>
                     </View>
 
                     {contextVideos.length === 0 && (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="film-outline" size={48} color="#C9CCB8" />
+                            <Ionicons name="film-outline" size={48} color="#ccc" />
                             <Text style={styles.emptyText}>위의 버튼을 눌러 영상을 추가해보세요</Text>
                         </View>
                     )}
@@ -406,7 +406,7 @@ const OnlineClassMakeVideo = () => {
                                     value={bankName}
                                     onChangeText={setBankName}
                                     placeholder="예: 국민은행"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor="#999"
                                 />
                             </View>
                             <View style={styles.inputGroup}>
@@ -416,7 +416,7 @@ const OnlineClassMakeVideo = () => {
                                     value={accountNumber}
                                     onChangeText={setAccountNumber}
                                     placeholder="계좌번호를 입력하세요"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor="#999"
                                     keyboardType="numeric"
                                 />
                             </View>
@@ -427,7 +427,7 @@ const OnlineClassMakeVideo = () => {
                                     value={accountHolder}
                                     onChangeText={setAccountHolder}
                                     placeholder="예금주명을 입력하세요"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor="#999"
                                 />
                             </View>
                             <View style={styles.feesContainer}>
@@ -449,7 +449,7 @@ const OnlineClassMakeVideo = () => {
                     )}
 
                     <View style={styles.noteContainer}>
-                        <Ionicons name="information-circle-outline" size={20} color="#7C8070" />
+                        <Ionicons name="information-circle-outline" size={20} color="#666" />
                         <Text style={styles.noteText}>
                             • 무료 영상은 모든 사용자가 볼 수 있습니다.{'\n'}
                             • MVP 영상은 결제 후 시청 가능합니다.{'\n'}
@@ -474,11 +474,11 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
-    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E3326' },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
     submitButton: { paddingHorizontal: 12, paddingVertical: 6 },
-    submitButtonText: { fontSize: 16, fontWeight: 'bold', color: '#4E7D32' },
+    submitButtonText: { fontSize: 16, fontWeight: 'bold', color: '#007bff' },
     scrollContainer: { flex: 1 },
     content: { padding: 20 },
     addButtonContainer: { flexDirection: 'row', gap: 12, marginBottom: 24 },
@@ -492,24 +492,24 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         gap: 8,
     },
-    freeButton: { backgroundColor: '#F4F8EE', borderColor: '#4E7D32' },
-    mvpButton: { backgroundColor: '#F4F8EE', borderColor: '#4E7D32' },
+    freeButton: { backgroundColor: '#f8fff9', borderColor: '#28a745' },
+    mvpButton: { backgroundColor: '#f8fbff', borderColor: '#007bff' },
     addButtonText: { fontSize: 16, fontWeight: '600' },
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 40,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         borderRadius: 12,
         marginBottom: 24,
     },
-    emptyText: { fontSize: 16, color: '#A3A794', marginTop: 12, textAlign: 'center' },
+    emptyText: { fontSize: 16, color: '#999', marginTop: 12, textAlign: 'center' },
     videoList: { gap: 16, marginBottom: 32 },
     videoContainer: {
         backgroundColor: '#fff',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -533,45 +533,45 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         minWidth: 80,
     },
-    freeTypeLabel: { backgroundColor: '#E8F2DE', color: '#4E7D32' },
-    mvpTypeLabel: { backgroundColor: '#E8F2DE', color: '#4E7D32' },
+    freeTypeLabel: { backgroundColor: '#e8f5e8', color: '#28a745' },
+    mvpTypeLabel: { backgroundColor: '#e3f2fd', color: '#007bff' },
     removeButton: { padding: 4, borderRadius: 20, backgroundColor: '#fff2f2' },
     inputGroup: { marginBottom: 16 },
-    label: { fontSize: 14, fontWeight: '600', color: '#2E3326', marginBottom: 8 },
+    label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
     textInput: {
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 10,
         fontSize: 16,
         backgroundColor: '#fff',
-        color: '#2E3326',
+        color: '#333',
     },
     videoPickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         borderRadius: 8,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         gap: 12,
     },
-    videoPickerText: { fontSize: 16, color: '#7C8070', flex: 1 },
-    videoPickerTextSelected: { color: '#4E7D32', fontWeight: '500' },
+    videoPickerText: { fontSize: 16, color: '#666', flex: 1 },
+    videoPickerTextSelected: { color: '#28a745', fontWeight: '500' },
     videoFooter: {
         marginTop: 12,
         paddingTop: 12,
         borderTopWidth: 1,
-        borderTopColor: '#EEF0E4',
+        borderTopColor: '#f0f0f0',
     },
-    removeHint: { fontSize: 12, color: '#A3A794', textAlign: 'center', fontStyle: 'italic' },
+    removeHint: { fontSize: 12, color: '#999', textAlign: 'center', fontStyle: 'italic' },
     accountContainer: {
         backgroundColor: '#fff',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         padding: 20,
         marginBottom: 24,
         shadowColor: '#000',
@@ -580,38 +580,38 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E3326', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 },
     feesContainer: { marginTop: 16 },
     feeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
-    feeLabel: { fontSize: 14, color: '#7C8070' },
-    feeValue: { fontSize: 14, fontWeight: '500', color: '#2E3326' },
+    feeLabel: { fontSize: 14, color: '#666' },
+    feeValue: { fontSize: 14, fontWeight: '500', color: '#333' },
     noteContainer: {
         flexDirection: 'row',
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         padding: 16,
         borderRadius: 8,
         gap: 8,
         borderLeftWidth: 4,
-        borderLeftColor: '#4E7D32',
+        borderLeftColor: '#007bff',
     },
-    noteText: { flex: 1, fontSize: 14, color: '#7C8070', lineHeight: 20 },
+    noteText: { flex: 1, fontSize: 14, color: '#666', lineHeight: 20 },
     levelContainer: { flexDirection: 'row', gap: 10 },
     levelButton: {
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
     },
-    activeLevelButton: { backgroundColor: '#4E7D32', borderColor: '#4E7D32' },
-    levelButtonText: { fontSize: 14, color: '#7C8070', fontWeight: '500' },
+    activeLevelButton: { backgroundColor: '#007bff', borderColor: '#007bff' },
+    levelButtonText: { fontSize: 14, color: '#666', fontWeight: '500' },
     activeLevelButtonText: { color: '#fff' },
 });
 

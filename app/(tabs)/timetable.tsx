@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -134,6 +135,73 @@ const NowCard = ({ now, schedules }: { now: Date; schedules: ScheduleItem[] }) =
 // ============================================================
 // 시간표 본문
 // ============================================================
+// ============================================================
+// 그날 계획 모두 보기 (아래에서 올라오는 창)
+// ============================================================
+const DayPlansSheet = ({
+                           visible,
+                           date,
+                           plans,
+                           onClose,
+                       }: {
+    visible: boolean;
+    date: Date | null;
+    plans: Plan[];
+    onClose: () => void;
+}) => {
+    const insets = useSafeAreaInsets();
+    if (!date) return null;
+    const title = `${date.getMonth() + 1}월 ${date.getDate()}일 ${DAY_LABEL[JS_DAY_KEYS[date.getDay()]]}요일`;
+    const openPlan = (id: string) => {
+        onClose();
+        router.push({ pathname: '/MakePlan', params: { id } });
+    };
+    const addPlan = () => {
+        onClose();
+        router.push({ pathname: '/MakePlan', params: { date: toDateKey(date) } });
+    };
+    return (
+        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+            <Pressable style={styles.sheetBackdrop} onPress={onClose} />
+            <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+                <View style={styles.sheetHandle} />
+                <View style={styles.sheetHead}>
+                    <View>
+                        <Text style={styles.sheetTitle}>{title}</Text>
+                        <Text style={styles.sheetSub}>계획 {plans.length}개</Text>
+                    </View>
+                    <TouchableOpacity onPress={onClose} hitSlop={8} accessibilityLabel="닫기">
+                        <Ionicons name="close" size={24} color={COLORS.subText} />
+                    </TouchableOpacity>
+                </View>
+                <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+                    {plans.map((p) => (
+                        <TouchableOpacity key={p.id} style={styles.sheetItem} onPress={() => openPlan(p.id)} activeOpacity={0.8}>
+                            <View
+                                style={[
+                                    styles.sheetBar,
+                                    { backgroundColor: p.color && p.color !== '#FFFFFF' ? p.color : COLORS.pink },
+                                ]}
+                            />
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.sheetItemTitle} numberOfLines={1}>{p.title}</Text>
+                                {!!p.content && (
+                                    <Text style={styles.sheetItemContent} numberOfLines={2}>{p.content}</Text>
+                                )}
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={COLORS.subText} />
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.sheetAdd} onPress={addPlan} activeOpacity={0.85}>
+                    <Ionicons name="add" size={18} color="#fff" />
+                    <Text style={styles.sheetAddText}>이 날 계획 추가</Text>
+                </TouchableOpacity>
+            </View>
+        </Modal>
+    );
+};
+
 const TimetableBody = ({
                            days,
                            schedules,
@@ -172,6 +240,9 @@ const TimetableBody = ({
     };
     const hasAnyPlan = days.some((d) => plansOf(d).length > 0);
 
+    // '+2' 를 누르면 그날 계획을 모두 보여주는 창
+    const [planDay, setPlanDay] = useState<string | null>(null);
+
     const nowHours = now.getHours() + now.getMinutes() / 60;
     const showNowLine = days.includes(todayKey) && nowHours >= START_HOUR && nowHours < END_HOUR;
     const nowTop = (nowHours - START_HOUR) * HOUR_HEIGHT;
@@ -187,6 +258,12 @@ const TimetableBody = ({
 
     return (
         <View style={styles.board}>
+            <DayPlansSheet
+                visible={planDay !== null}
+                date={planDay ? dateObjOf(planDay) : null}
+                plans={planDay ? plansOf(planDay) : []}
+                onClose={() => setPlanDay(null)}
+            />
             {/* 요일 줄 */}
             <View style={styles.daysHeader}>
                 <View style={{ width: TIME_COLUMN_WIDTH }} />
@@ -223,7 +300,16 @@ const TimetableBody = ({
                                         <Text style={styles.planChipText} numberOfLines={1}>{p.title}</Text>
                                     </TouchableOpacity>
                                 ))}
-                                {list.length > 2 && <Text style={styles.planMore}>+{list.length - 2}</Text>}
+                                {list.length > 2 && (
+                                    <TouchableOpacity
+                                        onPress={() => setPlanDay(day)}
+                                        style={styles.planMoreButton}
+                                        hitSlop={6}
+                                        accessibilityLabel={`계획 ${list.length}개 모두 보기`}
+                                    >
+                                        <Text style={styles.planMore}>+{list.length - 2}</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         );
                     })}
@@ -541,9 +627,94 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: COLORS.text,
     },
+    planMoreButton: {
+        alignSelf: 'center',
+        backgroundColor: COLORS.pink,
+        borderRadius: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        marginTop: 1,
+    },
+    sheetBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(20, 25, 15, 0.35)',
+    },
+    sheet: {
+        backgroundColor: COLORS.background,
+        borderTopLeftRadius: 26,
+        borderTopRightRadius: 26,
+        paddingHorizontal: 18,
+        paddingTop: 8,
+    },
+    sheetHandle: {
+        alignSelf: 'center',
+        width: 40,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: COLORS.line,
+        marginBottom: 12,
+    },
+    sheetHead: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sheetTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: COLORS.text,
+    },
+    sheetSub: {
+        fontSize: 13,
+        color: COLORS.subText,
+        marginTop: 2,
+    },
+    sheetItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: COLORS.line,
+    },
+    sheetBar: {
+        width: 5,
+        alignSelf: 'stretch',
+        borderRadius: 3,
+        marginRight: 12,
+    },
+    sheetItemTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+    sheetItemContent: {
+        fontSize: 13,
+        color: COLORS.subText,
+        marginTop: 3,
+    },
+    sheetAdd: {
+        marginTop: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: COLORS.pink,
+        borderRadius: 999,
+        paddingVertical: 13,
+    },
+    sheetAddText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '800',
+        marginLeft: 4,
+    },
     planMore: {
         fontSize: 10,
-        color: COLORS.subText,
+        fontWeight: '800',
+        color: '#FFFFFF',
         textAlign: 'center',
     },
     toggle: {

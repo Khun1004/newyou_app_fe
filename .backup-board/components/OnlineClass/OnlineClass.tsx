@@ -111,7 +111,7 @@ const OnlineClass: React.FC = () => {
     const classItems: ClassItem[] = Array.from(uniqueClassItemsMap.values());
 
     const handleRegister = () => {
-        router.push('/MakeOnlineClass');
+        router.push('MakeOnlineClass');
     };
 
     const handleSendMessage = (instructorName: string) => {
@@ -127,7 +127,7 @@ const OnlineClass: React.FC = () => {
     const handleJoinClass = (item: ClassItem) => {
         // 상세 페이지로 이동하며 필요한 데이터를 params로 전달합니다.
         router.push({
-            pathname: '/OnlineClassPersonDetail',
+            pathname: 'OnlineClassPersonDetail',
             params: {
                 id: item.id.toString(),
                 title: item.title,
@@ -210,7 +210,7 @@ const OnlineClass: React.FC = () => {
                             style={styles.messageButton}
                             onPress={() => handleSendMessage(item.instructor)}
                         >
-                            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#4E7D32" />
+                            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#007bff" />
                         </TouchableOpacity>
 
                         {/* ❤️ [수정] 좋아요 하트 아이콘 (상태에 따라 아이콘 변경) */}
@@ -232,13 +232,13 @@ const OnlineClass: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: 170 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 {classItems.length > 0 ? (
                     // 중복 제거된 목록 렌더링
                     classItems.map(renderClassItem)
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="sad-outline" size={50} color="#A3A794" />
+                        <Ionicons name="sad-outline" size={50} color="#999" />
                         <Text style={styles.emptyText}>등록된 온라인 클래스가 없습니다.</Text>
                     </View>
                 )}
@@ -258,7 +258,7 @@ const OnlineClass: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#ffffff',
     },
     scrollContainer: {
         flex: 1,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
     profileContainer: {
         marginRight: 15,
@@ -277,22 +277,22 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 40,
         borderWidth: 2,
-        borderColor: '#4E7D32',
+        borderColor: '#007bff',
     },
     defaultProfileImage: {
         width: 80,
         height: 80,
         borderRadius: 40,
         borderWidth: 2,
-        borderColor: '#4E7D32',
-        backgroundColor: '#EEF0E4',
+        borderColor: '#007bff',
+        backgroundColor: '#e9ecef',
         justifyContent: 'center',
         alignItems: 'center',
     },
     profileInitial: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#4E7D32',
+        color: '#007bff',
     },
     classInfo: {
         flex: 1,
@@ -300,12 +300,12 @@ const styles = StyleSheet.create({
     classTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333333',
         marginBottom: 5,
     },
     instructor: {
         fontSize: 14,
-        color: '#4E7D32',
+        color: '#007bff',
         marginBottom: 8,
     },
     reviewContainer: {
@@ -320,12 +320,12 @@ const styles = StyleSheet.create({
     ratingText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333333',
         marginRight: 5,
     },
     reviewCount: {
         fontSize: 12,
-        color: '#7C8070',
+        color: '#666666',
     },
     buttonRow: {
         flexDirection: 'row',
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 6,
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         flexShrink: 1,
         marginRight: 10,
     },
@@ -364,17 +364,17 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        color: '#7C8070',
+        color: '#666',
         marginTop: 10,
         textAlign: 'center',
     },
     registerClassButton: {
         position: 'absolute',
-        bottom: 110, // 아래 탭 바 위로 올려요
+        bottom: 30,
         right: 20,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#007bff',
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 25,

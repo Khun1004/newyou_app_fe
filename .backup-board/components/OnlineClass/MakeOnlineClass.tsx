@@ -89,7 +89,7 @@ const MakeOnlineClass = () => {
                 instructor: instructorName,
                 description: description.trim(),
                 introduction: introduction.trim(),
-                createdBy: currentUser?.name,
+                createdBy: currentUser?.id,
                 profileImage: instructorProfileImage,
                 phoneNumber: currentUser?.phoneNumber,
                 certificationImage: certificationImage,
@@ -133,7 +133,7 @@ const MakeOnlineClass = () => {
             <AppHeader
                 title="클래스 등록"
                 onBack={() => { if (!isLoading) handleCancel(); }}
-                right={[{ label: isLoading ? '등록중' : '등록', onPress: handleRegisterAndNavigate, disabled: isLoading, color: '#4E7D32' }]}
+                right={[{ label: isLoading ? '등록중' : '등록', onPress: handleRegisterAndNavigate, disabled: isLoading, color: '#6C63FF' }]}
             />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -147,7 +147,7 @@ const MakeOnlineClass = () => {
                                 />
                             ) : (
                                 <View style={styles.defaultProfileImage}>
-                                    <Ionicons name="person" size={30} color="#A3A794" />
+                                    <Ionicons name="person" size={30} color="#999" />
                                 </View>
                             )}
                         </View>
@@ -168,7 +168,7 @@ const MakeOnlineClass = () => {
                             value={title}
                             onChangeText={setTitle}
                             placeholder="클래스 제목을 입력해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor="#999"
                             maxLength={50}
                         />
                         <Text style={styles.charCount}>{title.length}/50</Text>
@@ -190,7 +190,7 @@ const MakeOnlineClass = () => {
                             value={description}
                             onChangeText={setDescription}
                             placeholder="수업 내용과 목표를 자세히 설명해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor="#999"
                             multiline
                             numberOfLines={6}
                             textAlignVertical="top"
@@ -206,7 +206,7 @@ const MakeOnlineClass = () => {
                             value={introduction}
                             onChangeText={setIntroduction}
                             placeholder="자신의 경력, 전문 분야, 교육 철학 등을 소개해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor="#999"
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
@@ -222,7 +222,7 @@ const MakeOnlineClass = () => {
                                 <Image source={{ uri: certificationImage }} style={styles.uploadedImage} />
                             ) : (
                                 <View style={styles.imagePlaceholder}>
-                                    <Ionicons name="camera-outline" size={30} color="#A3A794" />
+                                    <Ionicons name="camera-outline" size={30} color="#999" />
                                     <Text style={styles.imagePlaceholderText}>이미지 업로드</Text>
                                 </View>
                             )}
@@ -230,7 +230,7 @@ const MakeOnlineClass = () => {
                     </View>
 
                     <View style={styles.noteContainer}>
-                        <Ionicons name="information-circle-outline" size={20} color="#7C8070" />
+                        <Ionicons name="information-circle-outline" size={20} color="#666" />
                         <Text style={styles.noteText}>
                             자격증 이미지는 클래스 승인 심사에 참고되며, 필수 사항은 아닙니다.
                         </Text>
@@ -254,12 +254,12 @@ const styles = StyleSheet.create({
         paddingVertical: 15,
         backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#EEF0E4',
+        borderBottomColor: '#f0f0f0',
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
     },
     headerButtons: {
         flexDirection: 'row',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     registerButton: {
         paddingHorizontal: 12,
         paddingVertical: 6,
-        backgroundColor: '#4E7D32',
+        backgroundColor: '#28a745',
         borderRadius: 6,
     },
     registerButtonText: {
@@ -285,12 +285,12 @@ const styles = StyleSheet.create({
     profileContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         padding: 16,
         borderRadius: 12,
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
     },
     profileImageContainer: {
         marginRight: 16,
@@ -299,17 +299,17 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#f0f0f0',
     },
     defaultProfileImage: {
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#EEF0E4',
+        backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
     },
     profileInfo: {
         flex: 1,
@@ -317,12 +317,12 @@ const styles = StyleSheet.create({
     profileNickname: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 4,
     },
     profilePhone: {
         fontSize: 14,
-        color: '#7C8070',
+        color: '#666',
     },
     inputGroup: {
         marginBottom: 24,
@@ -330,18 +330,18 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2E3326',
+        color: '#333',
         marginBottom: 8,
     },
     textInput: {
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         borderRadius: 8,
         paddingHorizontal: 16,
         paddingVertical: 12,
         fontSize: 16,
         backgroundColor: '#fff',
-        color: '#2E3326',
+        color: '#333',
     },
     textArea: {
         height: 120,
@@ -349,30 +349,30 @@ const styles = StyleSheet.create({
     },
     charCount: {
         fontSize: 12,
-        color: '#A3A794',
+        color: '#999',
         textAlign: 'right',
         marginTop: 4,
     },
     instructorContainer: {
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         borderRadius: 8,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
     },
     instructorName: {
         fontSize: 16,
-        color: '#2E3326',
+        color: '#333',
         fontWeight: '500',
     },
     imagePicker: {
         width: '100%',
         height: 200,
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#E6E8DA',
+        borderColor: '#e5e5e5',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     imagePlaceholderText: {
         marginTop: 8,
         fontSize: 14,
-        color: '#A3A794',
+        color: '#999',
     },
     uploadedImage: {
         width: '100%',
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     noteContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FBFAF4',
+        backgroundColor: '#f8f9fa',
         padding: 16,
         borderRadius: 8,
         marginTop: 20,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     noteText: {
         flex: 1,
         fontSize: 14,
-        color: '#7C8070',
+        color: '#666',
         lineHeight: 20,
     },
 });

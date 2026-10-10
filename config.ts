@@ -1,4 +1,4 @@
-import Constants from "expo-constants";
+import Constants from 'expo-constants';
 
 // ============================================================
 // 서버 주소 설정
@@ -10,7 +10,7 @@ import Constants from "expo-constants";
 //
 // 자동으로 안 될 때(예: 웹 브라우저, 다른 PC에서 서버 실행)는
 // 아래 FALLBACK_SERVER_IP 를 서버 PC의 IP로 바꿔 주세요.
-const FALLBACK_SERVER_IP = "192.168.1.102";
+const FALLBACK_SERVER_IP = '192.168.1.102';
 
 // 백엔드(Spring) 서버 포트 (application.properties 의 server.port)
 const SERVER_PORT = 8080;
@@ -18,8 +18,8 @@ const SERVER_PORT = 8080;
 function detectServerIp(): string {
   // 예: "192.168.1.102:8081"  → "192.168.1.102"
   const hostUri = Constants.expoConfig?.hostUri;
-  const host = hostUri?.split(":")[0];
-  if (host && host !== "localhost" && host !== "127.0.0.1") {
+  const host = hostUri?.split(':')[0];
+  if (host && host !== 'localhost' && host !== '127.0.0.1') {
     return host;
   }
   return FALLBACK_SERVER_IP;
@@ -36,4 +36,12 @@ export const NOTES_URL: string = `${BASE_URL}/notes`;
 // 인증 API 경로
 export const AUTH_URL: string = `${BASE_URL}/auth`;
 
-console.log("🌐 서버 주소:", BASE_URL);
+console.log('🌐 서버 주소:', BASE_URL);
+
+// 서버에 저장된 사진 경로(/images/profile/xxx.jpg)를 앱에서 보여줄 수 있는 전체 주소로 바꿔요.
+// 이미 http, file:// 로 시작하면 그대로 돌려줘요.
+export function toImageUrl(path?: string | null): string {
+  if (!path) return '';
+  if (/^(https?:|file:|data:)/.test(path)) return path;
+  return `http://${SERVER_IP}:${SERVER_PORT}${path.startsWith('/') ? path : `/${path}`}`;
+}
