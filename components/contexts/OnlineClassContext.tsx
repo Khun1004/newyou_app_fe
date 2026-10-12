@@ -1,36 +1,18 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
+import api from '@/components/utils/api';
 import { useAuth } from '@/components/contexts/AuthProvider';
 
-// 저장 키 (앱을 껐다 켜도 내 수업이 남아 있게)
-const CLASSES_KEY = 'onlineClasses';
-const VIDEOS_KEY = 'onlineClassVideos';
-const SEEDED_KEY = (phone: string) => `classSeeded_${phone}`;
-
-// 로그인한 사용자가 처음 들어오면 넣어 주는 '내 수업' 예시
-function makeMyClass(name: string, phone: string, profileImage: string | null) {
-    return {
-        id: `my-${phone}`,
-        title: '왕초보 한국어 회화 첫걸음',
-        instructor: name,
-        createdBy: name,
-        phoneNumber: phone,
-        profileImage: profileImage || undefined,
-        introduction: `안녕하세요, ${name}입니다! 외국인 친구들이 한국 생활에서 바로 쓸 수 있는 회화를 쉽고 재미있게 알려 드려요.`,
-        description: '인사, 주문하기, 길 묻기처럼 매일 쓰는 표현을 짧은 영상으로 배우는 수업이에요. 영상마다 따라 말하기 연습이 있어요.',
-    };
-}
-
-const MY_VIDEOS: VideoData[] = [
-    { id: 'my-v1', videoTitle: '1강 · 처음 만났을 때 인사하기', classTitle: '왕초보 한국어 회화 첫걸음', duration: '8분', level: '초급', type: 'free' },
-    { id: 'my-v2', videoTitle: '2강 · 카페에서 주문하기', classTitle: '왕초보 한국어 회화 첫걸음', duration: '10분', level: '초급', type: 'free' },
-    { id: 'my-v3', videoTitle: '3강 · 길 묻고 대답하기 (MVP)', classTitle: '왕초보 한국어 회화 첫걸음', duration: '15분', level: '초급', type: 'mvp', price: 3000 },
-];
+/**
+ * 온라인 수업 저장소
+ * - 수업과 영상은 서버(/api/classes)에 저장돼요.
+ * - 목록은 로그인 없이도 볼 수 있고, 만들기·수정·삭제는 로그인이 필요해요.
+ * - videos 는 '지금 만들고 있는(또는 내) 수업'의 영상 목록이에요.
+ */
 
 // Context에서 사용할 ID 타입 정의
 type ClassId = string | number;
 
-interface VideoData {
+export interface VideoData {
     id: string;
     videoTitle: string;
     classTitle: string;
@@ -87,7 +69,7 @@ interface OnlineClassContextType {
     likedClassIds: ClassId[];
     toggleLike: (classId: ClassId) => void;
     // ---
-    setClassData: (data: ClassData) => void;
+    setClassData: (data: ClassData) => Promise<ClassData>;
     setCurrentClassData: (data: ClassData | null) => void;
     setVideos: (videos: VideoData[]) => void;
     addVideo: (video: VideoData) => void;
@@ -96,8 +78,9 @@ interface OnlineClassContextType {
     setPaymentInfo: (info: PaymentInfo) => void;
     calculateFees: () => Fees;
     setFees: (fees: Fees) => void;
-    addClass: (classData: ClassData) => void;
-    deleteClass: (classId: string) => void;
+    addClass: (classData: ClassData) => Promise<ClassData>;
+    deleteClass: (classId: string) => Promise<void>;
+    reloadClasses: () => Promise<void>;
     resetContext: () => void;
     setPaymentComplete: (isComplete: boolean) => void;
 }
@@ -116,52 +99,72 @@ export const OnlineClassProvider: React.FC<{ children: ReactNode }> = ({ childre
     const [likedClassIds, setLikedClassIds] = useState<ClassId[]>([]);
 
     const { isAuthenticated, currentUser } = useAuth();
-    const loaded = useRef(false);
 
-    // 1. 저장된 수업·영상 불러오기
+    // 서버에 저장된 수업인지 (서버 id 는 숫자예요)
+    const isServerId = (id?: ClassId) => id !== undefined && /^\d+$/.test(String(id)) && String(id).length < 13;
+
+    const normalize = (raw: any): ClassData & { videos?: VideoData[] } => ({
+        id: String(raw.id),
+        title: raw.title ?? '',
+        instructor: raw.instructor ?? '',
+        createdBy: raw.createdBy ?? raw.instructor,
+        phoneNumber: raw.phoneNumber,
+        profileImage: raw.profileImage ?? undefined,
+        introduction: raw.introduction ?? '',
+        description: raw.description ?? '',
+        certificationImage: raw.certificationImage ?? undefined,
+        videos: (raw.videos ?? []).map((v: any) => ({
+            id: String(v.id),
+            videoTitle: v.videoTitle ?? '',
+            classTitle: v.classTitle ?? raw.title ?? '',
+            duration: v.duration ?? '',
+            level: v.level ?? '',
+            type: v.type === 'mvp' ? 'mvp' : 'free',
+            price: v.price ?? undefined,
+            uri: v.uri ?? undefined,
+        })),
+    });
+
+    // 1. 서버에서 수업 목록 불러오기 (켤 때, 로그인/로그아웃할 때)
+    const reloadClasses = useCallback(async () => {
+        try {
+            const res = await api.get('/classes');
+            const list = (res.data as any[]).map(normalize);
+            setClasses(list);
+            // 내 수업의 영상들을 videos 에 넣어 둬요 (내 클래스 화면에서 보여줘요)
+            const mine = list.find((c) => c.phoneNumber && c.phoneNumber === currentUser?.phoneNumber);
+            setVideos(mine?.videos ?? []);
+        } catch (e) {
+            console.warn('온라인 수업을 불러오지 못했어요:', e);
+        }
+    }, [currentUser?.phoneNumber]);
+
     useEffect(() => {
-        (async () => {
-            try {
-                const [c, v] = await Promise.all([AsyncStorage.getItem(CLASSES_KEY), AsyncStorage.getItem(VIDEOS_KEY)]);
-                if (c) setClasses(JSON.parse(c));
-                if (v) setVideos(JSON.parse(v));
-            } catch (e) {
-                console.log('온라인 수업 불러오기 실패:', e);
-            } finally {
-                loaded.current = true;
-            }
-        })();
+        reloadClasses();
+    }, [isAuthenticated, reloadClasses]);
+
+    // 서버에 저장 (새 수업이면 POST, 이미 있는 내 수업이면 PATCH)
+    const saveToServer = useCallback(async (data: ClassData, withVideos?: VideoData[]) => {
+        const body: any = {
+            title: data.title,
+            introduction: data.introduction,
+            description: data.description,
+            certificationImage: data.certificationImage,
+        };
+        if (withVideos) {
+            body.videos = withVideos.map((v) => ({
+                videoTitle: v.videoTitle, duration: v.duration, level: v.level,
+                type: v.type, price: v.price, uri: v.uri,
+            }));
+        }
+        const res = isServerId(data.id)
+            ? await api.patch(`/classes/${data.id}`, body)
+            : await api.post('/classes', body);
+        const saved = normalize(res.data);
+        setClasses((cur) => [saved, ...cur.filter((c) => String(c.id) !== saved.id)]);
+        if (withVideos) setVideos(saved.videos ?? []);
+        return saved;
     }, []);
-
-    // 2. 로그인한 사용자가 처음이면 그 사람 이름으로 '내 수업' 넣기
-    useEffect(() => {
-        const phone = currentUser?.phoneNumber;
-        const name = currentUser?.name;
-        if (!isAuthenticated || !phone || !name) return;
-        (async () => {
-            try {
-                for (let i = 0; i < 20 && !loaded.current; i++) {
-                    await new Promise((r) => setTimeout(r, 50));
-                }
-                if (await AsyncStorage.getItem(SEEDED_KEY(phone))) return;
-                await AsyncStorage.setItem(SEEDED_KEY(phone), '1');
-                setClasses((cur) => [...cur.filter((c) => c.id !== `my-${phone}`), makeMyClass(name, phone, currentUser?.profileImage ?? null)]);
-                setVideos((cur) => (cur.length ? cur : MY_VIDEOS));
-            } catch (e) {
-                console.log('예시 수업 넣기 실패:', e);
-            }
-        })();
-    }, [isAuthenticated, currentUser?.phoneNumber, currentUser?.name]);
-
-    // 3. 바뀔 때마다 저장
-    useEffect(() => {
-        if (!loaded.current) return;
-        AsyncStorage.setItem(CLASSES_KEY, JSON.stringify(classes)).catch(() => {});
-    }, [classes]);
-    useEffect(() => {
-        if (!loaded.current) return;
-        AsyncStorage.setItem(VIDEOS_KEY, JSON.stringify(videos)).catch(() => {});
-    }, [videos]);
 
     // ❤️ [추가] 좋아요 상태 토글 함수
     const toggleLike = useCallback((classId: ClassId) => {
@@ -177,25 +180,28 @@ export const OnlineClassProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, []);
     // ---
 
-    const setClassData = useCallback((data: ClassData) => {
-        // ID가 없으면 Date.now()를 사용하여 고유 ID 생성
-        const classWithId = { ...data, id: data.id || Date.now().toString() };
-        setClasses((prevClasses) => [...prevClasses, classWithId]);
-        setCurrentClassData(classWithId);
-    }, []);
+    // 수업 만들기/수정 화면에서 저장 → 서버에 바로 저장해요
+    const setClassData = useCallback(async (data: ClassData) => {
+        const saved = await saveToServer(data);
+        setCurrentClassData(saved);
+        return saved;
+    }, [saveToServer]);
 
     const addVideo = useCallback((video: VideoData) => {
         setVideos((prevVideos) => [...prevVideos, video]);
     }, []);
 
-    const addClass = useCallback((classData: ClassData) => {
-        setClasses((prevClasses) => [...prevClasses, classData]);
-    }, []);
+    // 결제까지 끝났을 때 → 영상 목록까지 같이 서버에 저장해요
+    const addClass = useCallback(async (classData: ClassData) => {
+        return saveToServer(classData, videos);
+    }, [saveToServer, videos]);
 
-    const deleteClass = useCallback((classId: string) => {
-        setClasses((prevClasses) => prevClasses.filter(cls => cls.id !== classId));
-        if (currentClassData?.id === classId) {
+    const deleteClass = useCallback(async (classId: string) => {
+        if (isServerId(classId)) await api.delete(`/classes/${classId}`);
+        setClasses((prevClasses) => prevClasses.filter(cls => String(cls.id) !== String(classId)));
+        if (String(currentClassData?.id) === String(classId)) {
             setCurrentClassData(null);
+            setVideos([]);
         }
     }, [currentClassData]);
 
@@ -205,9 +211,15 @@ export const OnlineClassProvider: React.FC<{ children: ReactNode }> = ({ childre
         );
     }, []);
 
+    // 영상 삭제 → 그 영상이 서버의 내 수업에 있으면 서버에서도 지워요
     const removeVideo = useCallback((id: string) => {
-        setVideos((prevVideos) => prevVideos.filter((video) => video.id !== id));
-    }, []);
+        const next = videos.filter((video) => video.id !== id);
+        setVideos(next);
+        const owner = classes.find((c: any) => (c.videos ?? []).some((v: VideoData) => v.id === id));
+        if (owner && isServerId(owner.id)) {
+            saveToServer(owner, next).catch((e) => console.warn('영상 삭제 저장 실패:', e));
+        }
+    }, [videos, classes, saveToServer]);
 
     const calculateFees = useCallback((): Fees => {
         const baseUploadFee = 10000;
@@ -255,6 +267,7 @@ export const OnlineClassProvider: React.FC<{ children: ReactNode }> = ({ childre
             deleteClass,
             resetContext,
             setPaymentComplete,
+            reloadClasses,
         }),
         [
             classes,
@@ -278,6 +291,7 @@ export const OnlineClassProvider: React.FC<{ children: ReactNode }> = ({ childre
             deleteClass,
             resetContext,
             setPaymentComplete,
+            reloadClasses,
         ]
     );
 

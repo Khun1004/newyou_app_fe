@@ -1,49 +1,79 @@
 // components/hooks/AppFriend.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import api from '@/components/utils/api';
+import { useAuth } from '@/components/contexts/AuthProvider';
 
-// AppFriend 인터페이스 (타입 정의)
+/**
+ * 기념일에서 고를 수 있는 '내 친구' 목록
+ *  - 생일 화면에 등록한 친구들(서버 /api/friends)을 그대로 가져와요.
+ *  - 로그인하지 않았으면 빈 목록이에요.
+ */
+
 export interface AppFriend {
     id: string;
     nickname: string;
-    phoneNumber: string;
-    profileImage: string; // 'rabbit', 'cat', 'dog' 등 AnimalAvatar에서 사용할 키
+    phoneNumber: string;   // 전화번호 (없으면 빈칸)
+    profileImage: string;  // 동물 아바타 키: 'rabbit', 'cat', 'dog' ...
     isAppUser: boolean;
+    birthdayText?: string; // 예) '🎂 10월 16일'
 }
 
-const MOCK_FRIENDS: AppFriend[] = [
-    { id: 'user-001', nickname: '토끼마을', phoneNumber: '010-1234-5678', profileImage: 'rabbit', isAppUser: true },
-    { id: 'user-002', nickname: '고양이집사', phoneNumber: '010-9876-5432', profileImage: 'cat', isAppUser: true },
-    { id: 'user-003', nickname: '강아지친구', phoneNumber: '010-5555-4444', profileImage: 'dog', isAppUser: true },
-    { id: 'user-004', nickname: '팬더월드', phoneNumber: '010-3333-2222', profileImage: 'panda', isAppUser: true },
-    { id: 'user-005', nickname: '펭귄러버', phoneNumber: '010-1111-0000', profileImage: 'penguin', isAppUser: true },
-    { id: 'user-006', nickname: '여우별', phoneNumber: '010-7777-8888', profileImage: 'fox', isAppUser: true },
-    { id: 'user-007', nickname: '곰돌이', phoneNumber: '010-9999-1111', profileImage: 'bear', isAppUser: true },
-    { id: 'user-008', nickname: '코알라랜드', phoneNumber: '010-2222-3333', profileImage: 'koala', isAppUser: true },
-];
+// 친구마다 항상 같은 동물이 나오도록 id 로 골라요
+const ANIMALS = ['rabbit', 'cat', 'dog', 'panda', 'penguin', 'fox', 'bear', 'koala'];
+const animalOf = (id: string) => {
+    const n = String(id).split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    return ANIMALS[n % ANIMALS.length];
+};
 
-/**
- * 앱 친구 목록을 가져오는 커스텀 훅
- */
+// 서버의 생일 값 ("MM-dd" 또는 {month, day}) → '🎂 10월 16일'
+const birthdayLabel = (raw: any): string | undefined => {
+    if (!raw) return undefined;
+    if (typeof raw === 'string') {
+        const [m, d] = raw.split(/[-/]/).map((x: string) => parseInt(x, 10));
+        if (m && d) return `🎂 ${m}월 ${d}일`;
+        return undefined;
+    }
+    if (raw.month && raw.day) return `🎂 ${raw.month}월 ${raw.day}일`;
+    return undefined;
+};
+
 export const useAppFriends = () => {
+    const { isAuthenticated } = useAuth();
     const [friends, setFriends] = useState<AppFriend[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchFriends = () => {
-            setIsLoading(true);
-            setError(null);
-            setTimeout(() => {
-                setFriends(MOCK_FRIENDS);
-                setIsLoading(false);
-            }, 1000); // 로딩 시뮬레이션
-        };
-        fetchFriends();
-    }, []);
+    const reload = useCallback(async () => {
+        if (!isAuthenticated) {
+            setFriends([]);
+            return;
+        }
+        setIsLoading(true);
+        setError(null);
+        try {
+            const res = await api.get('/friends');
+            const list: AppFriend[] = (res.data as any[]).map((f) => ({
+                id: String(f.id),
+                nickname: f.nickname ?? '',
+                phoneNumber: f.phoneNumber ?? '',
+                profileImage: animalOf(String(f.id)),
+                isAppUser: false,
+                birthdayText: birthdayLabel(f.birthdate ?? (f.birthMonth ? { month: f.birthMonth, day: f.birthDay } : null)),
+            }));
+            list.sort((a, b) => a.nickname.localeCompare(b.nickname));
+            setFriends(list);
+        } catch (e: any) {
+            console.warn('친구 목록을 불러오지 못했어요:', e);
+            setError('친구 목록을 불러오지 못했어요. 서버가 켜져 있는지 확인해 주세요.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isAuthenticated]);
 
-    return {
-        friends,
-        isLoading,
-        error,
-    };
+    // 로그인/로그아웃할 때 다시 불러와요
+    useEffect(() => {
+        reload();
+    }, [reload]);
+
+    return { friends, isLoading, error, reload };
 };

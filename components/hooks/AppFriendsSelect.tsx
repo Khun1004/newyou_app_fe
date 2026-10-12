@@ -1,5 +1,5 @@
 // app/AppFriendsSelect.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView,
 } from 'react-native';
@@ -44,13 +44,13 @@ const FriendItem = ({ friend, onSelect, onInfoPress }: FriendItemProps) => {
                 <AnimalAvatar animal={friend.profileImage} size={64} />
                 <View style={styles.friendInfo}>
                     <Text style={styles.friendNickname}>{friend.nickname}</Text>
-                    <Text style={styles.friendPhone}>{friend.phoneNumber}</Text>
-                    {/* 친구 정보 표시 (앱 사용자 여부) */}
-                    <View style={[styles.badge, friend.isAppUser ? styles.badgeActive : styles.badgeInactive]}>
-                        <Text style={[styles.badgeText, friend.isAppUser ? styles.badgeTextActive : styles.badgeTextInactive]}>
-                            {friend.isAppUser ? '✓ 앱 사용자' : '미가입'}
-                        </Text>
-                    </View>
+                    {/* 생일 (생일 화면에 등록한 정보) */}
+                    <Text style={styles.friendPhone}>{friend.birthdayText || friend.phoneNumber || '생일 정보 없음'}</Text>
+                    {friend.isAppUser && (
+                        <View style={[styles.badge, styles.badgeActive]}>
+                            <Text style={[styles.badgeText, styles.badgeTextActive]}>✓ 앱 사용자</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* [수정] Chevron 아이콘을 TouchableOpacity로 감싸서 별도의 동작을 부여 */}
@@ -67,7 +67,12 @@ export default function AppFriendsSelect() {
     const router = useRouter();
     // 돌아갈 화면 정보와 기념일 ID를 가져옵니다.
     const { returnTo, anniversaryId } = useLocalSearchParams<{ returnTo?: string; anniversaryId?: string }>();
-    const { friends, isLoading, error } = useAppFriendsContext();
+    const { friends, isLoading, error, reload } = useAppFriendsContext();
+
+    // 화면을 열 때마다 최신 친구 목록을 불러와요 (생일 화면에서 방금 추가한 친구도 보이게)
+    useEffect(() => {
+        reload();
+    }, []);
 
     // 친구를 선택하고 AnniversaryEdit 화면으로 돌아가는 함수
     const handleFriendSelect = (friend: AppFriend) => {
@@ -126,7 +131,13 @@ export default function AppFriendsSelect() {
                 <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
                     <Ionicons name="person-add-outline" size={60} color="#ccc" />
-                    <Text style={styles.loadingText}>등록된 친구가 없습니다.</Text>
+                    <Text style={styles.loadingText}>등록된 친구가 없어요.</Text>
+                    <Text style={{ color: '#9ca3af', marginTop: 6, textAlign: 'center' }}>
+                        생일 화면에서 친구를 먼저 추가해 주세요.
+                    </Text>
+                    <TouchableOpacity onPress={() => router.push('/AddFriBirthday')} style={{ marginTop: 16, backgroundColor: '#F06292', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999 }}>
+                        <Text style={{ color: '#fff', fontWeight: '700' }}>친구 추가하러 가기</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         );

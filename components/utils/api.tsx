@@ -1,6 +1,6 @@
-import { BASE_URL } from "@/config";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance } from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@/config';
 
 // 로그인이 만료됐을 때(서버가 토큰을 거절할 때) 호출할 함수. AuthProvider가 등록합니다.
 let sessionExpiredHandler: (() => void) | null = null;
@@ -11,7 +11,7 @@ export const setSessionExpiredHandler = (handler: (() => void) | null) => {
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
   timeout: 10000,
 });
@@ -20,166 +20,170 @@ const api: AxiosInstance = axios.create({
  * 💡 요청 인터셉터: 모든 API 요청 시 JWT 토큰을 헤더에 자동으로 추가합니다.
  */
 api.interceptors.request.use(
-  async (config) => {
-    const token = await AsyncStorage.getItem("userToken");
+    async (config) => {
+      const token = await AsyncStorage.getItem('userToken');
 
-    console.log("========================================");
-    console.log("🔑 [API Request]");
-    console.log("- URL:", `${config.baseURL}${config.url}`);
-    console.log("- Method:", config.method?.toUpperCase());
+      console.log('========================================');
+      console.log('🔑 [API Request]');
+      console.log('- URL:', `${config.baseURL}${config.url}`);
+      console.log('- Method:', config.method?.toUpperCase());
 
-    if (token) {
-      console.log("✅ 토큰 존재");
-      console.log("- 토큰 길이:", token.length);
-      console.log("- 토큰 앞 30자:", token.substring(0, 30) + "...");
-      console.log(
-        "- 토큰 뒤 10자:",
-        "..." + token.substring(token.length - 10),
-      );
-      console.log(
-        "- Bearer 포함:",
-        token.startsWith("Bearer ") ? "예 ⚠️" : "아니오 ✅",
-      );
+      if (token) {
+        console.log('✅ 토큰 존재');
+        console.log('- 토큰 길이:', token.length);
+        console.log('- 토큰 앞 30자:', token.substring(0, 30) + '...');
+        console.log('- 토큰 뒤 10자:', '...' + token.substring(token.length - 10));
+        console.log('- Bearer 포함:', token.startsWith('Bearer ') ? '예 ⚠️' : '아니오 ✅');
 
-      // 🚨 중요: Bearer가 이미 포함되어 있는지 확인
-      const finalToken = token.startsWith("Bearer ")
-        ? token.substring(7).trim()
-        : token;
-      config.headers.Authorization = `Bearer ${finalToken}`;
+        // 🚨 중요: Bearer가 이미 포함되어 있는지 확인
+        const finalToken = token.startsWith('Bearer ') ? token.substring(7).trim() : token;
+        config.headers.Authorization = `Bearer ${finalToken}`;
 
-      console.log("- 최종 헤더:", `Bearer ${finalToken.substring(0, 20)}...`);
-    } else {
-      console.log("❌ 토큰 없음!");
-      console.log("⚠️ 인증이 필요한 요청일 경우 실패할 수 있습니다.");
+        console.log('- 최종 헤더:', `Bearer ${finalToken.substring(0, 20)}...`);
+      } else {
+        console.log('❌ 토큰 없음!');
+        console.log('⚠️ 인증이 필요한 요청일 경우 실패할 수 있습니다.');
+      }
+      console.log('========================================');
+
+      return config;
+    },
+    (error) => {
+      console.warn('========================================');
+      console.warn('❌ [Request Interceptor Error]');
+      console.warn(error);
+      console.warn('========================================');
+      return Promise.reject(error);
     }
-    console.log("========================================");
-
-    return config;
-  },
-  (error) => {
-    console.warn("========================================");
-    console.warn("❌ [Request Interceptor Error]");
-    console.warn(error);
-    console.warn("========================================");
-    return Promise.reject(error);
-  },
 );
+
+// 토큰이 정말 거절되는지 확인 (내 정보 API 로 한 번 더 물어봐요)
+async function isTokenRejected(token: string): Promise<boolean> {
+  try {
+    const clean = token.startsWith('Bearer ') ? token.substring(7).trim() : token;
+    const res = await fetch(`${BASE_URL}/mypage`, { headers: { Authorization: `Bearer ${clean}` } });
+    return res.status === 401 || res.status === 403;
+  } catch {
+    return false; // 네트워크 문제면 로그아웃하지 않아요
+  }
+}
 
 /**
  * 💡 응답 인터셉터: 에러 처리
  */
 api.interceptors.response.use(
-  (response) => {
-    console.log("========================================");
-    console.log("✅ [API Response Success]");
-    console.log("- URL:", response.config.url);
-    console.log("- Status:", response.status);
-    console.log(
-      "- Data Preview:",
-      JSON.stringify(response.data).substring(0, 100),
-    );
-    console.log("========================================");
-    return response;
-  },
-  async (error) => {
-    const status = error.response?.status;
-    const url = error.config?.url;
-    const errorData = error.response?.data;
+    (response) => {
+      console.log('========================================');
+      console.log('✅ [API Response Success]');
+      console.log('- URL:', response.config.url);
+      console.log('- Status:', response.status);
+      console.log('- Data Preview:', JSON.stringify(response.data).substring(0, 100));
+      console.log('========================================');
+      return response;
+    },
+    async (error) => {
+      const status = error.response?.status;
+      const url = error.config?.url;
+      const errorData = error.response?.data;
 
-    console.warn("========================================");
-    console.warn("❌ [API Response Error]");
-    console.warn("- URL:", url);
-    console.warn("- Status:", status);
-    console.warn("- Message:", error.message);
-    console.warn("- Error Data:", errorData);
-    console.warn("========================================");
+      console.warn('========================================');
+      console.warn('❌ [API Response Error]');
+      console.warn('- URL:', url);
+      console.warn('- Status:', status);
+      console.warn('- Message:', error.message);
+      console.warn('- Error Data:', errorData);
+      console.warn('========================================');
 
-    // 401 Unauthorized 처리
-    if (status === 401) {
-      console.warn("🚫 401 Unauthorized");
-      console.warn("- 토큰이 유효하지 않거나 만료되었습니다.");
+      // 401 Unauthorized 처리
+      if (status === 401) {
+        console.warn('🚫 401 Unauthorized');
+        console.warn('- 토큰이 유효하지 않거나 만료되었습니다.');
 
-      const token = await AsyncStorage.getItem("userToken");
-      console.warn("- 현재 저장된 토큰:", token ? "존재" : "없음");
+        const token = await AsyncStorage.getItem('userToken');
+        console.warn('- 현재 저장된 토큰:', token ? '존재' : '없음');
 
-      if (token) {
-        console.warn("- 토큰 앞 30자:", token.substring(0, 30) + "...");
+        if (token) {
+          console.warn('- 토큰 앞 30자:', token.substring(0, 30) + '...');
+        }
+
+        // 토큰 제거 + 로그아웃 처리 (AuthProvider)
+        await AsyncStorage.removeItem('userToken');
+        console.warn('- 토큰 제거 완료');
+        if (token) sessionExpiredHandler?.();
+
+        // 선택사항: 로그인 화면으로 리다이렉트
+        // import { router } from 'expo-router';
+        // router.replace('/login');
       }
 
-      // 토큰 제거 + 로그아웃 처리 (AuthProvider)
-      await AsyncStorage.removeItem("userToken");
-      console.warn("- 토큰 제거 완료");
-      if (token) sessionExpiredHandler?.();
+      // 403 Forbidden 처리
+      if (status === 403) {
+        console.warn('========================================');
+        console.warn('🚫 403 Forbidden - 접근 권한 없음');
+        console.warn('========================================');
 
-      // 선택사항: 로그인 화면으로 리다이렉트
-      // import { router } from 'expo-router';
-      // router.replace('/login');
-    }
+        // 토큰 상세 확인
+        const token = await AsyncStorage.getItem('userToken');
 
-    // 403 Forbidden 처리
-    if (status === 403) {
-      console.warn("========================================");
-      console.warn("🚫 403 Forbidden - 접근 권한 없음");
-      console.warn("========================================");
+        if (!token) {
+          console.warn('❌ 토큰이 저장되어 있지 않습니다!');
+          console.warn('→ 로그인이 필요합니다.');
+        } else {
+          console.warn('⚠️ 토큰은 존재하지만 서버가 거부했습니다.');
+          console.warn('토큰 상세 정보:');
+          console.warn('- 길이:', token.length);
+          console.warn('- 앞 30자:', token.substring(0, 30) + '...');
+          console.warn('- 뒤 10자:', '...' + token.substring(token.length - 10));
+          console.warn('- Bearer 포함:', token.startsWith('Bearer ') ? '예' : '아니오');
+          console.warn('→ 가능한 원인:');
+          console.warn('  1. 토큰이 만료됨');
+          console.warn('  2. 토큰 형식이 잘못됨');
+          console.warn('  3. 서버의 권한 설정 문제');
+          console.warn('  4. 잘못된 사용자 권한');
 
-      // 토큰 상세 확인
-      const token = await AsyncStorage.getItem("userToken");
+          // ⚠️ 403은 '토큰 만료'가 아니어도 나와요.
+          //    (예: 서버에 없는 주소, 서버 안에서 난 에러 → Spring 이 403으로 바꿔서 보내요)
+          //    그래서 바로 로그아웃하지 않고, 내 정보(/mypage)로 토큰이 정말 죽었는지 한 번 더 확인해요.
+          const tokenDead = await isTokenRejected(token);
+          if (tokenDead) {
+            console.warn('- 토큰이 정말 만료됐어요 → 로그아웃');
+            await AsyncStorage.removeItem('userToken');
+            sessionExpiredHandler?.();
+          } else {
+            console.warn('- 토큰은 정상이에요. 이 주소(' + url + ')만 서버에서 막혔어요.');
+            console.warn('  → 백엔드를 재시작했는지, 서버 콘솔에 에러가 있는지 확인하세요.');
+          }
+        }
 
-      if (!token) {
-        console.warn("❌ 토큰이 저장되어 있지 않습니다!");
-        console.warn("→ 로그인이 필요합니다.");
-      } else {
-        console.warn("⚠️ 토큰은 존재하지만 서버가 거부했습니다.");
-        console.warn("토큰 상세 정보:");
-        console.warn("- 길이:", token.length);
-        console.warn("- 앞 30자:", token.substring(0, 30) + "...");
-        console.warn("- 뒤 10자:", "..." + token.substring(token.length - 10));
-        console.warn(
-          "- Bearer 포함:",
-          token.startsWith("Bearer ") ? "예" : "아니오",
-        );
-        console.warn("→ 가능한 원인:");
-        console.warn("  1. 토큰이 만료됨");
-        console.warn("  2. 토큰 형식이 잘못됨");
-        console.warn("  3. 서버의 권한 설정 문제");
-        console.warn("  4. 잘못된 사용자 권한");
+        console.warn('========================================');
 
-        // 토큰 만료로 간주하고 제거 + 로그아웃 처리 (AuthProvider)
-        console.warn("- 토큰 제거 시작...");
-        await AsyncStorage.removeItem("userToken");
-        console.warn("- 토큰 제거 완료");
-        sessionExpiredHandler?.();
+        // 선택사항: 로그인 화면으로 리다이렉트
+        // import { router } from 'expo-router';
+        // router.replace('/login');
       }
 
-      console.warn("========================================");
+      // 500번대 서버 에러
+      if (status && status >= 500) {
+        console.warn('🔥 서버 에러 발생:', status);
+        console.warn('- 서버에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+      }
 
-      // 선택사항: 로그인 화면으로 리다이렉트
-      // import { router } from 'expo-router';
-      // router.replace('/login');
+      // 네트워크 에러
+      if (error.code === 'ECONNABORTED') {
+        console.warn('⏱️ 요청 타임아웃');
+        console.warn('- 서버 응답 시간이 초과되었습니다.');
+      }
+
+      if (!error.response) {
+        console.warn('📡 네트워크 연결 실패');
+        console.warn('- 서버에 도달할 수 없습니다.');
+        console.warn('- 인터넷 연결을 확인해주세요.');
+      }
+
+      console.warn('========================================');
+
+      return Promise.reject(error);
     }
-
-    // 500번대 서버 에러
-    if (status && status >= 500) {
-      console.warn("🔥 서버 에러 발생:", status);
-      console.warn("- 서버에 문제가 있습니다. 잠시 후 다시 시도해주세요.");
-    }
-
-    // 네트워크 에러
-    if (error.code === "ECONNABORTED") {
-      console.warn("⏱️ 요청 타임아웃");
-      console.warn("- 서버 응답 시간이 초과되었습니다.");
-    }
-
-    if (!error.response) {
-      console.warn("📡 네트워크 연결 실패");
-      console.warn("- 서버에 도달할 수 없습니다.");
-      console.warn("- 인터넷 연결을 확인해주세요.");
-    }
-
-    console.warn("========================================");
-
-    return Promise.reject(error);
-  },
 );
 
 export default api;

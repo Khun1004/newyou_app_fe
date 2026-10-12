@@ -36,7 +36,8 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
             || classes[classes.length - 1];
     }, [classes, id, currentUser?.name]);
 
-    const classId = id as string;
+    // 내 게시판 안에서는 id 가 없어서, 보여주는 수업의 id 를 써요
+    const classId = (id as string) || (currentClass?.id ? String(currentClass.id) : '');
 
     const defaultIntro = '안녕하세요! 저는 10년 경력의 개발자로, 실무에서 바로 활용할 수 있는 실전 위주의 강의를 제공합니다. 여러분의 성장을 위해 최선을 다하겠습니다.';
     const defaultDesc = '실무 중심의 체계적인 프로그래밍 교육을 통해 여러분을 전문 개발자로 성장시켜드립니다.';
@@ -150,10 +151,13 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                 {
                     text: '삭제',
                     style: 'destructive',
-                    onPress: () => {
-                        if (classId) {
-                            deleteClass(classId);
-                            router.back();
+                    onPress: async () => {
+                        if (!classId) return;
+                        try {
+                            await deleteClass(classId);
+                            if (!embedded) router.back();
+                        } catch (e: any) {
+                            Alert.alert('오류', e?.response?.data?.message || '삭제하지 못했어요.');
                         }
                     },
                 },

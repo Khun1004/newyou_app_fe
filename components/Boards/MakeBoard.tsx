@@ -90,14 +90,11 @@ const MakeBoard = () => {
                 category: selectedCategory as '교육' | '운동' | '활동',
             };
 
+            // 서버에 저장해요 (글쓴이 이름·사진은 서버가 로그인 정보로 채워요)
             if (isEdit && editingPost) {
-                updatePost(editingPost.id, fields);
+                await updatePost(editingPost.id, fields);
             } else {
-                addPost({
-                    author: currentUser?.name || '익명',
-                    profileImage: currentUser?.profileImage || null,
-                    ...fields,
-                });
+                await addPost(fields);
             }
 
             Alert.alert(
@@ -112,9 +109,10 @@ const MakeBoard = () => {
                     },
                 ]
             );
-        } catch (error) {
+        } catch (error: any) {
             console.error('게시글 등록 오류:', error);
-            Alert.alert('오류', '게시글 등록 중 문제가 발생했습니다.');
+            const msg = error?.response?.data?.message;
+            Alert.alert('오류', msg || '게시글 저장 중 문제가 발생했습니다. 서버가 켜져 있는지 확인해 주세요.');
         } finally {
             setIsLoading(false);
         }

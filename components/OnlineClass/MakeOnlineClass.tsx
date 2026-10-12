@@ -98,7 +98,8 @@ const MakeOnlineClass = () => {
 
             // 1. Save the class data to context
             // setClassData는 아마도 Context의 currentClassData를 설정하는 역할일 것입니다.
-            setClassData(classData);
+            // 서버에 저장해요 (수정이면 기존 수업을 고쳐요)
+            await setClassData(classData);
 
             // 2. Navigate to the main online class screen within the 'board' tab.
             router.replace({
@@ -108,7 +109,8 @@ const MakeOnlineClass = () => {
 
         } catch (error) {
             console.error('클래스 등록 오류:', error);
-            Alert.alert('오류', '클래스 등록 중 문제가 발생했습니다.');
+            const msg = (error as any)?.response?.data?.message;
+            Alert.alert('오류', msg || '클래스 저장 중 문제가 발생했습니다. 서버가 켜져 있는지 확인해 주세요.');
         } finally {
             setIsLoading(false);
         }

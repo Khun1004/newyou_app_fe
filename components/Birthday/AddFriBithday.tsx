@@ -5,10 +5,8 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Dimensions,
     Image,
     Alert,
-    SafeAreaView,
     StatusBar,
     Platform,
     KeyboardAvoidingView,
@@ -21,10 +19,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useFriends } from '@/components/contexts/FriendContext';
-import { BASE_URL } from '@/config'; // ✨ 추가: BASE_URL 임포트
+import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
 
-const { width } = Dimensions.get('window');
+/**
+ * 친구 생일 등록 / 수정
+ *  - 맨 위: 입력하는 대로 바로 바뀌는 '생일 카드' 미리보기
+ *  - 카드 색, 사진, 이름, 생일(월/일), 메모 입력
+ *  - 아래 고정 버튼: 추가하기(수정하기) / 취소 / 삭제
+ */
+
+// 생일 화면과 같은 색
+const COLORS = {
+    background: '#FFFBF5',
+    card: '#FFFFFF',
+    text: '#3F2A1E',
+    subText: '#8A7565',
+    border: '#F3E6DA',
+    pink: '#F06292',
+    button: ['#FFB75E', '#F06292'] as [string, string],
+};
 
 interface Friend {
     id: string;
@@ -35,94 +49,91 @@ interface Friend {
     memo?: string;
 }
 
-const colorPalette = [
-    ['#ec4899', '#8b5cf6'], // Pink-Purple
-    ['#60a5fa', '#06b6d4'], // Blue-Cyan
-    ['#4ade80', '#14b8a6'], // Green-Teal
-    ['#f97316', '#ef4444'], // Orange-Red
-    ['#a855f7', '#d946ef'], // Violet-Fuchsia
+// 카드 색 (두 가지 색 그라데이션)
+const colorPalette: { name: string; colors: string[] }[] = [
+    { name: '로즈', colors: ['#FFB199', '#F06292'] },
+    { name: '민트', colors: ['#A0E7E5', '#4FB3BF'] },
+    { name: '라벤더', colors: ['#C3B1E1', '#8E7CC3'] },
+    { name: '선샤인', colors: ['#FFD580', '#F59E0B'] },
+    { name: '포레스트', colors: ['#9AD0A0', '#4E7D32'] },
+    { name: '스카이', colors: ['#9EC5FF', '#4A7FD4'] },
 ];
 
-// 클라이언트의 getAbsoluteImageUrl 헬퍼 함수
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+// 서버에 저장된 사진 경로 → 전체 주소
 const getAbsoluteImageUrl = (relativePath: string | null | undefined): string | null => {
     if (!relativePath) return null;
-
-    // BASE_URL (예: http://ip:port/api)에서 '/api'를 제거하여 순수 도메인만 사용
+    if (/^(https?:|file:|data:)/.test(relativePath)) return relativePath;
     const cleanBaseUrl = BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '');
-
-    // 상대 경로의 시작 슬래시를 정리합니다.
     const cleanRelativePath = relativePath.replace(/^\/+/g, '');
-
-    // 최종 URL: http://ip:port/uploads/friendprofiles/friend_...jpg
     return `${cleanBaseUrl}/${cleanRelativePath}`;
 };
+
+// 다음 생일까지 남은 날
+const daysUntil = (month: number, day: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let next = new Date(today.getFullYear(), month - 1, day);
+    if (next < today) next = new Date(today.getFullYear() + 1, month - 1, day);
+    return Math.round((next.getTime() - today.getTime()) / 86400000);
+};
+
+const sameColors = (a: string[], b: string[]) => a.join(',') === b.join(',');
 
 const AddFriBirthday: React.FC = () => {
     const { editFriend } = useLocalSearchParams();
     const isEditing = !!editFriend;
     const { addFriend, updateFriend, deleteFriend, uploadFriendImage } = useFriends();
 
-    const initialFriendData = isEditing && typeof editFriend === 'string'
-        ? JSON.parse(editFriend)
-        : null;
+    const initialFriendData = isEditing && typeof editFriend === 'string' ? JSON.parse(editFriend) : null;
 
     const [friendData, setFriendData] = useState({
         nickname: initialFriendData?.nickname || '',
         day: initialFriendData?.birthdate?.day ? String(initialFriendData.birthdate.day) : '',
         month: initialFriendData?.birthdate?.month ? String(initialFriendData.birthdate.month) : '',
-        profileImage: initialFriendData?.profileImage || null as string | null,
-        profileColor: initialFriendData?.profileColor || colorPalette[0],
+        profileImage: (initialFriendData?.profileImage || null) as string | null,
+        profileColor: (initialFriendData?.profileColor?.length >= 2
+            ? initialFriendData.profileColor
+            : colorPalette[0].colors) as string[],
         memo: initialFriendData?.memo || '',
     });
 
     const [nicknameError, setNicknameError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    const [isUploadingImage, setIsUploadingImage] = useState(false); // 💡 이미지 업로드 중 상태
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-    // Animations
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const spinAnim = useRef(new Animated.Value(0)).current;
-
+    // 미리보기 카드가 살짝 튀어나오는 효과
+    const pop = useRef(new Animated.Value(0.95)).current;
     useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
+        Animated.spring(pop, { toValue: 1, friction: 6, tension: 120, useNativeDriver: true }).start();
+    }, [friendData.profileColor]);
 
-    const spin = spinAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-    });
+    // ---------------- 생일 값 확인 ----------------
+    const monthNum = parseInt(friendData.month, 10);
+    const dayNum = parseInt(friendData.day, 10);
+    const monthValid = !friendData.month || (monthNum >= 1 && monthNum <= 12);
+    const dayValid = !friendData.day || (dayNum >= 1 && dayNum <= (monthValid && monthNum ? DAYS_IN_MONTH[monthNum - 1] : 31));
+    const hasBirthday = !!friendData.month && !!friendData.day && monthValid && dayValid;
+    const birthdayError =
+        (friendData.month || friendData.day) && (!monthValid || !dayValid)
+            ? '날짜를 다시 확인해 주세요. (예: 10월 16일)'
+            : (friendData.month && !friendData.day) || (!friendData.month && friendData.day)
+                ? '월과 일을 모두 입력해 주세요.'
+                : '';
+    const dday = hasBirthday ? daysUntil(monthNum, dayNum) : null;
 
-    useEffect(() => {
-        if (isSaving) {
-            Animated.loop(
-                Animated.timing(spinAnim, {
-                    toValue: 1,
-                    duration: 1000,
-                    useNativeDriver: true,
-                })
-            ).start();
-        } else {
-            spinAnim.stopAnimation();
-            spinAnim.setValue(0);
-        }
-    }, [isSaving, spinAnim]);
-
-    // 💡 수정된 이미지 선택 함수
+    // ---------------- 사진 고르기 ----------------
     const pickImage = async () => {
-        // 권한 확인 및 요청
         if (Platform.OS !== 'web') {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('권한 필요', '프로필 이미지를 설정하려면 사진 라이브러리 접근 권한이 필요합니다.');
+                Alert.alert('권한 필요', '프로필 사진을 설정하려면 사진 접근 권한이 필요해요.');
                 return;
             }
         }
 
-        let result = await ImagePicker.launchImageLibraryAsync({
+        const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
             aspect: [1, 1],
@@ -130,86 +141,49 @@ const AddFriBirthday: React.FC = () => {
         });
 
         if (!result.canceled && result.assets[0]) {
-            const localUri = result.assets[0].uri;
-
-            console.log('========================================');
-            console.log('📸 [pickImage] 이미지 선택됨');
-            console.log('- Local URI:', localUri);
-            console.log('- 파일 크기:', result.assets[0].fileSize || '알 수 없음');
-            console.log('- 너비x높이:', result.assets[0].width, 'x', result.assets[0].height);
-            console.log('========================================');
-
-            // 💡 서버에 이미지 업로드
             setIsUploadingImage(true);
             try {
-                console.log('🔄 uploadFriendImage 호출 중...');
-                const uploadedUrl = await uploadFriendImage(localUri);
-
-                console.log('========================================');
-                console.log('📡 uploadFriendImage 결과:');
-                console.log('- 반환된 URL:', uploadedUrl);
-                console.log('========================================');
-
+                const uploadedUrl = await uploadFriendImage(result.assets[0].uri);
                 if (uploadedUrl) {
-                    console.log('✅ 업로드 성공! 상태 업데이트 중...');
-                    setFriendData(prev => ({
-                        ...prev,
-                        profileImage: uploadedUrl
-                    }));
-                    console.log('✅ 상태 업데이트 완료:', uploadedUrl);
-                    Alert.alert('성공', '이미지가 업로드되었습니다.');
+                    setFriendData((prev) => ({ ...prev, profileImage: uploadedUrl }));
                 } else {
-                    console.error('❌ uploadedUrl이 null입니다!');
-                    Alert.alert('오류', '이미지 업로드에 실패했습니다. 콘솔 로그를 확인해주세요.');
+                    Alert.alert('오류', '사진 업로드에 실패했어요.');
                 }
             } catch (error) {
                 console.error('❌ [pickImage] 이미지 업로드 오류:', error);
-                Alert.alert('오류', `이미지 업로드 중 문제가 발생했습니다: ${error}`);
+                Alert.alert('오류', `사진 업로드 중 문제가 생겼어요: ${error}`);
             } finally {
                 setIsUploadingImage(false);
-                console.log('========================================');
-                console.log('🏁 이미지 업로드 프로세스 종료');
-                console.log('========================================');
             }
         }
     };
 
-    const isButtonDisabled = friendData.nickname.trim().length === 0 || !!nicknameError || isSaving || isUploadingImage;
+    const removeImage = () => setFriendData((prev) => ({ ...prev, profileImage: null }));
 
+    const isButtonDisabled =
+        friendData.nickname.trim().length === 0 || !!nicknameError || !!birthdayError || isSaving || isUploadingImage;
+
+    // ---------------- 저장 ----------------
     const handleSubmit = async () => {
-        if (isButtonDisabled) return;
-
-        // 닉네임 유효성 검사
         if (friendData.nickname.trim().length === 0) {
-            setNicknameError('별명은 필수 입력 항목입니다.');
+            setNicknameError('이름(별명)은 꼭 입력해 주세요.');
             return;
-        } else {
-            setNicknameError('');
         }
+        if (isButtonDisabled) return;
 
         const newFriend: Friend = {
             id: isEditing ? initialFriendData.id : Date.now().toString(),
             nickname: friendData.nickname.trim(),
-            birthdate: (friendData.day && friendData.month)
-                ? { day: parseInt(friendData.day, 10), month: parseInt(friendData.month, 10) }
-                : null,
+            birthdate: hasBirthday ? { day: dayNum, month: monthNum } : null,
             profileColor: friendData.profileColor,
-            profileImage: friendData.profileImage, // 💡 서버 URL 또는 null
+            profileImage: friendData.profileImage,
             memo: friendData.memo.trim(),
         };
 
         setIsSaving(true);
         try {
-            let success = false;
-            if (isEditing) {
-                success = await updateFriend(newFriend);
-            } else {
-                success = await addFriend(newFriend);
-            }
-
-            if (success) {
-                router.back();
-            }
+            const success = isEditing ? await updateFriend(newFriend) : await addFriend(newFriend);
+            if (success) router.back();
         } catch (error) {
             console.error('❌ 친구 저장 오류:', error);
         } finally {
@@ -219,514 +193,379 @@ const AddFriBirthday: React.FC = () => {
 
     const handleDelete = () => {
         if (!isEditing || !initialFriendData) return;
-
-        Alert.alert(
-            '친구 삭제',
-            `정말로 친구 "${initialFriendData.nickname}"을(를) 삭제하시겠습니까?`,
-            [
-                { text: '취소', style: 'cancel' },
-                {
-                    text: '삭제',
-                    style: 'destructive',
-                    onPress: async () => {
-                        setIsSaving(true);
-                        try {
-                            const success = await deleteFriend(initialFriendData.id);
-                            if (success) {
-                                router.back();
-                            }
-                        } catch (error) {
-                            console.error('❌ 친구 삭제 오류:', error);
-                        } finally {
-                            setIsSaving(false);
-                        }
-                    },
+        Alert.alert('친구 삭제', `${initialFriendData.nickname}님을 목록에서 삭제할까요?`, [
+            { text: '취소', style: 'cancel' },
+            {
+                text: '삭제',
+                style: 'destructive',
+                onPress: async () => {
+                    setIsSaving(true);
+                    try {
+                        const success = await deleteFriend(initialFriendData.id);
+                        if (success) router.back();
+                    } catch (error) {
+                        console.error('❌ 친구 삭제 오류:', error);
+                    } finally {
+                        setIsSaving(false);
+                    }
                 },
-            ]
-        );
+            },
+        ]);
     };
 
-    const buttonColors = isButtonDisabled ? ['#d1d5db', '#9ca3af'] : friendData.profileColor;
+    const imageUri = getAbsoluteImageUrl(friendData.profileImage);
+    const initial = friendData.nickname.trim() ? friendData.nickname.trim()[0].toUpperCase() : '?';
 
     return (
-        <View style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+        <View style={styles.screen}>
+            <StatusBar barStyle="dark-content" />
+            <AppHeader title={isEditing ? '친구 정보 수정' : '생일 친구 추가'} />
 
-            {/* 공통 헤더 */}
-            <AppHeader title={isEditing ? '친구 정보 수정' : '새 친구 추가'} />
-
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-            >
-                <ScrollView contentContainerStyle={styles.container}>
-
-                    {/* 1. Profile Image/Color Selection */}
-                    <View style={styles.profileSection}>
-                        <Text style={styles.sectionTitle}>프로필 설정</Text>
-
-                        {/* Profile Image Display */}
-                        <TouchableOpacity
-                            style={styles.profileImageContainer}
-                            onPress={pickImage}
-                            disabled={isUploadingImage}
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+                    {/* ---------- 미리보기 카드 ---------- */}
+                    <Animated.View style={{ transform: [{ scale: pop }] }}>
+                        <LinearGradient
+                            colors={friendData.profileColor as any}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.preview}
                         >
-                            <LinearGradient
-                                colors={friendData.profileColor}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.profileGradient}
-                            >
-                                {isUploadingImage ? (
-                                    <ActivityIndicator size="large" color="#ffffff" />
-                                ) : friendData.profileImage ? (
-                                    <Image
-                                        source={{ uri: getAbsoluteImageUrl(friendData.profileImage) }} // ✨ 수정
-                                        style={styles.profileImage}
-                                    />
-                                ) : (
-                                    <Text style={styles.profileText}>
-                                        {friendData.nickname ? friendData.nickname[0] : 'N'}
-                                    </Text>
-                                )}
-                            </LinearGradient>
-                            <View style={styles.imageEditIcon}>
-                                <Ionicons name="camera" size={20} color="#ffffff" />
-                            </View>
-                        </TouchableOpacity>
+                            <Text style={[styles.sparkle, { top: 14, left: 18 }]}>✦</Text>
+                            <Text style={[styles.sparkle, { top: 30, right: 26, fontSize: 12 }]}>✦</Text>
+                            <Text style={[styles.sparkle, { bottom: 18, left: 40, fontSize: 10 }]}>✦</Text>
 
-                        {isUploadingImage && (
-                            <Text style={styles.uploadingText}>이미지 업로드 중...</Text>
-                        )}
-
-                        {/* Color Palette */}
-                        <View style={styles.colorPalette}>
-                            <Text style={styles.colorLabel}>색상 선택:</Text>
-                            <View style={styles.colorOptions}>
-                                {colorPalette.map((colors, index) => (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={styles.colorSwatch}
-                                        onPress={() => {
-                                            setFriendData(prev => ({
-                                                ...prev,
-                                                profileColor: colors,
-                                                // 이미지를 유지하고 색상만 변경
-                                            }))
-                                        }}
-                                    >
-                                        <LinearGradient
-                                            colors={colors}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 1 }}
-                                            style={styles.colorGradient}
-                                        >
-                                            {friendData.profileColor.toString() === colors.toString() && !friendData.profileImage && (
-                                                <Ionicons name="checkmark-circle" size={28} color="#ffffff" />
-                                            )}
+                            <TouchableOpacity onPress={pickImage} disabled={isUploadingImage} activeOpacity={0.85}>
+                                <View style={styles.avatarRing}>
+                                    {isUploadingImage ? (
+                                        <View style={[styles.avatar, styles.avatarFallback]}>
+                                            <ActivityIndicator color="#fff" />
+                                        </View>
+                                    ) : imageUri ? (
+                                        <Image source={{ uri: imageUri }} style={styles.avatar} />
+                                    ) : (
+                                        <LinearGradient colors={friendData.profileColor as any} style={[styles.avatar, styles.avatarFallback]}>
+                                            <Text style={styles.avatarText}>{initial}</Text>
                                         </LinearGradient>
-                                    </TouchableOpacity>
-                                ))}
+                                    )}
+                                    <View style={styles.cameraBadge}>
+                                        <Ionicons name="camera" size={14} color={COLORS.text} />
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+
+                            <Text style={styles.previewName} numberOfLines={1}>
+                                {friendData.nickname.trim() || '친구 이름'}
+                            </Text>
+                            <View style={styles.previewPill}>
+                                <Ionicons name="gift" size={14} color="#FFFFFF" />
+                                <Text style={styles.previewPillText}>
+                                    {hasBirthday
+                                        ? `${monthNum}월 ${dayNum}일 · ${dday === 0 ? '오늘!' : `D-${dday}`}`
+                                        : '생일을 입력해 주세요'}
+                                </Text>
                             </View>
+                            {friendData.profileImage && !isUploadingImage && (
+                                <TouchableOpacity onPress={removeImage} style={styles.removePhoto}>
+                                    <Text style={styles.removePhotoText}>사진 지우기</Text>
+                                </TouchableOpacity>
+                            )}
+                        </LinearGradient>
+                    </Animated.View>
+
+                    {/* ---------- 카드 색 ---------- */}
+                    <View style={styles.section}>
+                        <Text style={styles.label}>카드 색</Text>
+                        <View style={styles.swatches}>
+                            {colorPalette.map((p) => {
+                                const active = sameColors(friendData.profileColor, p.colors);
+                                return (
+                                    <TouchableOpacity
+                                        key={p.name}
+                                        onPress={() => setFriendData((prev) => ({ ...prev, profileColor: p.colors }))}
+                                        style={styles.swatchItem}
+                                        accessibilityLabel={`${p.name} 색`}
+                                    >
+                                        <View style={[styles.swatchRing, active && { borderColor: p.colors[1] }]}>
+                                            <LinearGradient colors={p.colors as any} style={styles.swatch}>
+                                                {active && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
+                                            </LinearGradient>
+                                        </View>
+                                        <Text style={[styles.swatchName, active && { color: COLORS.text, fontWeight: '800' }]}>
+                                            {p.name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
                     </View>
 
-                    {/* 2. Nickname Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>별명 <Text style={{ color: '#ef4444' }}>*</Text></Text>
-                        <TextInput
-                            style={[styles.input, friendData.nickname.length > 0 && styles.inputActive]}
-                            placeholder="친구의 별명을 입력해주세요"
-                            placeholderTextColor="#9ca3af"
-                            value={friendData.nickname}
-                            onChangeText={(text) => {
-                                setFriendData(prev => ({ ...prev, nickname: text }));
-                                if (text.trim().length > 0) {
-                                    setNicknameError('');
-                                }
-                            }}
-                            maxLength={15}
-                        />
-                        {nicknameError ? (
-                            <Text style={styles.errorText}>{nicknameError}</Text>
+                    {/* ---------- 이름 ---------- */}
+                    <View style={styles.section}>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>
+                                이름(별명) <Text style={{ color: COLORS.pink }}>*</Text>
+                            </Text>
+                            <Text style={styles.counter}>{friendData.nickname.length}/15</Text>
+                        </View>
+                        <View style={[styles.inputBox, friendData.nickname.length > 0 && styles.inputBoxActive]}>
+                            <Ionicons name="person-outline" size={18} color={COLORS.subText} />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="예) Moe Htet"
+                                placeholderTextColor="#C4B3A4"
+                                value={friendData.nickname}
+                                onChangeText={(text) => {
+                                    setFriendData((prev) => ({ ...prev, nickname: text }));
+                                    if (text.trim().length > 0) setNicknameError('');
+                                }}
+                                maxLength={15}
+                            />
+                        </View>
+                        {!!nicknameError && <Text style={styles.error}>{nicknameError}</Text>}
+                    </View>
+
+                    {/* ---------- 생일 ---------- */}
+                    <View style={styles.section}>
+                        <Text style={styles.label}>생일</Text>
+                        <View style={styles.dateRow}>
+                            <View style={[styles.dateBox, !!friendData.month && styles.inputBoxActive]}>
+                                <TextInput
+                                    style={styles.dateInput}
+                                    placeholder="10"
+                                    placeholderTextColor="#D9CABD"
+                                    value={friendData.month}
+                                    onChangeText={(t) => setFriendData((prev) => ({ ...prev, month: t.replace(/[^0-9]/g, '').slice(0, 2) }))}
+                                    keyboardType="number-pad"
+                                    maxLength={2}
+                                />
+                                <Text style={styles.dateUnit}>월</Text>
+                            </View>
+                            <View style={[styles.dateBox, !!friendData.day && styles.inputBoxActive]}>
+                                <TextInput
+                                    style={styles.dateInput}
+                                    placeholder="16"
+                                    placeholderTextColor="#D9CABD"
+                                    value={friendData.day}
+                                    onChangeText={(t) => setFriendData((prev) => ({ ...prev, day: t.replace(/[^0-9]/g, '').slice(0, 2) }))}
+                                    keyboardType="number-pad"
+                                    maxLength={2}
+                                />
+                                <Text style={styles.dateUnit}>일</Text>
+                            </View>
+                        </View>
+                        {birthdayError ? (
+                            <Text style={styles.error}>{birthdayError}</Text>
                         ) : (
-                            <Text style={styles.helperText}>{friendData.nickname.length}/15</Text>
+                            <Text style={styles.helper}>생일을 비워 두면 생일 목록의 맨 아래에 보여요.</Text>
                         )}
                     </View>
 
-                    {/* 3. Birthday Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>생일 (선택)</Text>
-                        <View style={styles.dateInputs}>
-                            <TextInput
-                                style={styles.dateInput}
-                                placeholder="월"
-                                placeholderTextColor="#9ca3af"
-                                value={friendData.month}
-                                onChangeText={(text) => setFriendData(prev => ({ ...prev, month: text.replace(/[^0-9]/g, '').slice(0, 2) }))}
-                                keyboardType="numeric"
-                                maxLength={2}
-                            />
-                            <Text style={styles.dateSeparator}>월</Text>
-                            <TextInput
-                                style={styles.dateInput}
-                                placeholder="일"
-                                placeholderTextColor="#9ca3af"
-                                value={friendData.day}
-                                onChangeText={(text) => setFriendData(prev => ({ ...prev, day: text.replace(/[^0-9]/g, '').slice(0, 2) }))}
-                                keyboardType="numeric"
-                                maxLength={2}
-                            />
-                            <Text style={styles.dateSeparator}>일</Text>
+                    {/* ---------- 메모 ---------- */}
+                    <View style={styles.section}>
+                        <View style={styles.labelRow}>
+                            <Text style={styles.label}>메모</Text>
+                            <Text style={styles.counter}>{friendData.memo.length}/100</Text>
                         </View>
-                        <Text style={styles.helperText}>생일을 입력하지 않으면 생일 목록에서 제외됩니다.</Text>
+                        <View style={[styles.memoBox, friendData.memo.length > 0 && styles.inputBoxActive]}>
+                            <TextInput
+                                style={styles.memoInput}
+                                placeholder="좋아하는 것, 선물 아이디어를 적어 두세요 🎁"
+                                placeholderTextColor="#C4B3A4"
+                                value={friendData.memo}
+                                onChangeText={(t) => setFriendData((prev) => ({ ...prev, memo: t }))}
+                                multiline
+                                maxLength={100}
+                            />
+                        </View>
                     </View>
 
-                    {/* 4. Memo Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>메모 (선택)</Text>
-                        <TextInput
-                            style={[styles.input, styles.memoInput, friendData.memo && friendData.memo.length > 0 && styles.inputActive]}
-                            placeholder="친구에 대한 특별한 메모를 남겨보세요."
-                            placeholderTextColor="#9ca3af"
-                            value={friendData.memo}
-                            onChangeText={(text) => setFriendData(prev => ({ ...prev, memo: text }))}
-                            multiline
-                            maxLength={100}
-                        />
-                        <Text style={styles.helperText}>{friendData.memo.length}/100</Text>
-                    </View>
-
-                    <View style={{ height: 50 }} />
+                    {isEditing && (
+                        <TouchableOpacity style={styles.deleteLink} onPress={handleDelete}>
+                            <Ionicons name="trash-outline" size={16} color="#D9534F" />
+                            <Text style={styles.deleteLinkText}>이 친구 삭제하기</Text>
+                        </TouchableOpacity>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Fixed Action Button Footer */}
-            <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
-                <View style={styles.actionSection}>
-                    {/* Primary Button (Add/Save) */}
-                    <TouchableOpacity
-                        style={[styles.primaryButton, isButtonDisabled && styles.primaryButtonDisabled]}
-                        onPress={handleSubmit}
-                        disabled={isButtonDisabled}
-                        activeOpacity={0.8}
+            {/* ---------- 아래 고정 버튼 ---------- */}
+            <View style={styles.footer}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+                    <Text style={styles.cancelText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{ flex: 1 }}
+                    onPress={handleSubmit}
+                    disabled={isSaving || isUploadingImage}
+                    activeOpacity={0.85}
+                >
+                    <LinearGradient
+                        colors={(isButtonDisabled ? ['#E8DCD2', '#D9CABD'] : COLORS.button) as any}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.saveBtn}
                     >
-                        <LinearGradient
-                            colors={buttonColors}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.gradientButton}
-                        >
-                            {isSaving && (
-                                <Animated.View style={[styles.loadingIcon, { transform: [{ rotate: spin }] }]}>
-                                    <Ionicons name="reload" size={20} color="#ffffff" />
-                                </Animated.View>
-                            )}
-                            <Text
-                                style={[
-                                    styles.primaryButtonText,
-                                    isButtonDisabled && styles.primaryButtonTextDisabled,
-                                ]}
-                            >
-                                {isEditing ? '정보 수정하기' : '친구 추가하기'}
-                            </Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    {/* Secondary Buttons (Delete/Cancel) */}
-                    <View style={styles.secondaryButtons}>
-                        {isEditing && (
-                            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                                <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                                <Text style={styles.deleteButtonText}>친구 삭제</Text>
-                            </TouchableOpacity>
+                        {isSaving ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <>
+                                <Ionicons name={isEditing ? 'checkmark' : 'add'} size={20} color="#FFFFFF" />
+                                <Text style={styles.saveText}>{isEditing ? '수정 완료' : '친구 추가하기'}</Text>
+                            </>
                         )}
-                        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-                            <Text style={styles.cancelButtonText}>취소</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Animated.View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
 
+const shadow = {
+    shadowColor: '#C9A68A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 4,
+};
+
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    header: {
-        flexDirection: 'row',
+    screen: { flex: 1, backgroundColor: COLORS.background },
+    scroll: { padding: 20, paddingBottom: 140 },
+
+    // 미리보기 카드
+    preview: {
+        borderRadius: 28,
+        paddingVertical: 26,
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        backgroundColor: '#ffffff',
+        ...shadow,
     },
-    backButton: {
-        position: 'absolute',
-        left: 16,
+    sparkle: { position: 'absolute', color: '#FFFFFFB3', fontSize: 16 },
+    avatarRing: {
         padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    container: {
-        padding: 24,
-        paddingBottom: 150,
-        minHeight: Dimensions.get('window').height - 50,
-    },
-    profileSection: {
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#4b5563',
-        marginBottom: 16,
-        alignSelf: 'flex-start',
-    },
-    profileImageContainer: {
-        width: 120,
-        height: 120,
         borderRadius: 60,
-        marginBottom: 12,
-        position: 'relative',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
+        backgroundColor: '#FFFFFF',
     },
-    profileGradient: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    profileImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 60,
-    },
-    profileText: {
-        fontSize: 48,
-        fontWeight: 'bold',
-        color: '#ffffff',
-    },
-    imageEditIcon: {
+    avatar: { width: 96, height: 96, borderRadius: 48 },
+    avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 40, fontWeight: '900', color: '#FFFFFF' },
+    cameraBadge: {
         position: 'absolute',
         right: 0,
-        bottom: 0,
-        backgroundColor: '#1f2937',
+        bottom: 2,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: COLORS.border,
+    },
+    previewName: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', marginTop: 12, maxWidth: '80%' },
+    previewPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginTop: 8,
+        backgroundColor: '#FFFFFF33',
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 999,
+    },
+    previewPillText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+    removePhoto: { marginTop: 10 },
+    removePhotoText: { color: '#FFFFFFD9', fontSize: 12, fontWeight: '700', textDecorationLine: 'underline' },
+
+    // 섹션
+    section: { marginTop: 24 },
+    labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    label: { fontSize: 15, fontWeight: '800', color: COLORS.text, marginBottom: 10 },
+    counter: { fontSize: 12, color: COLORS.subText, marginBottom: 10 },
+    helper: { fontSize: 12, color: COLORS.subText, marginTop: 8 },
+    error: { fontSize: 13, color: '#D9534F', marginTop: 8, fontWeight: '600' },
+
+    // 색
+    swatches: { flexDirection: 'row', justifyContent: 'space-between' },
+    swatchItem: { alignItems: 'center', width: 52 },
+    swatchRing: { padding: 3, borderRadius: 26, borderWidth: 2, borderColor: 'transparent' },
+    swatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    swatchName: { fontSize: 11, color: COLORS.subText, marginTop: 4, fontWeight: '600' },
+
+    // 입력
+    inputBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: COLORS.card,
         borderRadius: 16,
-        width: 32,
-        height: 32,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 3,
-        borderColor: '#ffffff',
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        paddingHorizontal: 14,
+        height: 52,
     },
-    uploadingText: {
-        fontSize: 14,
-        color: '#6b7280',
-        marginBottom: 8,
-        fontWeight: '500',
-    },
-    colorPalette: {
-        width: '100%',
-    },
-    colorLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#6b7280',
-        marginBottom: 8,
-    },
-    colorOptions: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 12,
-    },
-    colorSwatch: {
+    inputBoxActive: { borderColor: '#F7A8C2' },
+    input: { flex: 1, fontSize: 16, color: COLORS.text, fontWeight: '600' },
+    dateRow: { flexDirection: 'row', gap: 12 },
+    dateBox: {
         flex: 1,
-        aspectRatio: 1,
-        borderRadius: 12,
-        overflow: 'hidden',
-        borderWidth: 3,
-        borderColor: 'transparent',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    colorGradient: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 8,
-    },
-    inputGroup: {
-        marginBottom: 24,
-        gap: 8,
-    },
-    inputLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
-    },
-    input: {
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#1f2937',
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    inputActive: {
-        borderColor: '#6366f1',
-        shadowColor: '#6366f1',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    memoInput: {
-        height: 100,
-        textAlignVertical: 'top',
-        paddingTop: 14,
-    },
-    dateInputs: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
+        justifyContent: 'center',
+        backgroundColor: COLORS.card,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        height: 64,
     },
-    dateInput: {
-        flex: 1,
-        backgroundColor: '#ffffff',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#1f2937',
-        textAlign: 'center',
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
+    dateInput: { fontSize: 26, fontWeight: '900', color: COLORS.text, width: 56, textAlign: 'center', padding: 0 },
+    dateUnit: { fontSize: 16, fontWeight: '700', color: COLORS.subText, marginLeft: 6 },
+    memoBox: {
+        backgroundColor: '#FFF9E8',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#F5E6B8',
+        padding: 14,
+        minHeight: 110,
     },
-    dateSeparator: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#4b5563',
-    },
-    helperText: {
-        fontSize: 12,
-        color: '#9ca3af',
-        textAlign: 'right',
-    },
-    errorText: {
-        fontSize: 14,
-        color: '#ef4444',
-        fontWeight: '500',
-        alignSelf: 'flex-start',
-    },
+    memoInput: { fontSize: 15, color: COLORS.text, lineHeight: 22, textAlignVertical: 'top', minHeight: 80 },
+
+    deleteLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 28 },
+    deleteLinkText: { color: '#D9534F', fontSize: 14, fontWeight: '700' },
+
+    // 아래 버튼
     footer: {
         position: 'absolute',
-        bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#ffffff',
-        paddingHorizontal: 24,
-        paddingTop: 16,
-        paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+        bottom: 0,
+        flexDirection: 'row',
+        gap: 10,
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 18,
+        backgroundColor: '#FFFFFFF2',
         borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -5 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 10,
+        borderTopColor: COLORS.border,
     },
-    actionSection: {
-        gap: 12,
-    },
-    primaryButton: {
-        height: 56,
-        borderRadius: 16,
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 6,
-        overflow: 'hidden',
-    },
-    primaryButtonDisabled: {
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    gradientButton: {
-        height: '100%',
-        flexDirection: 'row',
-        justifyContent: 'center',
+    cancelBtn: {
+        width: 90,
+        height: 54,
+        borderRadius: 18,
+        backgroundColor: '#F5EFE9',
         alignItems: 'center',
-        gap: 8,
+        justifyContent: 'center',
     },
-    loadingIcon: {
-        marginRight: 4,
-    },
-    primaryButtonText: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    primaryButtonTextDisabled: {
-        color: '#f9fafb',
-    },
-    secondaryButtons: {
-        gap: 12,
-    },
-    deleteButton: {
+    cancelText: { fontSize: 16, fontWeight: '700', color: COLORS.subText },
+    saveBtn: {
+        height: 54,
+        borderRadius: 18,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 50,
-        borderRadius: 16,
-        backgroundColor: '#fef2f2',
-        borderWidth: 2,
-        borderColor: '#fecaca',
-        gap: 8,
+        gap: 6,
     },
-    deleteButtonText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#ef4444',
-    },
-    cancelButton: {
-        height: 50,
-        borderRadius: 16,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#e5e7eb',
-    },
-    cancelButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#4b5563',
-    }
+    saveText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
 });
 
 export default AddFriBirthday;

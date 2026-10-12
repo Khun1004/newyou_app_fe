@@ -48,7 +48,7 @@ const MyBoard = () => {
     const categories = ['전체', '교육', '운동', '활동'];
 
     // 현재 사용자가 작성한 게시글만 필터링
-    const myPosts = posts.filter(post => post.author === currentUser?.name);
+    const myPosts = posts.filter(post => post.authorPhone === currentUser?.phoneNumber);
 
     // 현재 사용자가 생성한 온라인 수업만 필터링
     const myClasses = classes.filter(classItem => classItem.createdBy === currentUser?.name);
@@ -124,9 +124,11 @@ const MyBoard = () => {
                 {
                     text: '삭제',
                     style: 'destructive',
-                    onPress: () => {
-                        if (deletePost) {
-                            deletePost(postId);
+                    onPress: async () => {
+                        try {
+                            await deletePost(postId);
+                        } catch (e: any) {
+                            Alert.alert('오류', e?.response?.data?.message || '삭제하지 못했어요.');
                         }
                     }
                 },
@@ -265,7 +267,7 @@ const MyBoard = () => {
         }
 
         return (
-            <ScrollView style={styles.postsScrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.postsScrollView} contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
                 {filteredPosts.length === 0 ? (
                     <View style={styles.noResultsContainer}>
                         <Text style={styles.noResultsText}>검색 결과가 없습니다</Text>
@@ -356,11 +358,41 @@ const MyBoard = () => {
             <View style={styles.contentContainer}>
                 {renderTabContent()}
             </View>
+            {/* 글쓰기 버튼 (게시판 탭, 글이 있을 때) */}
+            {activeTab === 'board' && myPosts.length > 0 && (
+                <TouchableOpacity
+                    style={styles.writeFab}
+                    onPress={() => router.push('/AgreementMakeBoard')}
+                    activeOpacity={0.85}
+                    accessibilityLabel="게시글 작성하기"
+                >
+                    <Ionicons name="create-outline" size={22} color="#fff" />
+                    <Text style={styles.writeFabText}>글쓰기</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    writeFab: {
+        position: 'absolute',
+        right: 20,
+        bottom: 34,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#4E7D32',
+        paddingHorizontal: 18,
+        height: 50,
+        borderRadius: 25,
+        shadowColor: '#3B5A24',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    writeFabText: { color: '#fff', fontSize: 15, fontWeight: '800' },
     container: { flex: 1, backgroundColor: '#FBFAF4' },
     header: {
         flexDirection: 'row',

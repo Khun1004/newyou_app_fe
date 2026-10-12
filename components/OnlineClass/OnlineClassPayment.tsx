@@ -102,7 +102,7 @@ const OnlineClassPayment = () => {
                 },
             };
 
-            addClass(finalClassData);
+            await addClass(finalClassData);
             setPaymentComplete(true);
 
             // ⭐ [핵심 수정] 결제 완료 후 현재 작업 중이던 클래스 데이터를 초기화합니다.

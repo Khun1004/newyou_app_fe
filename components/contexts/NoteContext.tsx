@@ -1,8 +1,8 @@
-import { useAuth } from "@/components/contexts/AuthProvider";
-import { NOTES_URL } from "@/config";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, ReactNode, useEffect, useState } from "react";
-import { Alert } from "react-native";
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NOTES_URL } from '@/config';
+import { Alert } from 'react-native';
+import { useAuth } from '@/components/contexts/AuthProvider';
 
 // 서버에서 받은 Note 객체 타입
 interface Note {
@@ -18,32 +18,19 @@ interface Note {
 interface NoteContextType {
   notes: Note[];
   loadNotes: () => Promise<void>;
-  addNote: (
-    title: string,
-    content: string,
-    category: string,
-    design: string,
-  ) => Promise<void>;
+  addNote: (title: string, content: string, category: string, design: string) => Promise<void>;
   deleteNote: (id: number) => Promise<void>;
-  updateNote: (
-    id: number,
-    newTitle: string,
-    newContent: string,
-    newCategory: string,
-    newDesign: string,
-  ) => Promise<void>;
+  updateNote: (id: number, newTitle: string, newContent: string, newCategory: string, newDesign: string) => Promise<void>;
 }
 
-export const NoteContext = createContext<NoteContextType | undefined>(
-  undefined,
-);
+export const NoteContext = createContext<NoteContextType | undefined>(undefined);
 
 interface NoteProviderProps {
   children: ReactNode;
 }
 
 const getAuthToken = async (): Promise<string | null> => {
-  return AsyncStorage.getItem("userToken");
+  return AsyncStorage.getItem('userToken');
 };
 
 export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
@@ -63,25 +50,25 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
   const loadNotes = async () => {
     const token = await getAuthToken();
     if (!token) {
-      console.error("인증 토큰이 없습니다. 로그인 상태를 확인하세요.");
+      console.log("노트: 로그인 전이라 불러오지 않아요.");
       return;
     }
 
     try {
       const response = await fetch(NOTES_URL, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
         const data: Note[] = await response.json();
         // design 필드가 없는 노트는 기본 디자인 적용
-        const notesWithDesign = data.map((note) => ({
+        const notesWithDesign = data.map(note => ({
           ...note,
-          design: note.design || "ribbon_pink",
+          design: note.design || 'ribbon_pink'
         }));
         setNotes(notesWithDesign);
         console.log("노트 목록 로드 성공:", notesWithDesign.length);
@@ -94,29 +81,24 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
         Alert.alert("오류", "노트 목록을 불러오는 데 실패했습니다.");
       }
     } catch (e) {
-      console.error("노트 로드 중 네트워크 오류:", e);
+      console.error('노트 로드 중 네트워크 오류:', e);
       Alert.alert("오류", "서버와 통신할 수 없습니다. IP 설정을 확인하세요.");
     }
   };
 
   // 2. 새 노트 추가 (CREATE)
-  const addNote = async (
-    title: string,
-    content: string,
-    category: string,
-    design: string,
-  ) => {
+  const addNote = async (title: string, content: string, category: string, design: string) => {
     const token = await getAuthToken();
     if (!token) return;
 
-    console.log("노트 추가 요청:", { title, content, category, design });
+    console.log('노트 추가 요청:', { title, content, category, design });
 
     try {
       const response = await fetch(NOTES_URL, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ title, content, category, design }),
       });
@@ -129,7 +111,7 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
         // design 필드가 없으면 요청한 design 사용
         const noteWithDesign = {
           ...newNote,
-          design: newNote.design || design,
+          design: newNote.design || design
         };
 
         await loadNotes(); // 전체 목록 다시 로드
@@ -138,46 +120,29 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
         console.error("노트 추가 실패:", response.status);
         const errorBody = await response.text();
         console.error("에러 상세:", errorBody);
-        Alert.alert("오류", `노트 추가 실패: ${errorBody}`);
+        Alert.alert('오류', `노트 추가 실패: ${errorBody}`);
       }
     } catch (e) {
-      console.error("노트 추가 중 네트워크 오류:", e);
-      Alert.alert("오류", "노트 추가 중 서버 오류 발생.");
+      console.error('노트 추가 중 네트워크 오류:', e);
+      Alert.alert('오류', "노트 추가 중 서버 오류 발생.");
     }
   };
 
   // 3. 노트 수정 (UPDATE)
-  const updateNote = async (
-    id: number,
-    newTitle: string,
-    newContent: string,
-    newCategory: string,
-    newDesign: string,
-  ) => {
+  const updateNote = async (id: number, newTitle: string, newContent: string, newCategory: string, newDesign: string) => {
     const token = await getAuthToken();
     if (!token) return;
 
-    console.log("노트 수정 요청:", {
-      id,
-      newTitle,
-      newContent,
-      newCategory,
-      newDesign,
-    });
+    console.log('노트 수정 요청:', { id, newTitle, newContent, newCategory, newDesign });
 
     try {
       const response = await fetch(`${NOTES_URL}/${id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: newTitle,
-          content: newContent,
-          category: newCategory,
-          design: newDesign,
-        }),
+        body: JSON.stringify({ title: newTitle, content: newContent, category: newCategory, design: newDesign }),
       });
 
       if (response.ok) {
@@ -188,16 +153,16 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
         await loadNotes();
         console.log("노트 수정 성공:", id);
       } else if (response.status === 404) {
-        Alert.alert("오류", "노트를 찾을 수 없거나 수정 권한이 없습니다.");
+        Alert.alert('오류', '노트를 찾을 수 없거나 수정 권한이 없습니다.');
       } else {
         console.error("노트 수정 실패:", response.status);
         const errorBody = await response.text();
         console.error("에러 상세:", errorBody);
-        Alert.alert("오류", "노트 수정에 실패했습니다.");
+        Alert.alert('오류', "노트 수정에 실패했습니다.");
       }
     } catch (e) {
-      console.error("노트 수정 중 네트워크 오류:", e);
-      Alert.alert("오류", "노트 수정 중 서버 오류 발생.");
+      console.error('노트 수정 중 네트워크 오류:', e);
+      Alert.alert('오류', "노트 수정 중 서버 오류 발생.");
     }
   };
 
@@ -208,24 +173,24 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
 
     try {
       const response = await fetch(`${NOTES_URL}/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 
       if (response.status === 204) {
-        setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
         console.log("노트 삭제 성공:", id);
       } else if (response.status === 404) {
-        Alert.alert("오류", "노트를 찾을 수 없거나 삭제 권한이 없습니다.");
+        Alert.alert('오류', '노트를 찾을 수 없거나 삭제 권한이 없습니다.');
       } else {
         console.error("노트 삭제 실패:", response.status);
-        Alert.alert("오류", "노트 삭제에 실패했습니다.");
+        Alert.alert('오류', "노트 삭제에 실패했습니다.");
       }
     } catch (e) {
-      console.error("노트 삭제 중 네트워크 오류:", e);
-      Alert.alert("오류", "노트 삭제 중 서버 오류 발생.");
+      console.error('노트 삭제 중 네트워크 오류:', e);
+      Alert.alert('오류', "노트 삭제 중 서버 오류 발생.");
     }
   };
 
@@ -238,6 +203,8 @@ export const NoteProvider: React.FC<NoteProviderProps> = ({ children }) => {
   };
 
   return (
-    <NoteContext.Provider value={contextValue}>{children}</NoteContext.Provider>
+      <NoteContext.Provider value={contextValue}>
+        {children}
+      </NoteContext.Provider>
   );
 };

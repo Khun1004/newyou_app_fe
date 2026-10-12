@@ -1,9 +1,10 @@
 // components/contexts/AnniversaryContext.tsx
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/components/contexts/AuthProvider';
 
-const SETTINGS_KEY = '@anniversary_settings';
-const ANNIVERSARIES_KEY = '@anniversaries';
+// 기념일은 계정별로 따로 저장해요. (예: @anniversaries_01011112222)
+// → 다른 계정이나 예전에 테스트한 기념일이 내 화면에 보이지 않아요.
 
 type RelationshipType = 'married' | 'relationship' | 'friendship';
 
@@ -63,14 +64,23 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
     const [settings, setSettings] = useState<AnniversarySettings>(defaultSettings);
     const [anniversaries, setAnniversaries] = useState<Anniversary[]>([]);
 
-    const loadSettings = async () => {
+    // 지금 로그인한 계정 (로그인 안 했으면 guest)
+    const { isAuthenticated, currentUser } = useAuth();
+    const owner = isAuthenticated && currentUser?.phoneNumber ? currentUser.phoneNumber : 'guest';
+    const SETTINGS_KEY = `@anniversary_settings_${owner}`;
+    const ANNIVERSARIES_KEY = `@anniversaries_${owner}`;
+
+    // ⚠️ useCallback 으로 고정해요. (화면이 이 함수를 useEffect/useFocusEffect 에 넣어서,
+    //    매번 새 함수가 되면 '불러오기 → 다시 그리기 → 또 불러오기'가 무한 반복돼 화면이 흔들려요)
+    const loadSettings = useCallback(async () => {
         try {
             const saved = await AsyncStorage.getItem(SETTINGS_KEY);
-            if (saved) setSettings(prev => ({ ...prev, ...JSON.parse(saved) }));
+            // 저장된 게 없으면 기본값으로 (이전 계정의 설정이 남지 않게)
+            setSettings(saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings);
         } catch (e) { console.error(e); }
-    };
+    }, [SETTINGS_KEY]);
 
-    const loadAnniversaries = async () => {
+    const loadAnniversaries = useCallback(async () => {
         try {
             const saved = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
             if (saved) {
@@ -82,7 +92,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
             console.error(e);
             setAnniversaries([]);
         }
-    };
+    }, [ANNIVERSARIES_KEY]);
 
     const updateSettings = async (newSettings: Partial<AnniversarySettings>) => {
         const newAppState = { ...settings, ...newSettings };
@@ -280,10 +290,16 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
 
+    // 계정이 바뀔 때마다(로그인/로그아웃) 그 계정의 기념일을 다시 불러와요
     useEffect(() => {
+        if (owner === 'guest') {
+            setSettings(defaultSettings);
+            setAnniversaries([]);
+            return;
+        }
         loadSettings();
         loadAnniversaries();
-    }, []);
+    }, [owner]);
 
     return (
         <AnniversaryContext.Provider value={{

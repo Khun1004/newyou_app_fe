@@ -146,14 +146,14 @@ const styles = StyleSheet.create({
         height: 120,
         borderRadius: 60,
         borderWidth: 2,
-        borderColor: '#000',
+        borderColor: '#4E7D32',
     },
     defaultProfileImage: {
         width: 120,
         height: 120,
         borderRadius: 60,
         borderWidth: 2,
-        borderColor: '#000',
+        borderColor: '#4E7D32',
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#EEF0E4',
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 50,
         borderWidth: 1,
-        borderColor: '#000',
+        borderColor: '#DADDCB',
         borderRadius: 8,
         paddingHorizontal: 15,
         fontSize: 16,
@@ -196,10 +196,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginHorizontal: 5,
         borderWidth: 1,
-        borderColor: '#000',
+        borderColor: '#4E7D32',
     },
     buttonActive: {
-        backgroundColor: '#000',
+        backgroundColor: '#4E7D32',
     },
     buttonInactive: {
         backgroundColor: '#EEF0E4',
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     cancelButtonText: {
-        color: '#000',
+        color: '#4E7D32',
     },
 });
 

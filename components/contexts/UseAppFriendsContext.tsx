@@ -8,6 +8,7 @@ interface AppFriendsContextType {
     friends: AppFriend[];
     isLoading: boolean;
     error: string | null;
+    reload: () => Promise<void>;  // 친구 목록 다시 불러오기
 }
 
 const AppFriendsContext = createContext<AppFriendsContextType | undefined>(undefined);
@@ -27,12 +28,13 @@ interface AppFriendsProviderProps {
 }
 
 export const AppFriendsProvider: React.FC<AppFriendsProviderProps> = ({ children }) => {
-    const { friends, isLoading, error } = useAppFriends();
+    const { friends, isLoading, error, reload } = useAppFriends();
 
     const contextValue: AppFriendsContextType = {
         friends,
         isLoading,
         error,
+        reload,
     };
 
     return (

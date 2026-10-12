@@ -1,374 +1,389 @@
-// Plan.tsx
+// Plan.tsx — 계획 달력
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { usePlans, Plan } from '@/components/Plan/PlanContext';
+import AppHeader from '@/components/AppHeader';
+import { useRequireLogin } from '@/components/RequireLogin';
+import { useAuth } from '@/components/contexts/AuthProvider';
+import { THEME } from '@/constants/theme';
 
-import AppHeader from "@/components/AppHeader";
-import { Plan, usePlans } from "@/components/Plan/PlanContext";
-import { useRequireLogin } from "@/components/RequireLogin";
-import { useAuth } from "@/components/contexts/AuthProvider";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import {
-  Dimensions,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+/**
+ * 계획 달력
+ *  - 위: 큰 달력 카드 (오늘은 초록 동그라미, 고른 날은 테두리, 계획 있는 날은 색 점)
+ *  - 아래: 고른 날의 계획 목록 + "이 날 계획 추가" 버튼
+ *  - 날짜를 누르면 그날 계획이 아래에 보여요. 계획을 누르면 수정 화면으로 가요.
+ */
 
-const { width } = Dimensions.get("window");
-const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+const SUN = '#E0605A';
+const SAT = '#4A7FD4';
 
-// Date 객체를 YYYY-MM-DD 문자열로 변환하는 헬퍼 함수
-const formatDateToYYYYMMDD = (date: Date): string => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
+const toKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-// 달력 날짜 타입 정의
-interface CalendarDay {
-  day: number | null;
-  isCurrentMonth: boolean;
-  isWeekend: boolean;
-  isToday: boolean;
+// 한 달 달력 (6주 x 7일, 앞뒤 달 날짜는 null)
+function buildMonth(year: number, month: number): (Date | null)[][] {
+  const first = new Date(year, month, 1).getDay();
+  const days = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < first; i++) cells.push(null);
+  for (let d = 1; d <= days; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (Date | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
 }
-
-// 해당 월의 달력 데이터를 동적으로 생성하는 함수 (오류 수정됨!)
-const getCalendarForMonth = (date: Date): CalendarDay[][] => {
-  // ⭐⭐⭐ 이전 오류 수정 부분 ⭐⭐⭐
-  const year = date.getFullYear(); // date 객체를 덮어쓰지 않고 year만 가져옵니다.
-  const month = date.getMonth();
-  // ⭐⭐⭐ 이전 오류 수정 부분 끝 ⭐⭐⭐
-
-  const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-  const todayDay = today.getDate();
-
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const startDayOfWeek = firstDayOfMonth.getDay();
-  const daysInMonth = lastDayOfMonth.getDate();
-
-  const calendar: CalendarDay[][] = [];
-  let days: CalendarDay[] = [];
-
-  for (let i = 0; i < startDayOfWeek; i++) {
-    days.push({
-      day: null,
-      isCurrentMonth: false,
-      isWeekend: false,
-      isToday: false,
-    });
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const isToday =
-      year === todayYear && month === todayMonth && day === todayDay;
-
-    days.push({ day, isCurrentMonth: true, isWeekend, isToday });
-
-    if (days.length === 7) {
-      calendar.push(days);
-      days = [];
-    }
-  }
-
-  if (days.length > 0) {
-    while (days.length < 7) {
-      days.push({
-        day: null,
-        isCurrentMonth: false,
-        isWeekend: false,
-        isToday: false,
-      });
-    }
-    calendar.push(days);
-  }
-
-  return calendar;
-};
 
 const PlanScreen = () => {
   const router = useRouter();
   const { plans } = usePlans();
   const { isAuthenticated } = useAuth();
   const requireLogin = useRequireLogin();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // 해당 날짜에 대한 계획을 가져오는 함수 (기존 코드와 동일)
-  const getPlansForDay = (
-    day: number | null,
-    month: number,
-    year: number,
-  ): Plan[] => {
-    if (day === null) return [];
-    // Note: use 'date' field if your PlanContext uses 'date' for YYYY-MM-DD
-    // Based on the previous context, I'll assume planDate is the correct field name for the date string.
-    const dateString = formatDateToYYYYMMDD(new Date(year, month, day)); // YYYY-MM-DD
-    return plans.filter((plan) => {
-      // PlanContext.tsx에서 date 또는 planDate 필드를 사용하는지에 따라 수정해야 합니다.
-      // 가장 최근의 PlanContext.tsx snippet을 기반으로 'date' 대신 'planDate'를 사용한다고 가정합니다.
-      // 만약 서버에서 받은 필드 이름이 'date'라면 plan.date === dateString으로 변경하세요.
-      return (plan as any).planDate === dateString;
+  const today = new Date();
+  const todayKey = toKey(today);
+  const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selected, setSelected] = useState(todayKey);
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const weeks = useMemo(() => buildMonth(year, month), [year, month]);
+
+  // 날짜별 계획 묶음
+  const byDate = useMemo(() => {
+    const map: Record<string, Plan[]> = {};
+    (isAuthenticated ? plans : []).forEach((p: any) => {
+      if (!p.planDate) return;
+      (map[p.planDate] ||= []).push(p);
     });
-  };
+    return map;
+  }, [plans, isAuthenticated]);
 
-  const handleMonthChange = (direction: "prev" | "next") => {
-    setCurrentMonth((prev) => {
-      const newDate = new Date(
-        prev.getFullYear(),
-        prev.getMonth() + (direction === "next" ? 1 : -1),
-        1,
-      );
-      return newDate;
-    });
-  };
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const monthCount = Object.entries(byDate)
+      .filter(([k]) => k.startsWith(monthPrefix))
+      .reduce((sum, [, list]) => sum + list.length, 0);
 
-  // 1. 빈 날짜를 클릭했을 때 실행되는 함수 (새 계획 생성)
-  const handleDayPress = (day: number, month: number, year: number) => {
-    // 로그인하지 않았으면 "로그인이 필요해요" 안내창을 띄워요.
-    if (!requireLogin("계획 등록")) return;
-    const dateString = formatDateToYYYYMMDD(new Date(year, month, day));
-    // MakePlan 화면으로 이동하며, 해당 날짜(date)를 파라미터로 넘깁니다.
-    router.push({
-      pathname: "/MakePlan",
-      params: { date: dateString },
-    });
-  };
-
-  // 2. 기존 이벤트를 클릭했을 때 실행되는 함수 (계획 수정)
-  const handleEventPress = (plan: Plan) => {
-    // 계획의 ID를 파라미터로 넘겨서 MakePlan에서 해당 계획을 불러오도록 합니다.
-    router.push({
-      pathname: "/MakePlan",
-      params: { id: plan.id },
-    });
-  };
-
-  const calendarData = useMemo(
-    () => getCalendarForMonth(currentMonth),
-    [currentMonth],
+  // 다가오는 계획 (오늘 포함, 가장 가까운 것)
+  const upcoming = useMemo(
+      () =>
+          Object.keys(byDate)
+              .filter((k) => k >= todayKey)
+              .sort()
+              .slice(0, 1)
+              .map((k) => ({ key: k, plan: byDate[k][0] }))[0],
+      [byDate, todayKey]
   );
-  const monthYearText = `${currentMonth.getFullYear()}년 ${currentMonth.getMonth() + 1}월`;
 
-  const renderDay = (calendarDay: CalendarDay) => {
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
+  const selectedPlans = byDate[selected] ?? [];
+  const selectedDate = new Date(selected + 'T00:00:00');
+  const selectedLabel = `${selectedDate.getMonth() + 1}월 ${selectedDate.getDate()}일 ${DAY_NAMES[selectedDate.getDay()]}요일`;
 
-    // 캘린더의 빈 칸 (다른 월의 날짜 또는 null) 처리
-    if (calendarDay.day === null || !calendarDay.isCurrentMonth) {
-      return (
-        <View
-          key={`empty-${year}-${month}-${calendarDay.day || Math.random()}`}
-          style={[styles.day, styles.otherMonthDay]} // View를 사용하여 클릭 비활성화
-        />
-      );
-    }
+  const moveMonth = (diff: number) => setCursor(new Date(year, month + diff, 1));
+  const goToday = () => {
+    setCursor(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelected(todayKey);
+  };
 
-    const dayPlans = getPlansForDay(calendarDay.day, month, year).slice(0, 3); // 최대 3개 표시
+  const addPlan = (dateKey: string) => {
+    if (!requireLogin('계획 등록')) return;
+    router.push({ pathname: '/MakePlan', params: { date: dateKey } });
+  };
+  const openPlan = (plan: Plan) => router.push({ pathname: '/MakePlan', params: { id: plan.id } });
 
-    const isToday = calendarDay.isToday && calendarDay.isCurrentMonth;
-
-    // 3. 날짜 셀 전체를 TouchableOpacity로 감싸서 클릭 가능하게 만듭니다.
-    return (
-      <TouchableOpacity
-        key={`${year}-${month}-${calendarDay.day}`}
-        style={[
-          styles.day,
-          calendarDay.isWeekend && styles.weekendDay,
-          isToday && styles.todayCell,
-        ]}
-        onPress={() => handleDayPress(calendarDay.day!, month, year)}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[
-            styles.dayNumber,
-            calendarDay.isWeekend && styles.weekendDayNumber,
-            isToday && styles.todayMarker,
-          ]}
-        >
-          {calendarDay.day}
-        </Text>
-
-        {dayPlans.map((plan) => (
-          <TouchableOpacity
-            // 기존 이벤트 클릭 로직은 유지 (수정/삭제용)
-            key={plan.id}
-            style={[styles.event, { borderLeftColor: plan.color }]}
-            onPress={(e) => {
-              e.stopPropagation(); // 이벤트 버블링을 막아 날짜 클릭 이벤트가 실행되지 않도록 합니다.
-              handleEventPress(plan);
-            }}
-          >
-            <Ionicons
-              name="ellipse"
-              size={8}
-              color={plan.color}
-              style={styles.eventIcon}
-            />
-            <Text numberOfLines={1} style={styles.eventText}>
-              {plan.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </TouchableOpacity>
-    );
+  const daysLeft = (key: string) => {
+    const diff = Math.round((new Date(key + 'T00:00:00').getTime() - new Date(todayKey + 'T00:00:00').getTime()) / 86400000);
+    return diff === 0 ? '오늘' : `D-${diff}`;
   };
 
   return (
-    <View style={styles.container}>
-      {/* 공통 헤더 */}
-      <AppHeader title="계획" />
+      <View style={styles.screen}>
+        <AppHeader title="계획" />
 
-      <View style={styles.calendarControls}>
-        <TouchableOpacity onPress={() => handleMonthChange("prev")}>
-          <Ionicons name="chevron-back" size={28} color="#2D3748" />
-        </TouchableOpacity>
-        <Text style={styles.monthYearText}>{monthYearText}</Text>
-        <TouchableOpacity onPress={() => handleMonthChange("next")}>
-          <Ionicons name="chevron-forward" size={28} color="#2D3748" />
-        </TouchableOpacity>
-      </View>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* 다가오는 계획 배너 */}
+          {isAuthenticated && upcoming && (
+              <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    const d = new Date(upcoming.key + 'T00:00:00');
+                    setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+                    setSelected(upcoming.key);
+                  }}
+              >
+                <LinearGradient
+                    colors={THEME.buttonGradient as any}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.banner}
+                >
+                  <View style={styles.bannerDday}>
+                    <Text style={styles.bannerDdayText}>{daysLeft(upcoming.key)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.bannerSmall}>다가오는 계획</Text>
+                    <Text style={styles.bannerTitle} numberOfLines={1}>
+                      {upcoming.plan.title}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#FFFFFFCC" />
+                </LinearGradient>
+              </TouchableOpacity>
+          )}
 
-      <View style={styles.weekDaysContainer}>
-        {DAY_NAMES.map((dayName, index) => (
-          <Text
-            key={dayName}
-            style={[
-              styles.weekDayText,
-              (index === 0 || index === 6) && styles.weekendDayText,
-            ]}
-          >
-            {dayName}
-          </Text>
-        ))}
-      </View>
-
-      {/* Calendar Grid */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.calendarGrid}>
-          {calendarData.map((week, weekIndex) => (
-            <View key={weekIndex} style={styles.weekRow}>
-              {week.map(renderDay)}
+          {/* 달력 카드 */}
+          <View style={styles.card}>
+            <View style={styles.monthRow}>
+              <TouchableOpacity style={styles.navBtn} onPress={() => moveMonth(-1)} accessibilityLabel="이전 달">
+                <Ionicons name="chevron-back" size={20} color={THEME.text} />
+              </TouchableOpacity>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.yearText}>{year}</Text>
+                <Text style={styles.monthText}>{month + 1}월</Text>
+              </View>
+              <TouchableOpacity style={styles.navBtn} onPress={() => moveMonth(1)} accessibilityLabel="다음 달">
+                <Ionicons name="chevron-forward" size={20} color={THEME.text} />
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
-        {!isAuthenticated && (
-          <View style={styles.guestNotice}>
-            <Ionicons name="lock-closed-outline" size={16} color="#718096" />
-            <Text style={styles.guestNoticeText}>
-              계획을 등록하려면 먼저 로그인해 주세요.
-            </Text>
+
+            <View style={styles.monthMeta}>
+              <View style={styles.countPill}>
+                <Ionicons name="sparkles" size={12} color={THEME.primaryDark} />
+                <Text style={styles.countPillText}>이번 달 계획 {monthCount}개</Text>
+              </View>
+              <TouchableOpacity onPress={goToday} style={styles.todayBtn}>
+                <Text style={styles.todayBtnText}>오늘</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekHeader}>
+              {DAY_NAMES.map((n, i) => (
+                  <Text
+                      key={n}
+                      style={[styles.weekHeaderText, i === 0 && { color: SUN }, i === 6 && { color: SAT }]}
+                  >
+                    {n}
+                  </Text>
+              ))}
+            </View>
+
+            {weeks.map((week, wi) => (
+                <View key={wi} style={styles.weekRow}>
+                  {week.map((date, di) => {
+                    if (!date) return <View key={di} style={styles.cell} />;
+                    const key = toKey(date);
+                    const list = byDate[key] ?? [];
+                    const isToday = key === todayKey;
+                    const isSelected = key === selected;
+                    return (
+                        <TouchableOpacity
+                            key={di}
+                            style={styles.cell}
+                            onPress={() => setSelected(key)}
+                            onLongPress={() => addPlan(key)}
+                            activeOpacity={0.7}
+                        >
+                          <View
+                              style={[
+                                styles.dayCircle,
+                                isSelected && !isToday && styles.daySelected,
+                                isToday && styles.dayToday,
+                              ]}
+                          >
+                            <Text
+                                style={[
+                                  styles.dayText,
+                                  di === 0 && { color: SUN },
+                                  di === 6 && { color: SAT },
+                                  isToday && { color: '#FFFFFF', fontWeight: '900' },
+                                ]}
+                            >
+                              {date.getDate()}
+                            </Text>
+                          </View>
+                          <View style={styles.dots}>
+                            {list.slice(0, 3).map((p, i) => (
+                                <View key={i} style={[styles.dot, { backgroundColor: p.color || THEME.primary }]} />
+                            ))}
+                          </View>
+                        </TouchableOpacity>
+                    );
+                  })}
+                </View>
+            ))}
           </View>
-        )}
-      </ScrollView>
-    </View>
+
+          {/* 고른 날의 계획 */}
+          <View style={styles.agendaHead}>
+            <View>
+              <Text style={styles.agendaTitle}>{selectedLabel}</Text>
+              <Text style={styles.agendaSub}>
+                {selectedPlans.length > 0 ? `계획 ${selectedPlans.length}개` : '아직 계획이 없어요'}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.addSmall} onPress={() => addPlan(selected)} accessibilityLabel="이 날 계획 추가">
+              <Ionicons name="add" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          {selectedPlans.map((p) => (
+              <TouchableOpacity key={p.id} style={styles.planCard} onPress={() => openPlan(p)} activeOpacity={0.85}>
+                <View style={[styles.planBar, { backgroundColor: p.color || THEME.primary }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.planTitle} numberOfLines={1}>{p.title}</Text>
+                  {!!p.content && (
+                      <Text style={styles.planContent} numberOfLines={2}>{p.content}</Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={THEME.icon} />
+              </TouchableOpacity>
+          ))}
+
+          {selectedPlans.length === 0 && (
+              <TouchableOpacity style={styles.emptyCard} onPress={() => addPlan(selected)} activeOpacity={0.85}>
+                <Text style={styles.emptyEmoji}>🗓️</Text>
+                <Text style={styles.emptyText}>
+                  {isAuthenticated ? '이 날 계획을 추가해 보세요' : '계획을 등록하려면 먼저 로그인해 주세요'}
+                </Text>
+              </TouchableOpacity>
+          )}
+
+          <Text style={styles.tip}>날짜를 꾹 누르면 바로 그 날 계획을 만들 수 있어요</Text>
+        </ScrollView>
+      </View>
   );
 };
 
 const styles = StyleSheet.create({
-  guestNotice: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
-    gap: 6,
+  screen: { flex: 1, backgroundColor: THEME.background },
+  scroll: { padding: 16, paddingBottom: 60 },
+
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
   },
-  guestNoticeText: {
-    fontSize: 14,
-    color: "#718096",
+  bannerDday: {
+    minWidth: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF33',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
   },
-  container: { flex: 1, backgroundColor: "#f7f7f7" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: Platform.OS === "android" ? 40 : 10,
-    paddingBottom: 15,
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  backButton: { marginRight: 10, padding: 5 },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: "#2D3748" },
-  calendarControls: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  bannerDdayText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
+  bannerSmall: { color: '#FFFFFFCC', fontSize: 12, fontWeight: '700' },
+  bannerTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '800', marginTop: 2 },
+
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    shadowColor: '#4B5A3A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
   },
-  monthYearText: { fontSize: 20, fontWeight: "bold", color: "#2D3748" },
-  weekDaysContainer: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  navBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: THEME.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  weekDayText: {
-    flex: 1,
-    textAlign: "center",
-    paddingVertical: 10,
-    fontWeight: "bold",
-    color: "#7f8c8d",
-    fontSize: 14,
+  yearText: { fontSize: 12, color: THEME.subText, fontWeight: '700', letterSpacing: 1 },
+  monthText: { fontSize: 26, fontWeight: '900', color: THEME.text, marginTop: -2 },
+  monthMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 10,
   },
-  weekendDayText: { color: "#e74c3c" },
-  scrollContent: { flexGrow: 1 },
-  calendarGrid: { flex: 1 },
-  weekRow: { flexDirection: "row" },
-  // ⭐ day 스타일이 TouchableOpacity에 적용됩니다.
-  day: {
-    flex: 1,
-    minHeight: width / 5,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "#e0e0e0",
-    padding: 4,
-    overflow: "hidden",
+  countPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: THEME.primarySoft,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  todayCell: { backgroundColor: "#E8EAF6" },
-  weekendDay: { backgroundColor: "#fefefe" },
-  otherMonthDay: { backgroundColor: "#f5f5f5" },
-  dayNumber: {
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 8,
-    fontSize: 14,
-    alignSelf: "flex-end",
-    paddingRight: 4,
+  countPillText: { fontSize: 12, fontWeight: '800', color: THEME.primaryDark },
+  todayBtn: {
+    borderWidth: 1,
+    borderColor: THEME.line,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
-  todayMarker: { color: "#6C63FF", fontWeight: "900" },
-  weekendDayNumber: { color: "#e74c3c" },
-  otherMonthDayNumber: { color: "#bdc3c7" },
-  // 이벤트 스타일은 그대로 유지
-  event: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 4,
-    paddingLeft: 8,
-    borderRadius: 4,
-    borderLeftWidth: 4,
-    marginBottom: 3,
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
+  todayBtnText: { fontSize: 12, fontWeight: '800', color: THEME.text },
+
+  weekHeader: { flexDirection: 'row', marginBottom: 4 },
+  weekHeaderText: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '800', color: THEME.subText },
+  weekRow: { flexDirection: 'row' },
+  cell: { flex: 1, alignItems: 'center', paddingVertical: 4, height: 50 },
+  dayCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  dayToday: { backgroundColor: THEME.primary },
+  daySelected: { borderWidth: 2, borderColor: THEME.primary, backgroundColor: THEME.primarySoft },
+  dayText: { fontSize: 15, fontWeight: '700', color: THEME.text },
+  dots: { flexDirection: 'row', gap: 3, marginTop: 3, height: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+
+  agendaHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 22,
+    marginBottom: 10,
+    paddingHorizontal: 2,
   },
-  eventIcon: { marginRight: 4, fontSize: 8 },
-  eventText: { fontSize: 10, flex: 1, color: "#333" },
+  agendaTitle: { fontSize: 18, fontWeight: '900', color: THEME.text },
+  agendaSub: { fontSize: 13, color: THEME.subText, marginTop: 2 },
+  addSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: THEME.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: THEME.line,
+  },
+  planBar: { width: 5, alignSelf: 'stretch', borderRadius: 3 },
+  planTitle: { fontSize: 16, fontWeight: '800', color: THEME.text },
+  planContent: { fontSize: 13, color: THEME.subText, marginTop: 3, lineHeight: 18 },
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: THEME.line,
+    paddingVertical: 22,
+  },
+  emptyEmoji: { fontSize: 28, marginBottom: 6 },
+  emptyText: { fontSize: 14, color: THEME.subText, fontWeight: '600' },
+  tip: { textAlign: 'center', fontSize: 12, color: THEME.placeholder, marginTop: 16 },
 });
 
 export default PlanScreen;

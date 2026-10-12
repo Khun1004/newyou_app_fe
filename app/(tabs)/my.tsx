@@ -41,7 +41,9 @@ export default function MyScreen() {
     useEffect(() => {
         // 로그인 안 했으면 아무것도 안 해요. (화면에는 아래 statistics 에서 0일로 보여줘요)
         if (!isAuthenticated || !currentUser?.phoneNumber) return;
-        const key = `streak_${currentUser.phoneNumber}`;
+        // 계정 번호(id)까지 넣어서 저장해요. 예전 테스트 기록은 쓰지 않고 이 계정으로 새로 세요.
+        // 오늘 앱을 열었으면 1일부터 시작해요.
+        const key = `streak_v2_${currentUser.id ?? ''}_${currentUser.phoneNumber}`;
         const toDay = (d: Date) =>
             `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const today = toDay(new Date());

@@ -105,9 +105,9 @@ export default function AppFriendsInfo() {
                         {/* 오른쪽: 닉네임, 전화번호, 상태 */}
                         <View style={styles.profileInfoRight}>
                             <Text style={styles.nicknameText}>{nickname}</Text>
-                            <Text style={styles.phoneText}>{phoneNumber}</Text>
+                            <Text style={styles.phoneText}>{friend.birthdayText || phoneNumber || '생일 정보 없음'}</Text>
                             <View style={styles.statusBadge}>
-                                <Text style={styles.statusText}>{isAppUser ? '앱 사용자' : '미가입 사용자'}</Text>
+                                <Text style={styles.statusText}>{isAppUser ? '앱 사용자' : '내 생일 친구'}</Text>
                             </View>
                         </View>
                     </View>

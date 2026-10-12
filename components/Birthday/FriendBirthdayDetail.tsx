@@ -4,10 +4,8 @@ import {
     Text,
     StyleSheet,
     StatusBar,
-    Platform,
     Image,
     TouchableOpacity,
-    Dimensions,
     Alert,
     ScrollView,
     Animated,
@@ -19,7 +17,25 @@ import { useFriends } from '@/components/contexts/FriendContext';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
 
-const { width, height } = Dimensions.get('window');
+/**
+ * 친구 생일 자세히 보기
+ *  - 친구 색으로 된 큰 카드 (사진, 이름, 생일, 남은 날 카운트다운)
+ *  - 다음 생일이 무슨 요일인지, 몇 주 남았는지
+ *  - 메모 (포스트잇 느낌)
+ *  - 수정 / 삭제
+ */
+
+const COLORS = {
+    background: '#FFFBF5',
+    card: '#FFFFFF',
+    text: '#3F2A1E',
+    subText: '#8A7565',
+    border: '#F3E6DA',
+    pink: '#F06292',
+    button: ['#FFB75E', '#F06292'] as [string, string],
+};
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 interface Friend {
     id: string;
@@ -32,604 +48,315 @@ interface Friend {
 
 const getAbsoluteImageUrl = (relativePath: string | null | undefined): string | null => {
     if (!relativePath) return null;
+    if (/^(https?:|file:|data:)/.test(relativePath)) return relativePath;
     const cleanBaseUrl = BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '');
     const cleanRelativePath = relativePath.replace(/^\/+/g, '');
     return `${cleanBaseUrl}/${cleanRelativePath}`;
 };
 
+// 다음 생일 날짜와 남은 날
+const nextBirthdayOf = (b: { month: number; day: number }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let next = new Date(today.getFullYear(), b.month - 1, b.day);
+    if (next < today) next = new Date(today.getFullYear() + 1, b.month - 1, b.day);
+    const days = Math.round((next.getTime() - today.getTime()) / 86400000);
+    return { next, days };
+};
+
+// 색종이 위치 (고정)
+const CONFETTI = [
+    { left: '8%', top: 18, color: '#FFFFFF', r: 20 },
+    { left: '18%', top: 120, color: '#FFF3B0', r: -40 },
+    { left: '80%', top: 26, color: '#FFF3B0', r: 35 },
+    { left: '90%', top: 110, color: '#FFFFFF', r: -15 },
+    { left: '50%', top: 10, color: '#FFE0EC', r: 60 },
+    { left: '70%', top: 150, color: '#FFFFFF', r: 10 },
+];
+
 const FriendBirthdayDetail: React.FC = () => {
     const { friendData } = useLocalSearchParams();
     const { deleteFriend } = useFriends();
 
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(50)).current;
-    const scaleAnim = useRef(new Animated.Value(0.9)).current;
-    const cardSlideAnim = useRef(new Animated.Value(100)).current;
+    const fade = useRef(new Animated.Value(0)).current;
+    const rise = useRef(new Animated.Value(30)).current;
+    const bounce = useRef(new Animated.Value(0.85)).current;
 
     useEffect(() => {
-        Animated.stagger(150, [
-            Animated.parallel([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-                Animated.spring(scaleAnim, {
-                    toValue: 1,
-                    tension: 50,
-                    friction: 7,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(slideAnim, {
-                    toValue: 0,
-                    duration: 700,
-                    useNativeDriver: true,
-                }),
-            ]),
-            Animated.spring(cardSlideAnim, {
-                toValue: 0,
-                tension: 50,
-                friction: 8,
-                useNativeDriver: true,
-            }),
+        Animated.parallel([
+            Animated.timing(fade, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.timing(rise, { toValue: 0, duration: 500, useNativeDriver: true }),
+            Animated.spring(bounce, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
         ]).start();
     }, []);
 
     if (!friendData) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: COLORS.background }}>
                 <AppHeader title="친구 정보" />
-                <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle" size={60} color="#ef4444" />
-                    <Text style={styles.errorText}>친구 정보를 불러올 수 없습니다.</Text>
+                <View style={styles.errorBox}>
+                    <Text style={{ fontSize: 40 }}>🥲</Text>
+                    <Text style={styles.errorText}>친구 정보를 불러올 수 없어요.</Text>
                 </View>
             </View>
         );
     }
 
     const friend: Friend = JSON.parse(friendData as string);
-    const hasBirthdate = !!friend.birthdate;
-    const isToday = hasBirthdate && friend.birthdate?.month === (new Date().getMonth() + 1) && friend.birthdate?.day === new Date().getDate();
-
-    const calculateDaysUntil = () => {
-        if (!friend.birthdate) return null;
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const { month, day } = friend.birthdate;
-        let birthdayThisYear = new Date(currentYear, month - 1, day);
-        if (birthdayThisYear.getTime() < today.getTime() && !isToday) {
-            birthdayThisYear = new Date(currentYear + 1, month - 1, day);
-        }
-        const diffTime = birthdayThisYear.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
-    const daysUntil = calculateDaysUntil();
-    const daysUntilText = isToday ? '🎉 오늘이 생일!' : daysUntil !== null ? `D-${daysUntil}` : '';
+    const colors = (friend.profileColor?.length >= 2 ? friend.profileColor : COLORS.button) as [string, string];
+    const info = friend.birthdate ? nextBirthdayOf(friend.birthdate) : null;
+    const isToday = info?.days === 0;
+    const imageUri = getAbsoluteImageUrl(friend.profileImage);
 
     const handleDelete = () => {
-        Alert.alert(
-            '친구 삭제',
-            '정말로 이 친구를 삭제하시겠습니까?',
-            [
-                { text: '취소', style: 'cancel' },
-                {
-                    text: '삭제',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await deleteFriend(friend.id);
-                        if (success) {
-                            router.back();
-                        }
-                    }
+        Alert.alert('친구 삭제', `${friend.nickname}님을 목록에서 삭제할까요?`, [
+            { text: '취소', style: 'cancel' },
+            {
+                text: '삭제',
+                style: 'destructive',
+                onPress: async () => {
+                    const success = await deleteFriend(friend.id);
+                    if (success) router.back();
                 },
-            ]
-        );
+            },
+        ]);
     };
 
     const handleEdit = () => {
-        router.push({
-            pathname: '/AddFriBirthday',
-            params: { editFriend: friendData }
-        });
+        router.push({ pathname: '/AddFriBirthday', params: { editFriend: friendData } });
     };
 
-    const renderProfile = () => {
-        const initial = friend.nickname.charAt(0).toUpperCase();
-
-        if (friend.profileImage) {
-            const absoluteUrl = getAbsoluteImageUrl(friend.profileImage);
-            console.log('🖼️ [Detail] 이미지 렌더링:', absoluteUrl);
-
-            return (
-                <Image
-                    source={{
-                        uri: absoluteUrl || undefined,
-                    }}
-                    style={styles.profileImage}
-                    onError={(e) => {
-                        console.error('❌ [Detail] 이미지 로드 실패');
-                        console.error('- 상대 경로:', friend.profileImage);
-                        console.error('- 절대 URL:', absoluteUrl);
-                    }}
-                    onLoad={() => {
-                        console.log('✅ [Detail] 이미지 로드 성공:', absoluteUrl);
-                    }}
-                />
-            );
-        }
-
-        return (
-            <LinearGradient
-                colors={friend.profileColor}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.profileGradient}
-            >
-                <Text style={styles.profileInitial}>{initial}</Text>
-            </LinearGradient>
-        );
+    // 남은 날을 사람이 읽기 쉬운 말로
+    const friendlyLeft = () => {
+        if (!info) return '';
+        if (info.days === 0) return '바로 오늘이에요!';
+        if (info.days === 1) return '내일이에요!';
+        if (info.days < 7) return `이번 주 안에 와요`;
+        if (info.days < 31) return `약 ${Math.round(info.days / 7)}주 남았어요`;
+        return `약 ${Math.round(info.days / 30)}달 남았어요`;
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+        <View style={styles.screen}>
+            <StatusBar barStyle="dark-content" />
+            <AppHeader
+                title="친구 생일"
+                right={[{ icon: 'create-outline', onPress: handleEdit, accessibilityLabel: '수정' }]}
+            />
 
-            {/* 공통 헤더: < 친구 정보 [편집] 🔔 */}
-            <AppHeader title="친구 정보" right={[{ icon: 'create-outline', onPress: handleEdit, accessibilityLabel: '편집' }]} />
+            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+                {/* ---------- 큰 카드 ---------- */}
+                <Animated.View style={{ opacity: fade, transform: [{ translateY: rise }] }}>
+                    <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+                        {CONFETTI.map((c, i) => (
+                            <View
+                                key={i}
+                                style={[
+                                    styles.confetti,
+                                    { left: c.left as any, top: c.top, backgroundColor: c.color, transform: [{ rotate: `${c.r}deg` }] },
+                                ]}
+                            />
+                        ))}
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* 프로필 섹션 */}
-                <Animated.View
-                    style={[
-                        styles.profileSection,
-                        {
-                            opacity: fadeAnim,
-                            transform: [
-                                { translateY: slideAnim },
-                                { scale: scaleAnim }
-                            ]
-                        }
-                    ]}
-                >
-                    <View style={styles.profileContainer}>
-                        {renderProfile()}
-                        {isToday && (
-                            <View style={styles.confettiBadge}>
-                                <Text style={styles.confettiEmoji}>🎊</Text>
-                            </View>
-                        )}
-                    </View>
+                        <Animated.View style={[styles.avatarRing, { transform: [{ scale: bounce }] }]}>
+                            {imageUri ? (
+                                <Image source={{ uri: imageUri }} style={styles.avatar} />
+                            ) : (
+                                <LinearGradient colors={colors} style={[styles.avatar, styles.avatarFallback]}>
+                                    <Text style={styles.avatarText}>{friend.nickname.charAt(0).toUpperCase()}</Text>
+                                </LinearGradient>
+                            )}
+                            {isToday && (
+                                <View style={styles.crown}>
+                                    <Text style={{ fontSize: 22 }}>👑</Text>
+                                </View>
+                            )}
+                        </Animated.View>
 
-                    <Text style={styles.nickname}>{friend.nickname}</Text>
+                        <Text style={styles.name} numberOfLines={1}>{friend.nickname}</Text>
 
-                    {hasBirthdate && (
-                        <View style={styles.birthdayInfo}>
-                            <View style={[styles.birthdayCard, isToday && styles.birthdayCardToday]}>
-                                <Ionicons
-                                    name={isToday ? "gift" : "calendar"}
-                                    size={22}
-                                    color={isToday ? "#f59e0b" : "#8b5cf6"}
-                                />
-                                <Text style={styles.birthdayDate}>
-                                    {friend.birthdate?.month}월 {friend.birthdate?.day}일
+                        {info ? (
+                            <>
+                                <Text style={styles.birthText}>
+                                    🎂 {friend.birthdate!.month}월 {friend.birthdate!.day}일
                                 </Text>
-                            </View>
-                            {daysUntilText && (
-                                <View style={[styles.dDayCard, isToday && styles.dDayCardToday]}>
-                                    <Text style={[styles.dDayText, isToday && styles.dDayTextToday]}>
-                                        {daysUntilText}
-                                    </Text>
+
+                                {/* 카운트다운 */}
+                                <View style={styles.countWrap}>
+                                    {isToday ? (
+                                        <Text style={styles.countToday}>HAPPY BIRTHDAY! 🎉</Text>
+                                    ) : (
+                                        <>
+                                            <Text style={styles.countNum}>{info.days}</Text>
+                                            <Text style={styles.countUnit}>일 남았어요</Text>
+                                        </>
+                                    )}
                                 </View>
-                            )}
-                        </View>
-                    )}
+                            </>
+                        ) : (
+                            <Text style={styles.birthText}>생일 정보가 아직 없어요</Text>
+                        )}
+                    </LinearGradient>
                 </Animated.View>
 
-                {/* 컨텐츠 카드들 */}
-                <Animated.View
-                    style={[
-                        styles.contentContainer,
-                        {
-                            opacity: fadeAnim,
-                            transform: [{ translateY: cardSlideAnim }]
-                        }
-                    ]}
-                >
-                    {/* 메모 카드 */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <View style={styles.cardIconContainer}>
-                                <LinearGradient
-                                    colors={['#8b5cf6', '#6366f1']}
-                                    style={styles.cardIconGradient}
-                                >
-                                    <Ionicons name="chatbubble-ellipses" size={20} color="#ffffff" />
-                                </LinearGradient>
-                            </View>
-                            <Text style={styles.cardTitle}>메모</Text>
-                        </View>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.memoText}>
-                                {friend.memo && friend.memo.trim() !== ''
-                                    ? friend.memo
-                                    : '작성된 메모가 없습니다.'}
+                {/* ---------- 다음 생일 정보 ---------- */}
+                {info && (
+                    <Animated.View style={[styles.infoRow, { opacity: fade }]}>
+                        <View style={styles.infoCard}>
+                            <Ionicons name="calendar" size={18} color={colors[1]} />
+                            <Text style={styles.infoLabel}>다음 생일</Text>
+                            <Text style={styles.infoValue}>
+                                {info.next.getFullYear()}.{info.next.getMonth() + 1}.{info.next.getDate()}
                             </Text>
+                            <Text style={styles.infoSub}>{WEEKDAYS[info.next.getDay()]}요일</Text>
                         </View>
-                    </View>
-
-                    {/* 정보 카드 */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <View style={styles.cardIconContainer}>
-                                <LinearGradient
-                                    colors={['#ec4899', '#f43f5e']}
-                                    style={styles.cardIconGradient}
-                                >
-                                    <Ionicons name="information-circle" size={20} color="#ffffff" />
-                                </LinearGradient>
-                            </View>
-                            <Text style={styles.cardTitle}>추가 정보</Text>
+                        <View style={styles.infoCard}>
+                            <Ionicons name="hourglass" size={18} color={colors[1]} />
+                            <Text style={styles.infoLabel}>남은 시간</Text>
+                            <Text style={styles.infoValue}>{isToday ? '오늘' : `D-${info.days}`}</Text>
+                            <Text style={styles.infoSub}>{friendlyLeft()}</Text>
                         </View>
-                        <View style={styles.cardContent}>
-                            <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Ionicons name="person-outline" size={18} color="#6b7280" />
-                                </View>
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={styles.infoLabel}>닉네임</Text>
-                                    <Text style={styles.infoValue}>{friend.nickname}</Text>
-                                </View>
-                            </View>
-                            {hasBirthdate && (
-                                <View style={styles.infoRow}>
-                                    <View style={styles.infoIcon}>
-                                        <Ionicons name="calendar-outline" size={18} color="#6b7280" />
-                                    </View>
-                                    <View style={styles.infoTextContainer}>
-                                        <Text style={styles.infoLabel}>생일</Text>
-                                        <Text style={styles.infoValue}>
-                                            {friend.birthdate?.month}월 {friend.birthdate?.day}일
-                                        </Text>
-                                    </View>
-                                </View>
-                            )}
+                    </Animated.View>
+                )}
+
+                {/* ---------- 메모 (포스트잇) ---------- */}
+                <Animated.View style={{ opacity: fade }}>
+                    <View style={styles.memo}>
+                        <View style={styles.memoTape} />
+                        <View style={styles.memoHead}>
+                            <Ionicons name="heart" size={16} color={COLORS.pink} />
+                            <Text style={styles.memoTitle}>{friend.nickname}에 대한 메모</Text>
                         </View>
-                    </View>
-
-                    {/* 액션 버튼들 */}
-                    <View style={styles.actionContainer}>
-                        <TouchableOpacity
-                            onPress={handleEdit}
-                            style={styles.primaryButton}
-                            activeOpacity={0.8}
-                        >
-                            <LinearGradient
-                                colors={['#6366f1', '#8b5cf6']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.buttonGradient}
-                            >
-                                <Ionicons name="pencil" size={20} color="#ffffff" />
-                                <Text style={styles.primaryButtonText}>정보 수정</Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={handleDelete}
-                            style={styles.deleteButton}
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                            <Text style={styles.deleteButtonText}>친구 삭제</Text>
-                        </TouchableOpacity>
+                        <Text style={[styles.memoText, !friend.memo?.trim() && styles.memoEmpty]}>
+                            {friend.memo?.trim()
+                                ? friend.memo
+                                : '아직 메모가 없어요.\n좋아하는 것이나 선물 아이디어를 적어 두면 좋아요 🎁'}
+                        </Text>
                     </View>
                 </Animated.View>
+
+                {/* ---------- 버튼 ---------- */}
+                <TouchableOpacity onPress={handleEdit} activeOpacity={0.85} style={{ marginTop: 22 }}>
+                    <LinearGradient colors={COLORS.button} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
+                        <Ionicons name="pencil" size={18} color="#FFFFFF" />
+                        <Text style={styles.primaryText}>정보 수정하기</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn} activeOpacity={0.8}>
+                    <Ionicons name="trash-outline" size={16} color="#D9534F" />
+                    <Text style={styles.deleteText}>친구 삭제</Text>
+                </TouchableOpacity>
             </ScrollView>
         </View>
     );
 };
 
+const shadow = {
+    shadowColor: '#C9A68A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 4,
+};
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    screen: { flex: 1, backgroundColor: COLORS.background },
+    scroll: { padding: 20, paddingBottom: 48 },
+
+    errorBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+    errorText: { fontSize: 16, color: COLORS.subText, fontWeight: '600' },
+
+    // 큰 카드
+    hero: {
+        borderRadius: 30,
+        paddingTop: 30,
+        paddingBottom: 24,
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
-        gap: 16,
+        overflow: 'hidden',
+        ...shadow,
     },
-    errorText: {
-        fontSize: 18,
-        color: '#ef4444',
-        fontWeight: '600',
-    },
-    fixedHeader: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        backgroundColor: '#ffffff',
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 44,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    header: {
+    confetti: { position: 'absolute', width: 7, height: 16, borderRadius: 2, opacity: 0.8 },
+    avatarRing: { padding: 5, borderRadius: 70, backgroundColor: '#FFFFFF' },
+    avatar: { width: 110, height: 110, borderRadius: 55 },
+    avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 46, fontWeight: '900', color: '#FFFFFF' },
+    crown: { position: 'absolute', top: -14, alignSelf: 'center' },
+    name: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', marginTop: 14, maxWidth: '85%' },
+    birthText: { fontSize: 15, fontWeight: '700', color: '#FFFFFFE6', marginTop: 4 },
+    countWrap: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    backButton: {
-        position: 'absolute',
-        left: 16,
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    editIconButton: {
-        position: 'absolute',
-        right: 16,
-        padding: 4,
-    },
-    scrollContent: {
-        paddingTop: 20,
-        paddingBottom: 40,
-    },
-    profileSection: {
-        alignItems: 'center',
-        paddingVertical: 30,
-        backgroundColor: '#ffffff',
-        marginBottom: 16,
-    },
-    profileContainer: {
-        position: 'relative',
-        marginBottom: 24,
-    },
-    profileImage: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        borderWidth: 5,
-        borderColor: '#ffffff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    profileGradient: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 5,
-        borderColor: '#ffffff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    profileInitial: {
-        fontSize: 56,
-        fontWeight: 'bold',
-        color: '#ffffff',
-    },
-    confettiBadge: {
-        position: 'absolute',
-        top: -5,
-        right: -5,
-        backgroundColor: '#fbbf24',
-        borderRadius: 20,
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 3,
-        borderColor: '#ffffff',
-        shadowColor: '#f59e0b',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    confettiEmoji: {
-        fontSize: 20,
-    },
-    nickname: {
-        fontSize: 36,
-        fontWeight: '900',
-        color: '#1f2937',
-        marginBottom: 16,
-        textAlign: 'center',
-    },
-    birthdayInfo: {
-        flexDirection: 'row',
-        gap: 12,
-        alignItems: 'center',
-    },
-    birthdayCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-        paddingHorizontal: 16,
+        alignItems: 'flex-end',
+        gap: 6,
+        marginTop: 16,
+        backgroundColor: '#FFFFFF2E',
+        paddingHorizontal: 22,
         paddingVertical: 10,
+        borderRadius: 22,
+    },
+    countNum: { fontSize: 44, fontWeight: '900', color: '#FFFFFF', lineHeight: 48 },
+    countUnit: { fontSize: 15, fontWeight: '800', color: '#FFFFFFE6', marginBottom: 7 },
+    countToday: { fontSize: 20, fontWeight: '900', color: '#FFFFFF', paddingVertical: 8 },
+
+    // 정보 카드 2개
+    infoRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    infoCard: {
+        flex: 1,
+        backgroundColor: COLORS.card,
         borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    infoLabel: { fontSize: 12, color: COLORS.subText, fontWeight: '700', marginTop: 8 },
+    infoValue: { fontSize: 20, fontWeight: '900', color: COLORS.text, marginTop: 2 },
+    infoSub: { fontSize: 12, color: COLORS.subText, marginTop: 2 },
+
+    // 메모
+    memo: {
+        marginTop: 22,
+        backgroundColor: '#FFF6D1',
+        borderRadius: 6,
+        borderBottomRightRadius: 22,
+        padding: 18,
+        paddingTop: 22,
+        transform: [{ rotate: '-1deg' }],
+        ...shadow,
+    },
+    memoTape: {
+        position: 'absolute',
+        top: -9,
+        alignSelf: 'center',
+        width: 70,
+        height: 18,
+        borderRadius: 2,
+        backgroundColor: '#F7C6D6',
+        opacity: 0.9,
+    },
+    memoHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+    memoTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
+    memoText: { fontSize: 15, lineHeight: 23, color: '#5A4636' },
+    memoEmpty: { color: COLORS.subText },
+
+    // 버튼
+    primaryBtn: {
+        height: 54,
+        borderRadius: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
     },
-    birthdayCardToday: {
-        backgroundColor: '#fef3c7',
-        borderColor: '#fbbf24',
-    },
-    birthdayDate: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    dDayCard: {
-        backgroundColor: '#ede9fe',
-        paddingHorizontal: 14,
+    primaryText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
+    deleteBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: 14,
         paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#c4b5fd',
     },
-    dDayCardToday: {
-        backgroundColor: '#fef3c7',
-        borderColor: '#fbbf24',
-    },
-    dDayText: {
-        fontSize: 15,
-        fontWeight: '800',
-        color: '#6366f1',
-    },
-    dDayTextToday: {
-        color: '#f59e0b',
-        fontSize: 14,
-    },
-    contentContainer: {
-        paddingHorizontal: 20,
-        gap: 16,
-    },
-    card: {
-        backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
-        gap: 12,
-    },
-    cardIconContainer: {
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    cardIconGradient: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    cardTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#1f2937',
-    },
-    cardContent: {
-        paddingLeft: 4,
-    },
-    memoText: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: '#4b5563',
-        fontWeight: '500',
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        gap: 12,
-    },
-    infoIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: '#f3f4f6',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    infoTextContainer: {
-        flex: 1,
-    },
-    infoLabel: {
-        fontSize: 13,
-        color: '#6b7280',
-        marginBottom: 2,
-        fontWeight: '500',
-    },
-    infoValue: {
-        fontSize: 16,
-        color: '#1f2937',
-        fontWeight: '600',
-    },
-    actionContainer: {
-        gap: 12,
-        marginTop: 8,
-    },
-    primaryButton: {
-        borderRadius: 20,
-        overflow: 'hidden',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#6366f1',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-            },
-            android: {
-                elevation: 6,
-            },
-        }),
-    },
-    buttonGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 18,
-        gap: 10,
-    },
-    primaryButtonText: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    deleteButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fef2f2',
-        paddingVertical: 18,
-        borderRadius: 20,
-        gap: 10,
-        borderWidth: 1,
-        borderColor: '#fecaca',
-    },
-    deleteButtonText: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#ef4444',
-    },
+    deleteText: { fontSize: 14, fontWeight: '700', color: '#D9534F' },
 });
 
 export default FriendBirthdayDetail;
