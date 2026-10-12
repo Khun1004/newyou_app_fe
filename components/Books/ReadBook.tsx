@@ -11,7 +11,7 @@ import {
     Modal,
     Alert,
 } from 'react-native';
-import { useNavigation } from "expo-router/react-navigation";
+import { router } from 'expo-router';
 import { useBookContext } from '@/components/contexts/BookContext'; // Make sure this path is correct
 import AppHeader from '@/components/AppHeader';
 
@@ -31,7 +31,6 @@ function Slider(props: {
 }
 
 const ReadBook: React.FC = () => {
-    const navigation = useNavigation();
 
     // Get the book and other state variables from the context
     const {
@@ -41,21 +40,6 @@ const ReadBook: React.FC = () => {
         readingProgress,
         setReadingProgress,
     } = useBookContext();
-
-    // Handle the case where the book is not available in the context
-    if (!book) {
-        return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
-                <AppHeader title="책 읽기" />
-                <SafeAreaView style={styles.container}>
-                    <Text style={styles.errorText}>책 정보를 불러올 수 없습니다.</Text>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.errorButton}>
-                        <Text style={styles.errorButtonText}>뒤로 가기</Text>
-                    </TouchableOpacity>
-                </SafeAreaView>
-            </View>
-        );
-    }
 
     const scrollViewRef = useRef<ScrollView>(null);
     const [fontSize, setFontSize] = useState(16);
@@ -83,7 +67,7 @@ const ReadBook: React.FC = () => {
         ],
     };
 
-    const currentBookContent = bookContent[book.id] || ['이 책의 내용을 불러올 수 없습니다.'];
+    const currentBookContent = (book && (bookContent as any)[book.id]) || ['이 책의 내용을 불러올 수 없습니다.'];
     const totalPages = currentBookContent.length;
 
     useEffect(() => {
@@ -91,13 +75,29 @@ const ReadBook: React.FC = () => {
         setReadingProgress(progress);
     }, [currentPage, totalPages, setReadingProgress]);
 
+    // 책 정보가 없으면 (예: 앱을 새로 켜고 바로 이 화면) 안내만 보여줘요
+    if (!book) {
+        return (
+            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+                <AppHeader title="책 읽기" />
+                <SafeAreaView style={styles.container}>
+                    <Text style={styles.errorText}>책 정보를 불러올 수 없습니다.</Text>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.errorButton}>
+                        <Text style={styles.errorButtonText}>뒤로 가기</Text>
+                    </TouchableOpacity>
+                </SafeAreaView>
+            </View>
+        );
+    }
+
+
     const handleGoBack = () => {
         Alert.alert(
             '읽기 종료',
             '정말로 읽기를 종료하시겠습니까? 현재 페이지가 저장됩니다.',
             [
                 { text: '취소', style: 'cancel' },
-                { text: '확인', onPress: () => navigation.goBack() },
+                { text: '확인', onPress: () => router.back() },
             ]
         );
     };
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     },
     progressFill: {
         height: '100%',
-        backgroundColor: '#007BFF',
+        backgroundColor: '#4E7D32',
         borderRadius: 2,
     },
     progressText: {
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     errorButton: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#4E7D32',
         borderRadius: 8,
         padding: 12,
         marginTop: 20,

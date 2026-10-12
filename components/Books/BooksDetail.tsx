@@ -1,128 +1,136 @@
+// 책 정보 화면
 import React from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    TouchableOpacity,
-    StyleSheet,
-    Image,
-    SafeAreaView,
-    StatusBar,
-    Dimensions,
-} from 'react-native';
-import { useNavigation, useRoute, RouteProp } from "expo-router/react-navigation";
-import { useBookContext } from '@/components/contexts/BookContext';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
+import { useBookContext } from '@/components/contexts/BookContext';
+import { findBook, readingTime } from '@/components/Books/bookData';
+import { THEME } from '@/constants/theme';
 
-interface Book {
-    id: string;
-    title: string;
-    author: string;
-    coverImage: string;
-    description: string;
-    pages: number;
-    genre: string;
-    rating: number;
-    publishedYear: number;
-}
-
-type RootStackParamList = {
-    BooksDetail: {
-        book: Book;
-    };
-    ReadBook: {
-        book: Book;
-    };
-};
-
-type BooksDetailRouteProp = RouteProp<RootStackParamList, 'BooksDetail'>;
-
-const { width } = Dimensions.get('window');
+/**
+ * 책 정보
+ *  - 책 색으로 된 위쪽 배경 + 큰 표지
+ *  - 별점 · 쪽수 · 읽는 시간 · 출간년도
+ *  - 책 소개, 첫 문장 미리보기
+ *  - 아래 버튼: 읽기 시작 (읽던 책이면 '이어 읽기')
+ */
 
 const BooksDetail: React.FC = () => {
-    const navigation = useNavigation();
-    const route = useRoute<BooksDetailRouteProp>();
-    const { book } = route.params;
+    const { id } = useLocalSearchParams<{ id?: string }>();
+    const { currentBook, setCurrentBook, readingProgress, setCurrentPage, setReadingProgress } = useBookContext();
+    const book = findBook(id);
 
-    const { setCurrentBook } = useBookContext();
+    if (!book) {
+        return (
+            <View style={{ flex: 1, backgroundColor: THEME.background }}>
+                <AppHeader title="책 정보" />
+                <View style={styles.missing}>
+                    <Text style={{ fontSize: 40 }}>📕</Text>
+                    <Text style={styles.missingText}>책 정보를 찾을 수 없어요</Text>
+                </View>
+            </View>
+        );
+    }
 
-    const handleReadBook = () => {
-        setCurrentBook(book); // 컨텍스트에 현재 책 정보 저장
-        navigation.navigate('ReadBook' as never);
-    };
+    const isReading = currentBook?.id === book.id;
+    const progress = isReading ? Math.round(readingProgress || 0) : 0;
 
-    const handleGoBack = () => {
-        navigation.goBack();
+    const handleRead = () => {
+        if (!isReading) {
+            // 새 책이면 처음부터
+            setCurrentBook(book as any);
+            setCurrentPage(1);
+            setReadingProgress(0);
+        }
+        router.push('/ReadBook');
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.screen}>
+            <StatusBar barStyle="dark-content" />
+            <AppHeader title="책 정보" />
 
-            {/* 공통 헤더 */}
-            <AppHeader title="책 정보" onBack={handleGoBack} />
+            <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+                {/* 위쪽: 책 색 배경 + 표지 */}
+                <LinearGradient colors={[book.color, `${book.color}AA`, THEME.background]} style={styles.top}>
+                    <View style={styles.coverWrap}>
+                        <View style={[styles.cover, { backgroundColor: book.color }]}>
+                            <Text style={styles.coverFallback}>{book.title}</Text>
+                            <Image source={{ uri: book.coverImage }} style={StyleSheet.absoluteFill} />
+                            <LinearGradient
+                                colors={['rgba(0,0,0,0.3)', 'rgba(255,255,255,0.1)', 'transparent']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.spine}
+                            />
+                        </View>
+                    </View>
+                </LinearGradient>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Book Cover Section */}
-                <View style={styles.coverSection}>
-                    <Image source={{ uri: book.coverImage }} style={styles.coverImage} />
-                </View>
-
-                {/* Book Info Section */}
-                <View style={styles.infoSection}>
+                <View style={styles.body}>
+                    <View style={styles.genrePill}>
+                        <Text style={styles.genrePillText}>{book.genre}</Text>
+                    </View>
                     <Text style={styles.title}>{book.title}</Text>
                     <Text style={styles.author}>{book.author}</Text>
 
-                    {/* Rating and Pages */}
-                    <View style={styles.statsContainer}>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>평점</Text>
+                    {/* 숫자 정보 */}
+                    <View style={styles.stats}>
+                        <View style={styles.stat}>
                             <Text style={styles.statValue}>⭐ {book.rating}</Text>
+                            <Text style={styles.statLabel}>별점</Text>
                         </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>페이지</Text>
-                            <Text style={styles.statValue}>{book.pages}p</Text>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{book.pages}</Text>
+                            <Text style={styles.statLabel}>쪽</Text>
                         </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>출간년도</Text>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
+                            <Text style={styles.statValue}>{readingTime(book.pages)}</Text>
+                            <Text style={styles.statLabel}>읽는 시간</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.stat}>
                             <Text style={styles.statValue}>{book.publishedYear}</Text>
+                            <Text style={styles.statLabel}>출간</Text>
                         </View>
                     </View>
 
-                    {/* Genre */}
-                    <View style={styles.genreContainer}>
-                        <Text style={styles.genreLabel}>장르</Text>
-                        <View style={styles.genreTag}>
-                            <Text style={styles.genreText}>{book.genre}</Text>
+                    {isReading && (
+                        <View style={styles.readingBox}>
+                            <Ionicons name="bookmark" size={16} color={THEME.primary} />
+                            <Text style={styles.readingText}>지금 읽는 중 · {progress}%</Text>
+                            <View style={styles.readingTrack}>
+                                <View style={[styles.readingFill, { width: `${progress}%` }]} />
+                            </View>
                         </View>
-                    </View>
+                    )}
 
-                    {/* Description */}
-                    <View style={styles.descriptionContainer}>
-                        <Text style={styles.descriptionLabel}>책 소개</Text>
-                        <Text style={styles.description}>{book.description}</Text>
-                    </View>
+                    {/* 소개 */}
+                    <Text style={styles.sectionTitle}>책 소개</Text>
+                    <Text style={styles.desc}>{book.description}</Text>
 
-                    {/* Sample Content Preview */}
-                    <View style={styles.previewContainer}>
-                        <Text style={styles.previewLabel}>미리보기</Text>
-                        <Text style={styles.previewText}>
-                            {book.title === '해리포터와 마법사의 돌'
-                                ? '더즐리 부부는 프리벳 가 4번지에 살았는데, 그들은 자신들이 완벽하게 정상적인 사람이라고 자랑스럽게 말하곤 했다. 그들은 이상하거나 신비로운 일들과는 전혀 무관한 사람들이었으며, 그런 말도 안 되는 것들은 용납할 수 없다고 생각했다.'
-                                : book.title === '1984'
-                                    ? '4월의 밝고 차가운 날이었다. 시계가 열세 시를 알리고 있었다. 윈스턴 스미스는 추위를 피하려고 턱을 가슴에 파묻고 빅토리 맨션의 유리문을 재빨리 통과했지만, 성가신 바람이 들어와 소용돌이치며 모래먼지를 날렸다.'
-                                    : book.title === '데미안'
-                                        ? '내가 단지 한 인간의 삶을 살려는 시도를 이야기하려고 한다. 그는 자기 자신이 되려고 노력했던 사람이었다. 어쩌면 그것은 보잘것없는 이야기일지도 모른다. 모든 사람의 삶이 자기 자신을 향한 길이며, 한 길을 시도한 것이다.'
-                                        : '이 책의 첫 번째 장을 읽어보세요. 흥미진진한 이야기가 여러분을 기다리고 있습니다.'}
+                    {/* 미리보기 (책 한 페이지 느낌) */}
+                    <Text style={styles.sectionTitle}>첫 문장</Text>
+                    <View style={styles.page}>
+                        <Text style={styles.pageText}>
+                            {book.preview ?? '이 책의 첫 장을 펼쳐 보세요. 흥미진진한 이야기가 기다리고 있어요.'}
                         </Text>
+                        <Text style={styles.pageNo}>- 1 -</Text>
                     </View>
                 </View>
             </ScrollView>
 
-            {/* Read Button */}
-            <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.readButton} onPress={handleReadBook}>
-                    <Text style={styles.readButtonText}>읽기 시작</Text>
+            {/* 아래 고정 버튼 */}
+            <View style={styles.footer}>
+                <TouchableOpacity onPress={handleRead} activeOpacity={0.85}>
+                    <LinearGradient colors={THEME.buttonGradient as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.readBtn}>
+                        <Ionicons name={isReading ? 'play' : 'book-outline'} size={20} color="#FFFFFF" />
+                        <Text style={styles.readText}>{isReading ? `이어 읽기 (${progress}%)` : '읽기 시작'}</Text>
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
         </View>
@@ -130,179 +138,109 @@ const BooksDetail: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8F9FA',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#007BFF',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-    },
-    backButton: {
-        padding: 8,
-    },
-    backButtonText: {
-        fontSize: 24,
-        color: '#FFFFFF',
-        fontWeight: 'bold',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-    },
-    placeholder: {
-        width: 40,
-    },
-    scrollContent: {
-        paddingBottom: 100,
-    },
-    coverSection: {
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 30,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    coverImage: {
-        width: width * 0.5,
-        height: width * 0.7,
-        borderRadius: 12,
-        resizeMode: 'cover',
-    },
-    infoSection: {
-        backgroundColor: '#FFFFFF',
-        marginTop: 16,
-        paddingHorizontal: 20,
-        paddingVertical: 24,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#212529',
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    author: {
-        fontSize: 18,
-        color: '#6C757D',
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        backgroundColor: '#F8F9FA',
-        borderRadius: 12,
-        paddingVertical: 16,
-        marginBottom: 24,
-    },
-    statItem: {
-        alignItems: 'center',
-    },
-    statLabel: {
-        fontSize: 12,
-        color: '#6C757D',
-        marginBottom: 4,
-    },
-    statValue: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#212529',
-    },
-    genreContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    genreLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#212529',
-        marginRight: 12,
-    },
-    genreTag: {
-        backgroundColor: '#E3F2FD',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-    },
-    genreText: {
-        fontSize: 14,
-        color: '#007BFF',
-        fontWeight: '500',
-    },
-    descriptionContainer: {
-        marginBottom: 24,
-    },
-    descriptionLabel: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#212529',
-        marginBottom: 12,
-    },
-    description: {
-        fontSize: 16,
-        lineHeight: 24,
-        color: '#495057',
-    },
-    previewContainer: {
-        backgroundColor: '#F8F9FA',
-        borderRadius: 12,
-        padding: 16,
-    },
-    previewLabel: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#212529',
-        marginBottom: 12,
-    },
-    previewText: {
-        fontSize: 14,
-        lineHeight: 22,
-        color: '#495057',
-        fontStyle: 'italic',
-    },
-    buttonContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#E9ECEF',
-    },
-    readButton: {
-        backgroundColor: '#007BFF',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-        shadowColor: '#007BFF',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+    screen: { flex: 1, backgroundColor: THEME.background },
+    missing: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
+    missingText: { fontSize: 15, color: THEME.subText, fontWeight: '600' },
+
+    top: { paddingTop: 26, paddingBottom: 10, alignItems: 'center' },
+    coverWrap: {
+        shadowColor: '#2A1E10',
+        shadowOffset: { width: 4, height: 12 },
+        shadowOpacity: 0.35,
+        shadowRadius: 14,
         elevation: 8,
     },
-    readButtonText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
+    cover: {
+        width: 150,
+        height: 220,
+        borderRadius: 8,
+        borderTopLeftRadius: 4,
+        borderBottomLeftRadius: 4,
+        overflow: 'hidden',
+        justifyContent: 'center',
+        padding: 12,
     },
+    coverFallback: { color: '#FFFFFFE6', fontSize: 16, fontWeight: '900', textAlign: 'center' },
+    spine: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 16 },
+
+    body: { paddingHorizontal: 20, alignItems: 'stretch' },
+    genrePill: {
+        alignSelf: 'center',
+        backgroundColor: THEME.primarySoft,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 10,
+        marginTop: 10,
+    },
+    genrePillText: { fontSize: 12, fontWeight: '800', color: THEME.primaryDark },
+    title: { fontSize: 24, fontWeight: '900', color: THEME.text, textAlign: 'center', marginTop: 8 },
+    author: { fontSize: 14, color: THEME.subText, textAlign: 'center', marginTop: 4 },
+
+    stats: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
+        paddingVertical: 14,
+        marginTop: 18,
+        borderWidth: 1,
+        borderColor: THEME.line,
+    },
+    stat: { flex: 1, alignItems: 'center' },
+    statValue: { fontSize: 15, fontWeight: '900', color: THEME.text },
+    statLabel: { fontSize: 11, color: THEME.subText, marginTop: 2 },
+    statDivider: { width: 1, backgroundColor: THEME.line },
+
+    readingBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: THEME.primarySoft,
+        borderRadius: 14,
+        padding: 12,
+        marginTop: 12,
+    },
+    readingText: { fontSize: 13, fontWeight: '800', color: THEME.primaryDark },
+    readingTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF', overflow: 'hidden', marginLeft: 6 },
+    readingFill: { height: '100%', backgroundColor: THEME.primary },
+
+    sectionTitle: { fontSize: 16, fontWeight: '900', color: THEME.text, marginTop: 22, marginBottom: 8 },
+    desc: { fontSize: 15, color: '#4A4E3F', lineHeight: 23 },
+    page: {
+        backgroundColor: '#FFFDF6',
+        borderRadius: 6,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#EFE6CF',
+        shadowColor: '#6B5A2A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    pageText: { fontSize: 15, lineHeight: 26, color: '#3F3A2E' },
+    pageNo: { textAlign: 'center', fontSize: 11, color: '#B0A68C', marginTop: 12 },
+
+    footer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: 34,
+        backgroundColor: '#FBFAF4F2',
+        borderTopWidth: 1,
+        borderTopColor: THEME.line,
+    },
+    readBtn: {
+        height: 54,
+        borderRadius: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    readText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
 });
 
 export default BooksDetail;

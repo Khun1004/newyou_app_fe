@@ -16,6 +16,8 @@ export interface AppFriend {
     profileImage: string;  // 동물 아바타 키: 'rabbit', 'cat', 'dog' ...
     isAppUser: boolean;
     birthdayText?: string; // 예) '🎂 10월 16일'
+    colors?: string[];     // 생일 화면에서 고른 카드 색 (2가지)
+    photo?: string | null; // 서버에 올린 친구 사진 경로
 }
 
 // 친구마다 항상 같은 동물이 나오도록 id 로 골라요
@@ -59,6 +61,12 @@ export const useAppFriends = () => {
                 profileImage: animalOf(String(f.id)),
                 isAppUser: false,
                 birthdayText: birthdayLabel(f.birthdate ?? (f.birthMonth ? { month: f.birthMonth, day: f.birthDay } : null)),
+                colors: Array.isArray(f.profileColor)
+                    ? f.profileColor
+                    : typeof f.profileColor === 'string' && f.profileColor
+                        ? f.profileColor.split(',')
+                        : undefined,
+                photo: f.profileImage || null,
             }));
             list.sort((a, b) => a.nickname.localeCompare(b.nickname));
             setFriends(list);

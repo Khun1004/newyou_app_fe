@@ -21,7 +21,13 @@ const ChatsGroups = () => {
             onPress={() => handleGroupChatPress(item)}
         >
             <View style={styles.avatarContainer}>
-                <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                {item.avatar ? (
+                    <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                ) : (
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF3CF' }]}>
+                        <Text style={{ fontSize: 26 }}>🎉</Text>
+                    </View>
+                )}
                 <View style={styles.groupIcon}>
                     <Ionicons name="people" size={12} color="#fff" />
                 </View>

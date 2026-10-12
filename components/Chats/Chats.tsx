@@ -1,7 +1,20 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ChatContext } from '@/components/contexts/ChatContext';
+import { toImageUrl } from '@/config';
+
+// 사진이 없으면 이름 첫 글자 동그라미
+const ChatAvatar = ({ item }: { item: any }) => {
+    if (item.avatar) return <Image source={{ uri: toImageUrl(item.avatar) }} style={styles.avatar} />;
+    const colors = item.colors?.length >= 2 ? item.colors : ['#9AD0A0', '#4E7D32'];
+    return (
+        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarText}>{(item.name || '?').charAt(0).toUpperCase()}</Text>
+        </LinearGradient>
+    );
+};
 
 const Chats = () => {
     const router = useRouter();
@@ -19,7 +32,7 @@ const Chats = () => {
             style={styles.chatItem}
             onPress={() => handleChatPress(item)}
         >
-            <Image source={{ uri: item.avatar }} style={styles.avatar} />
+            <ChatAvatar item={item} />
             <View style={styles.chatContent}>
                 <View style={styles.chatHeader}>
                     <Text style={styles.name}>{item.name}</Text>
@@ -41,6 +54,13 @@ const Chats = () => {
 
     return (
         <View style={styles.container}>
+            {chatData.length === 0 && (
+                <View style={styles.empty}>
+                    <Text style={styles.emptyEmoji}>💬</Text>
+                    <Text style={styles.emptyText}>아직 채팅할 친구가 없어요</Text>
+                    <Text style={styles.emptySub}>생일 화면에서 친구를 추가하면 여기에 보여요</Text>
+                </View>
+            )}
             <FlatList
                 data={chatData}
                 renderItem={renderChatItem}
@@ -74,6 +94,12 @@ const styles = StyleSheet.create({
         marginRight: 15,
         backgroundColor: '#f0f0f0',
     },
+    avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+    avatarText: { color: '#FFFFFF', fontSize: 22, fontWeight: '800' },
+    empty: { alignItems: 'center', paddingTop: 60 },
+    emptyEmoji: { fontSize: 44, marginBottom: 8 },
+    emptyText: { fontSize: 16, fontWeight: '700', color: '#333' },
+    emptySub: { fontSize: 13, color: '#8E8E93', marginTop: 4 },
     chatContent: {
         flex: 1,
     },

@@ -1,457 +1,424 @@
-// /app/like.js
-import React, { useState, useMemo } from 'react';
+// 좋아요(찜한 선물) 화면
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     FlatList,
-    SafeAreaView,
     Dimensions,
     Image,
-    Modal,
+    ScrollView,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { giftData } from '@/components/Presents/GiftData';
-
-// Import the custom hook for global state
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
+import { useFriends } from '@/components/contexts/FriendContext';
 import AppHeader from '@/components/AppHeader';
+import { THEME } from '@/constants/theme';
+
+/**
+ * 좋아요(찜) 화면
+ *  - 위: 찜한 선물 개수 · 모두 합친 가격 · 곧 생일인 친구 알림
+ *  - 종류(향수/신발/시계…) 고르기 + 정렬
+ *  - 2줄 카드 (사진, 할인, 별점, 가격) — 하트를 누르면 찜 취소
+ */
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = (width - 48) / 2;
+const GAP = 12;
+const CARD_W = (width - 16 * 2 - GAP) / 2;
 
-const sortOptions = ['최근 추가순', '인기순', '낮은 가격순', '높은 가격순', '평점 높은순'];
+const SORTS = ['최근 찜한 순', '낮은 가격순', '높은 가격순', '별점 높은순'] as const;
+type Sort = (typeof SORTS)[number];
 
-// 좋아요 카드 컴포넌트
-const LikeCard = ({ item, onLikePress, onPress }) => (
-    <TouchableOpacity
-        style={styles.likeCard}
-        onPress={() => onPress(item.id)}
-        activeOpacity={0.9}
-    >
-        <View style={styles.imageContainer}>
-            <Image source={{ uri: item.image }} style={styles.productImage} />
-            <TouchableOpacity
-                style={styles.likeButton}
-                onPress={() => onLikePress(item.id)}
-            >
-                <Ionicons
-                    name="heart"
-                    size={20}
-                    color="#FF4757"
-                />
-            </TouchableOpacity>
-            {item.discount && (
-                <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>{item.discount}</Text>
-                </View>
-            )}
-        </View>
+const CATEGORY_EMOJI: Record<string, string> = {
+    향수: '🌸',
+    신발: '👟',
+    시계: '⌚',
+    케이크: '🎂',
+    액세서리: '💍',
+};
 
-        <View style={styles.productInfo}>
-            <Text style={styles.brandName}>{item.brand}</Text>
-            <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+const won = (s?: string) => parseInt((s || '0').replace(/[^0-9]/g, ''), 10) || 0;
+const formatWon = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 
-            {item.rating && (
-                <View style={styles.ratingContainer}>
-                    <Ionicons name="star" size={12} color="#FFD700" />
-                    <Text style={styles.rating}>{item.rating}</Text>
-                    <Text style={styles.reviewCount}>({item.reviews?.toLocaleString()})</Text>
-                </View>
-            )}
-
-            <View style={styles.priceContainer}>
-                {item.originalPrice && (
-                    <Text style={styles.originalPrice}>{item.originalPrice}</Text>
-                )}
-                <Text style={styles.price}>{item.price}</Text>
-            </View>
-
-            {item.tags && item.tags.length > 0 && (
-                <View style={styles.tagsContainer}>
-                    {item.tags?.slice(0, 2).map((tag, index) => (
-                        <View key={index} style={styles.tag}>
-                            <Text style={styles.tagText}>{tag}</Text>
-                        </View>
-                    ))}
-                </View>
-            )}
-        </View>
-    </TouchableOpacity>
-);
-
-// 빈 화면 컴포넌트
-const EmptyLikes = () => (
-    <View style={styles.emptyContainer}>
-        <Ionicons name="heart-outline" size={64} color="#ccc" />
-        <Text style={styles.emptyTitle}>좋아요한 상품이 없어요</Text>
-        <Text style={styles.emptySubtitle}>
-            마음에 드는 상품에 하트를 눌러보세요
-        </Text>
-    </View>
-);
+// 다음 생일까지 남은 날
+const daysUntil = (b?: { month: number; day: number } | null) => {
+    if (!b) return null;
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    let n = new Date(t.getFullYear(), b.month - 1, b.day);
+    if (n < t) n = new Date(t.getFullYear() + 1, b.month - 1, b.day);
+    return Math.round((n.getTime() - t.getTime()) / 86400000);
+};
 
 const Like = () => {
-    // Use the global state from context
-    const { likedItems, toggleLike } = useLikedItems();
-    const [selectedSort, setSelectedSort] = useState('최근 추가순');
-    const [showSortModal, setShowSortModal] = useState(false);
     const router = useRouter();
+    const { likedItems, toggleLike } = useLikedItems() as { likedItems: number[]; toggleLike: (id: number) => void };
+    const { friends } = useFriends();
+    const [sort, setSort] = useState<Sort>('최근 찜한 순');
+    const [category, setCategory] = useState<string>('전체');
 
-    // 좋아요한 상품들을 giftData에서 찾기
-    const likedProducts = useMemo(() => {
-        const allProducts = [];
+    // 찜한 상품 (찜한 순서 유지)
+    const liked = useMemo(() => {
+        const all: any[] = [];
+        Object.entries(giftData).forEach(([cat, products]: [string, any[]]) =>
+            products.forEach((p) => {
+                const order = likedItems.indexOf(p.id);
+                if (order >= 0) all.push({ ...p, category: cat, order });
+            })
+        );
+        return all;
+    }, [likedItems]);
 
-        Object.entries(giftData).forEach(([category, products]) => {
-            products.forEach(product => {
-                if (likedItems.includes(product.id)) {
-                    allProducts.push({ ...product, category });
-                }
-            });
-        });
+    const categories = useMemo(() => {
+        const set = Array.from(new Set(liked.map((p) => p.category)));
+        return ['전체', ...set];
+    }, [liked]);
 
-        switch (selectedSort) {
+    const visible = useMemo(() => {
+        const list = liked.filter((p) => category === '전체' || p.category === category);
+        switch (sort) {
             case '낮은 가격순':
-                return [...allProducts].sort((a, b) => {
-                    const priceA = parseInt(a.price?.replace(/[^0-9]/g, '') || '0');
-                    const priceB = parseInt(b.price?.replace(/[^0-9]/g, '') || '0');
-                    return priceA - priceB;
-                });
+                return [...list].sort((a, b) => won(a.price) - won(b.price));
             case '높은 가격순':
-                return [...allProducts].sort((a, b) => {
-                    const priceA = parseInt(a.price?.replace(/[^0-9]/g, '') || '0');
-                    const priceB = parseInt(b.price?.replace(/[^0-9]/g, '') || '0');
-                    return priceB - priceA;
-                });
-            case '평점 높은순':
-                return [...allProducts].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            case '인기순':
-                return [...allProducts].sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+                return [...list].sort((a, b) => won(b.price) - won(a.price));
+            case '별점 높은순':
+                return [...list].sort((a, b) => (b.rating || 0) - (a.rating || 0));
             default:
-                return allProducts.reverse();
+                return [...list].sort((a, b) => b.order - a.order);
         }
-    }, [likedItems, selectedSort]);
+    }, [liked, category, sort]);
 
-    const handleSortSelect = (sort) => {
-        setSelectedSort(sort);
-        setShowSortModal(false);
+    const total = liked.reduce((sum, p) => sum + won(p.price), 0);
+    const saved = liked.reduce((sum, p) => sum + (p.originalPrice ? won(p.originalPrice) - won(p.price) : 0), 0);
+
+    // 곧 생일인 친구 (30일 안)
+    const soonFriend = useMemo(() => {
+        const list = (friends as any[])
+            .map((f) => ({ f, d: daysUntil(f.birthdate) }))
+            .filter((x) => x.d !== null && x.d <= 30)
+            .sort((a, b) => (a.d as number) - (b.d as number));
+        return list[0];
+    }, [friends]);
+
+    const unlike = (item: any) => {
+        Alert.alert('찜 취소', `'${item.name}'을(를) 좋아요에서 뺄까요?`, [
+            { text: '아니요', style: 'cancel' },
+            { text: '빼기', style: 'destructive', onPress: () => toggleLike(item.id) },
+        ]);
     };
 
-    const renderItem = ({ item }) => (
-        <LikeCard
-            item={item}
-            onLikePress={toggleLike}
-            onPress={(id) => router.push(`/ProductDetail?id=${id}`)}
-        />
+    const nextSort = () => {
+        const i = SORTS.indexOf(sort);
+        setSort(SORTS[(i + 1) % SORTS.length]);
+    };
+
+    const renderCard = ({ item }: { item: any }) => (
+        <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => router.push(`/ProductDetail?id=${item.id}`)}
+        >
+            <View style={styles.imageBox}>
+                <Image source={{ uri: item.image }} style={styles.image} />
+                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.25)']} style={styles.imageShade} />
+                {!!item.discount && (
+                    <View style={styles.discount}>
+                        <Text style={styles.discountText}>{item.discount} OFF</Text>
+                    </View>
+                )}
+                <TouchableOpacity style={styles.heart} onPress={() => unlike(item)} hitSlop={8}>
+                    <Ionicons name="heart" size={18} color="#FF4D6D" />
+                </TouchableOpacity>
+                <View style={styles.catPill}>
+                    <Text style={styles.catPillText}>
+                        {CATEGORY_EMOJI[item.category] ?? '🎁'} {item.category}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={styles.info}>
+                <Text style={styles.brand} numberOfLines={1}>{item.brand}</Text>
+                <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+                {!!item.rating && (
+                    <View style={styles.ratingRow}>
+                        <Ionicons name="star" size={12} color="#F2B705" />
+                        <Text style={styles.rating}>{item.rating}</Text>
+                        <Text style={styles.reviews}>({item.reviews?.toLocaleString()})</Text>
+                    </View>
+                )}
+                <View style={styles.priceRow}>
+                    <Text style={styles.price}>{item.price}</Text>
+                    {!!item.originalPrice && <Text style={styles.originalPrice}>{item.originalPrice}</Text>}
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+
+    const Header = (
+        <View>
+            {/* 요약 카드 */}
+            <LinearGradient colors={['#FFE3EA', '#FFF6D6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+                <View style={styles.heroTop}>
+                    <View style={styles.heroHeart}>
+                        <Ionicons name="heart" size={22} color="#FFFFFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.heroTitle}>내가 찜한 선물 {liked.length}개</Text>
+                        <Text style={styles.heroSub}>마음에 드는 선물을 모아 두었어요</Text>
+                    </View>
+                </View>
+                <View style={styles.heroStats}>
+                    <View style={styles.heroStat}>
+                        <Text style={styles.heroStatLabel}>모두 합치면</Text>
+                        <Text style={styles.heroStatValue}>{formatWon(total)}</Text>
+                    </View>
+                    <View style={styles.heroDivider} />
+                    <View style={styles.heroStat}>
+                        {/* 할인된 선물이 있으면 아낀 돈, 없으면 평균 가격 */}
+                        <Text style={styles.heroStatLabel}>{saved > 0 ? '할인으로 아껴요' : '평균 가격'}</Text>
+                        <Text style={[styles.heroStatValue, saved > 0 && { color: '#E0466A' }]}>
+                            {formatWon(saved > 0 ? saved : Math.round(total / Math.max(liked.length, 1)))}
+                        </Text>
+                    </View>
+                </View>
+            </LinearGradient>
+
+            {/* 곧 생일인 친구 */}
+            {soonFriend && (
+                <TouchableOpacity style={styles.bdayTip} onPress={() => router.push('/Birthday')} activeOpacity={0.85}>
+                    <Text style={{ fontSize: 22 }}>🎂</Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.bdayTitle}>
+                            {soonFriend.f.nickname} 생일이 {soonFriend.d === 0 ? '오늘이에요!' : `${soonFriend.d}일 남았어요`}
+                        </Text>
+                        <Text style={styles.bdaySub}>찜한 선물 중에서 하나 골라 볼까요?</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={THEME.subText} />
+                </TouchableOpacity>
+            )}
+
+            {/* 종류 + 정렬 */}
+            <View style={styles.toolbar}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                    {categories.map((c) => {
+                        const active = category === c;
+                        return (
+                            <TouchableOpacity
+                                key={c}
+                                onPress={() => setCategory(c)}
+                                style={[styles.chip, active && styles.chipActive]}
+                            >
+                                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                                    {c === '전체' ? '전체' : `${CATEGORY_EMOJI[c] ?? '🎁'} ${c}`}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </View>
+            <View style={styles.sortRow}>
+                <Text style={styles.count}>{visible.length}개</Text>
+                <TouchableOpacity style={styles.sortBtn} onPress={nextSort}>
+                    <Ionicons name="swap-vertical" size={14} color={THEME.primaryDark} />
+                    <Text style={styles.sortText}>{sort}</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 
     return (
-        <View style={styles.container}>
-            {/* 공통 헤더 */}
+        <View style={styles.screen}>
             <AppHeader title="좋아요" />
 
-            {likedProducts.length > 0 ? (
-                <>
-                    <View style={styles.filterContainer}>
-                        <Text style={styles.resultText}>
-                            총 {likedProducts.length}개의 상품
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.sortButton}
-                            onPress={() => setShowSortModal(true)}
+            {liked.length === 0 ? (
+                <View style={styles.empty}>
+                    <LinearGradient colors={['#FFE3EA', '#FFF6D6']} style={styles.emptyCircle}>
+                        <Ionicons name="heart-outline" size={52} color="#FF4D6D" />
+                    </LinearGradient>
+                    <Text style={styles.emptyTitle}>아직 찜한 선물이 없어요</Text>
+                    <Text style={styles.emptySub}>선물 구경하다가 마음에 드는 상품에{'\n'}하트를 눌러 보세요</Text>
+                    <TouchableOpacity onPress={() => router.push('/Present')} activeOpacity={0.85}>
+                        <LinearGradient
+                            colors={THEME.buttonGradient as any}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.emptyBtn}
                         >
-                            <Text style={styles.sortText}>{selectedSort}</Text>
-                            <Ionicons name="chevron-down" size={16} color="#666" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <FlatList
-                        data={likedProducts}
-                        renderItem={renderItem}
-                        numColumns={2}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.gridContainer}
-                        columnWrapperStyle={styles.row}
-                        keyExtractor={(item) => `${item.category}-${item.id}`}
-                    />
-                </>
+                            <Ionicons name="gift-outline" size={18} color="#FFFFFF" />
+                            <Text style={styles.emptyBtnText}>선물 보러 가기</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
             ) : (
-                <EmptyLikes />
+                <FlatList
+                    data={visible}
+                    renderItem={renderCard}
+                    numColumns={2}
+                    keyExtractor={(item) => `${item.category}-${item.id}`}
+                    columnWrapperStyle={{ gap: GAP }}
+                    contentContainerStyle={styles.list}
+                    ListHeaderComponent={Header}
+                    showsVerticalScrollIndicator={false}
+                />
             )}
-
-            <Modal
-                visible={showSortModal}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowSortModal(false)}
-            >
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowSortModal(false)}
-                >
-                    <View style={styles.sortModal}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>정렬</Text>
-                            <TouchableOpacity onPress={() => setShowSortModal(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
-                            </TouchableOpacity>
-                        </View>
-                        {sortOptions.map((option) => (
-                            <TouchableOpacity
-                                key={option}
-                                style={styles.sortOption}
-                                onPress={() => handleSortSelect(option)}
-                            >
-                                <Text style={[
-                                    styles.sortOptionText,
-                                    selectedSort === option && styles.selectedSortText
-                                ]}>
-                                    {option}
-                                </Text>
-                                {selectedSort === option && (
-                                    <Ionicons name="checkmark" size={20} color="#007AFF" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </TouchableOpacity>
-            </Modal>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    header: {
-        flexDirection: 'row',
+    screen: { flex: 1, backgroundColor: THEME.background },
+    list: { padding: 16, paddingBottom: 40 },
+
+    // 요약 카드
+    hero: { borderRadius: 24, padding: 18, marginBottom: 12 },
+    heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    heroHeart: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#FF4D6D',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        justifyContent: 'center',
+    },
+    heroTitle: { fontSize: 18, fontWeight: '900', color: THEME.text },
+    heroSub: { fontSize: 12, color: THEME.subText, marginTop: 2 },
+    heroStats: {
+        flexDirection: 'row',
+        backgroundColor: '#FFFFFFCC',
+        borderRadius: 16,
+        marginTop: 14,
         paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
     },
-    backButton: {
-        padding: 4,
+    heroStat: { flex: 1, alignItems: 'center' },
+    heroStatLabel: { fontSize: 11, color: THEME.subText, fontWeight: '700' },
+    heroStatValue: { fontSize: 16, fontWeight: '900', color: THEME.text, marginTop: 2 },
+    heroDivider: { width: 1, backgroundColor: THEME.line },
+
+    // 생일 팁
+    bdayTip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#FFD1DC',
+        marginBottom: 12,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
+    bdayTitle: { fontSize: 14, fontWeight: '800', color: THEME.text },
+    bdaySub: { fontSize: 12, color: THEME.subText, marginTop: 1 },
+
+    // 종류 / 정렬
+    toolbar: { marginBottom: 8 },
+    chip: {
+        paddingHorizontal: 14,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: THEME.line,
+        justifyContent: 'center',
     },
-    headerRight: {
-        width: 32,
-    },
-    filterContainer: {
+    chipActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
+    chipText: { fontSize: 13, fontWeight: '700', color: THEME.subText },
+    chipTextActive: { color: '#FFFFFF' },
+    sortRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        marginBottom: 12,
+        marginTop: 4,
     },
-    resultText: {
-        fontSize: 14,
-        color: '#666',
-    },
-    sortButton: {
+    count: { fontSize: 13, fontWeight: '700', color: THEME.subText },
+    sortBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
+        gap: 4,
+        backgroundColor: THEME.primarySoft,
+        paddingHorizontal: 10,
         paddingVertical: 6,
-    },
-    sortText: {
-        fontSize: 14,
-        color: '#666',
-        marginRight: 4,
-    },
-    gridContainer: {
-        padding: 16,
-    },
-    row: {
-        justifyContent: 'space-between',
-    },
-    likeCard: {
-        width: ITEM_WIDTH,
-        marginBottom: 20,
-        backgroundColor: '#fff',
         borderRadius: 12,
+    },
+    sortText: { fontSize: 12, fontWeight: '800', color: THEME.primaryDark },
+
+    // 카드
+    card: {
+        width: CARD_W,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        marginBottom: GAP,
         overflow: 'hidden',
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowColor: '#4B5A3A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 2,
     },
-    imageContainer: {
-        position: 'relative',
+    imageBox: { width: '100%', height: CARD_W * 1.05, backgroundColor: '#F2F1EA' },
+    image: { width: '100%', height: '100%' },
+    imageShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 50 },
+    discount: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        backgroundColor: '#FF4D6D',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
     },
-    productImage: {
-        width: '100%',
-        height: 180,
-        resizeMode: 'cover',
-    },
-    likeButton: {
+    discountText: { color: '#FFFFFF', fontSize: 11, fontWeight: '900' },
+    heart: {
         position: 'absolute',
         top: 8,
         right: 8,
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        justifyContent: 'center',
+        backgroundColor: '#FFFFFFEE',
         alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        justifyContent: 'center',
     },
-    discountBadge: {
+    catPill: {
         position: 'absolute',
-        top: 8,
-        left: 8,
-        backgroundColor: '#FF4757',
+        left: 10,
+        bottom: 8,
+        backgroundColor: '#FFFFFFE6',
         paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    discountText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    productInfo: {
-        padding: 12,
-    },
-    brandName: {
-        fontSize: 12,
-        color: '#999',
-        marginBottom: 4,
-        fontWeight: '500',
-    },
-    productName: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 6,
-        lineHeight: 18,
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    rating: {
-        fontSize: 12,
-        color: '#333',
-        marginLeft: 4,
-        marginRight: 4,
-        fontWeight: '600',
-    },
-    reviewCount: {
-        fontSize: 12,
-        color: '#999',
-    },
-    priceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    originalPrice: {
-        fontSize: 12,
-        color: '#999',
-        textDecorationLine: 'line-through',
-        marginRight: 6,
-    },
-    price: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#007AFF',
-    },
-    tagsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginTop: 4,
-    },
-    tag: {
-        backgroundColor: '#f0f8ff',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: 3,
         borderRadius: 10,
-        marginRight: 6,
-        marginBottom: 4,
     },
-    tagText: {
-        fontSize: 10,
-        color: '#007AFF',
-        fontWeight: '500',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 32,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginTop: 16,
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 14,
-        color: '#666',
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    sortModal: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: 20,
-    },
-    modalHeader: {
+    catPillText: { fontSize: 11, fontWeight: '800', color: THEME.text },
+    info: { padding: 12 },
+    brand: { fontSize: 11, fontWeight: '800', color: THEME.subText, letterSpacing: 0.5 },
+    name: { fontSize: 14, fontWeight: '800', color: THEME.text, marginTop: 3, lineHeight: 19, minHeight: 38 },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4 },
+    rating: { fontSize: 12, fontWeight: '800', color: THEME.text },
+    reviews: { fontSize: 11, color: THEME.subText },
+    priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 6, flexWrap: 'wrap' },
+    price: { fontSize: 15, fontWeight: '900', color: THEME.primaryDark },
+    originalPrice: { fontSize: 11, color: THEME.placeholder, textDecorationLine: 'line-through' },
+
+    // 비었을 때
+    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+    emptyCircle: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' },
+    emptyTitle: { fontSize: 18, fontWeight: '900', color: THEME.text, marginTop: 18 },
+    emptySub: { fontSize: 14, color: THEME.subText, textAlign: 'center', lineHeight: 20, marginTop: 6 },
+    emptyBtn: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        gap: 6,
+        marginTop: 20,
+        paddingHorizontal: 22,
+        height: 48,
+        borderRadius: 24,
     },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    sortOption: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-    },
-    sortOptionText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    selectedSortText: {
-        color: '#007AFF',
-        fontWeight: '600',
-    },
+    emptyBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });
 
 export default Like;
