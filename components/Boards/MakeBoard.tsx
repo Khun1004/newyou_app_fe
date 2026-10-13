@@ -20,6 +20,7 @@ import { useAuth } from '@/components/contexts/AuthProvider';
 import { useBoard } from '@/components/contexts/BoardContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const MakeBoard = () => {
     const { currentUser } = useAuth();
     const { posts, addPost, updatePost } = useBoard();
@@ -130,7 +131,7 @@ const MakeBoard = () => {
                 <AppHeader
                     title={isEdit ? '게시글 수정' : '게시글 작성'}
                     onBack={() => { if (!isLoading) handleBack(); }}
-                    right={[{ label: isEdit ? '저장' : '등록', onPress: handleSubmit, disabled: isSubmitDisabled, color: '#4E7D32' }]}
+                    right={[{ label: isEdit ? '저장' : '등록', onPress: handleSubmit, disabled: isSubmitDisabled, color: dc('#4E7D32') }]}
                 />
 
                 <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -142,7 +143,7 @@ const MakeBoard = () => {
                                 <Image source={{ uri: toImageUrl(currentUser.profileImage) }} style={styles.profileImage} />
                             ) : (
                                 <View style={styles.defaultProfileImage}>
-                                    <Ionicons name="person" size={24} color="#4E7D32" />
+                                    <Ionicons name="person" size={24} color={dc('#4E7D32')} />
                                 </View>
                             )}
                             <View>
@@ -197,7 +198,7 @@ const MakeBoard = () => {
                             onChangeText={setTitle}
                             maxLength={50}
                             editable={!isLoading}
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor={dc('#A3A794')}
                         />
                     </View>
 
@@ -215,7 +216,7 @@ const MakeBoard = () => {
                             multiline
                             textAlignVertical="top"
                             editable={!isLoading}
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor={dc('#A3A794')}
                         />
                     </View>
                 </ScrollView>

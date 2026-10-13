@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { THEME } from '@/constants/theme';
+import { THEME, dc } from '@/constants/theme';
 // 컨텍스트 경로가 정확한지 확인하세요.
 import { useReels } from '@/components/contexts/ReelContext';
 // expo-video 임포트
@@ -175,7 +175,7 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
     if (allReels.length === 0) {
         return (
             <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color="#fff" />
+                <ActivityIndicator size="large" color={dc('#fff')} />
                 <Text style={styles.loadingText}>릴스를 로드하는 중...</Text>
             </View>
         );
@@ -253,7 +253,7 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                                 {/* 위쪽: 분류 배지 + 몇 번째인지 */}
                                 <View style={[styles.topRow, { top: topInset + 10 }]} pointerEvents="none">
                                     <View style={styles.glassPill}>
-                                        <Ionicons name="sparkles" size={12} color="#fff" />
+                                        <Ionicons name="sparkles" size={12} color={dc('#fff')} />
                                         <Text style={styles.glassPillText}>
                                             {short.title ? short.title.split(' ')[0] : '릴스'}
                                         </Text>
@@ -281,7 +281,7 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                                             </Text>
                                         </LinearGradient>
                                         <View style={styles.followBadge}>
-                                            <Ionicons name="add" size={12} color="#fff" />
+                                            <Ionicons name="add" size={12} color={dc('#fff')} />
                                         </View>
                                     </View>
 
@@ -289,7 +289,7 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                                         <Ionicons
                                             name={short.isLiked ? 'heart' : 'heart-outline'}
                                             size={32}
-                                            color={short.isLiked ? '#FF4D6D' : '#fff'}
+                                            color={dc(short.isLiked ? '#FF4D6D' : '#fff')}
                                             style={styles.iconShadow}
                                         />
                                         <Text style={styles.actionText}>{short.likes}</Text>
@@ -299,14 +299,14 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                                         <Ionicons
                                             name={short.isSaved ? 'bookmark' : 'bookmark-outline'}
                                             size={29}
-                                            color={short.isSaved ? '#F2B705' : '#fff'}
+                                            color={dc(short.isSaved ? '#F2B705' : '#fff')}
                                             style={styles.iconShadow}
                                         />
                                         <Text style={styles.actionText}>{short.isSaved ? '저장됨' : '저장'}</Text>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity style={styles.action} accessibilityLabel="공유">
-                                        <Ionicons name="paper-plane-outline" size={28} color="#fff" style={styles.iconShadow} />
+                                        <Ionicons name="paper-plane-outline" size={28} color={dc('#fff')} style={styles.iconShadow} />
                                         <Text style={styles.actionText}>공유</Text>
                                     </TouchableOpacity>
                                 </View>

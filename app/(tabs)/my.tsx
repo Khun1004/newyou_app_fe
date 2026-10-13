@@ -18,8 +18,10 @@ import { usePlans } from '@/components/Plan/PlanContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
+import { useThemeMode } from '@/components/contexts/ThemeContext';
 import { AUTH_URL, SERVER_IP } from '@/config';
-import { THEME } from '@/constants/theme';
+import api from '@/components/utils/api';
+import { THEME, dc, isDark } from '@/constants/theme';
 
 export default function MyScreen() {
     const { currentUser, logout, isAuthenticated } = useAuth();
@@ -27,9 +29,29 @@ export default function MyScreen() {
     const { anniversaries, loadAnniversaries } = useAnniversary(); // 추가
     const { plans } = usePlans();
     const [streakDays, setStreakDays] = useState(0);
+    // 로그인 아이디 (서버 /api/mypage 에서 최신 값을 받아와요)
+    const [loginId, setLoginId] = useState<string>(currentUser?.loginId || '');
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setLoginId('');
+            return;
+        }
+        setLoginId(currentUser?.loginId || '');
+        let alive = true;
+        api.get('/mypage')
+            .then((res) => {
+                if (alive && res.data?.loginId) setLoginId(res.data.loginId);
+            })
+            .catch(() => {});
+        return () => {
+            alive = false;
+        };
+    }, [isAuthenticated, currentUser?.phoneNumber, currentUser?.loginId]);
 
     const [notifications, setNotifications] = useState(true);
-    const [darkMode, setDarkMode] = useState(false);
+    // 화면 모드 (라이트 / 다크 / 휴대폰 설정)
+    const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
     const [soundEnabled, setSoundEnabled] = useState(true);
 
     // 기념일 데이터 로드
@@ -90,7 +112,7 @@ export default function MyScreen() {
             label: '내 계획',
             value: isAuthenticated ? plans.length.toString() : '0',
             icon: 'checkmark-circle',
-            color: '#4ECDC4',
+            color: dc('#4ECDC4'),
             onPress: isAuthenticated ? () => router.push('/Plan') : undefined,
         },
         {
@@ -98,7 +120,7 @@ export default function MyScreen() {
             label: '설정한 알람',
             value: isAuthenticated ? alarms.length.toString() : '0',
             icon: 'alarm',
-            color: '#FF6B6B',
+            color: dc('#FF6B6B'),
             onPress: isAuthenticated ? () => router.push('/AlarmList') : undefined,
         },
         {
@@ -106,7 +128,7 @@ export default function MyScreen() {
             label: '기념일 등록',
             value: isAuthenticated ? anniversaries.length.toString() : '0',
             icon: 'gift',
-            color: '#9B59B6',
+            color: dc('#9B59B6'),
             onPress: isAuthenticated ? () => router.push('/AnniversaryList') : undefined,
         },
         {
@@ -114,7 +136,7 @@ export default function MyScreen() {
             label: '연속 사용일',
             value: `${isAuthenticated ? streakDays : 0}일`,
             icon: 'flame',
-            color: '#FFA726',
+            color: dc('#FFA726'),
             onPress: undefined as undefined | (() => void),
         },
     ];
@@ -141,7 +163,7 @@ export default function MyScreen() {
                 { id: '12', title: '홈 알람 설정', subtitle: '홈 화면에 보여줄 알람 3개 고르기', icon: 'home-outline', hasArrow: true, onPress: () => router.push('/HomeAlarmSettings') },
                 { id: '4', title: '푸시 알림', icon: 'notifications-outline', hasSwitch: true, value: notifications, onToggle: setNotifications },
                 { id: '5', title: '알림음', icon: 'volume-high-outline', hasSwitch: true, value: soundEnabled, onToggle: setSoundEnabled },
-                { id: '6', title: '다크 모드', icon: 'moon-outline', hasSwitch: true, value: darkMode, onToggle: setDarkMode },
+                { id: '6', title: '화면 모드', icon: 'moon-outline', themeSelector: true },
             ]
         },
         {
@@ -182,7 +204,24 @@ export default function MyScreen() {
                     </View>
                 </View>
                 <View style={styles.menuItemRight}>
-                    {item.hasSwitch ? (
+                    {item.themeSelector ? (
+                        <View style={styles.segment}>
+                            {([
+                                ['light', '라이트'],
+                                ['dark', '다크'],
+                                ['system', '자동'],
+                            ] as const).map(([m, label]) => (
+                                <TouchableOpacity
+                                    key={m}
+                                    onPress={() => setThemeMode(m)}
+                                    style={[styles.segmentBtn, themeMode === m && styles.segmentBtnActive]}
+                                    accessibilityLabel={`화면 모드 ${label}`}
+                                >
+                                    <Text style={[styles.segmentText, themeMode === m && styles.segmentTextActive]}>{label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ) : item.hasSwitch ? (
                         <Switch
                             value={item.value as boolean}
                             onValueChange={item.onToggle}
@@ -190,7 +229,7 @@ export default function MyScreen() {
                             thumbColor={item.value ? '#fff' : '#f4f3f4'}
                         />
                     ) : item.hasArrow ? (
-                        <Ionicons name="chevron-forward" size={20} color="#999" />
+                        <Ionicons name="chevron-forward" size={20} color={dc('#999')} />
                     ) : null}
                 </View>
             </TouchableOpacity>
@@ -199,7 +238,7 @@ export default function MyScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
 
             {/* 공통 헤더 (햇살 색) */}
             <AppHeader
@@ -241,13 +280,26 @@ export default function MyScreen() {
                                     </View>
                                 )}
                                 <TouchableOpacity style={styles.cameraButton} onPress={() => router.push('/ProfileEdit')}>
-                                    <Ionicons name="camera" size={16} color="#fff" />
+                                    <Ionicons name="camera" size={16} color={dc('#fff')} />
                                 </TouchableOpacity>
                             </View>
                             <View style={styles.profileInfo}>
                                 <Text style={styles.userName}>{userInfo.name}</Text>
-                                <Text style={styles.userEmail}>{userInfo.phoneNumber}</Text>
-                                <Text style={styles.memberSince}>가입일: {userInfo.memberSince}</Text>
+                                {/* 아이디 */}
+                                <View style={styles.idChip}>
+                                    <Ionicons name="at" size={14} color={THEME.primaryDark} />
+                                    <Text style={styles.idChipText} numberOfLines={1}>
+                                        {loginId || '아이디 없음'}
+                                    </Text>
+                                </View>
+                                <View style={styles.infoLine}>
+                                    <Ionicons name="call-outline" size={13} color={THEME.subText} />
+                                    <Text style={styles.userEmail}>{userInfo.phoneNumber}</Text>
+                                </View>
+                                <View style={styles.infoLine}>
+                                    <Ionicons name="calendar-outline" size={13} color={THEME.icon} />
+                                    <Text style={styles.memberSince}>가입일: {userInfo.memberSince}</Text>
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -295,7 +347,7 @@ export default function MyScreen() {
                             style={styles.logoutButton}
                             onPress={handleLogout}
                         >
-                            <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
+                            <Ionicons name="log-out-outline" size={20} color={dc('#FF6B6B')} />
                             <Text style={styles.logoutText}>로그아웃</Text>
                         </TouchableOpacity>
                     </View>
@@ -306,6 +358,12 @@ export default function MyScreen() {
 }
 
 const styles = StyleSheet.create({
+    // 화면 모드 고르기 (라이트 / 다크 / 자동)
+    segment: { flexDirection: 'row', backgroundColor: '#F1F2EA', borderRadius: 10, padding: 3 },
+    segmentBtn: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8 },
+    segmentBtnActive: { backgroundColor: '#4E7D32' },
+    segmentText: { fontSize: 12, fontWeight: '700', color: '#7C8070' },
+    segmentTextActive: { color: '#FFFFFF' },
     guestCard: {
         backgroundColor: '#fff',
         borderWidth: 1,
@@ -456,10 +514,33 @@ const styles = StyleSheet.create({
         color: THEME.text,
         marginBottom: 4,
     },
-    userEmail: {
-        fontSize: 16,
-        color: THEME.subText,
+    idChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        alignSelf: 'flex-start',
+        maxWidth: '100%',
+        backgroundColor: THEME.primarySoft,
+        borderRadius: 10,
+        paddingHorizontal: 9,
+        paddingVertical: 3,
         marginBottom: 8,
+    },
+    idChipText: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: THEME.primaryDark,
+        flexShrink: 1,
+    },
+    infoLine: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginBottom: 4,
+    },
+    userEmail: {
+        fontSize: 15,
+        color: THEME.subText,
     },
     memberSince: {
         fontSize: 14,

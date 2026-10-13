@@ -19,6 +19,7 @@ import { useAuth } from '@/components/contexts/AuthProvider';
 import AppHeader, { HEADER_HEIGHT } from '@/components/AppHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { dbg, dc } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 
 // Dummy data for messages
@@ -48,12 +49,12 @@ const ChattingRoom = () => {
 
     if (!chatData || !currentUser) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="채팅방" />
                 <SafeAreaView style={styles.container}>
                     <View style={styles.errorContainer}>
                         <View style={styles.errorIconContainer}>
-                            <Ionicons name="sad-outline" size={60} color="#FF6B6B" />
+                            <Ionicons name="sad-outline" size={60} color={dc('#FF6B6B')} />
                         </View>
                         <Text style={styles.errorText}>채팅 정보를 불러올 수 없습니다.</Text>
                         <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
@@ -94,7 +95,7 @@ const ChattingRoom = () => {
                                 <Image source={{ uri: profileImageUri }} style={styles.chatAvatar} />
                             ) : (
                                 <View style={styles.defaultAvatarContainer}>
-                                    <Ionicons name="person" size={20} color="#007AFF" />
+                                    <Ionicons name="person" size={20} color={dc('#007AFF')} />
                                 </View>
                             )}
                         </View>
@@ -118,7 +119,7 @@ const ChattingRoom = () => {
                                 <Image source={{ uri: profileImageUri }} style={styles.chatAvatar} />
                             ) : (
                                 <View style={styles.defaultAvatarContainer}>
-                                    <Ionicons name="person" size={20} color="#007AFF" />
+                                    <Ionicons name="person" size={20} color={dc('#007AFF')} />
                                 </View>
                             )}
                         </View>
@@ -161,7 +162,7 @@ const ChattingRoom = () => {
                 <View style={styles.inputContainer}>
                     <TouchableOpacity style={styles.attachButton}>
                         <View style={styles.attachButtonContainer}>
-                            <Ionicons name="add" size={20} color="#007AFF" />
+                            <Ionicons name="add" size={20} color={dc('#007AFF')} />
                         </View>
                     </TouchableOpacity>
                     <View style={styles.textInputContainer}>
@@ -170,7 +171,7 @@ const ChattingRoom = () => {
                             value={inputMessage}
                             onChangeText={setInputMessage}
                             placeholder="메시지를 입력하세요..."
-                            placeholderTextColor="#A0A0A0"
+                            placeholderTextColor={dc('#A0A0A0')}
                             multiline
                             maxLength={1000}
                         />
@@ -183,7 +184,7 @@ const ChattingRoom = () => {
                         <Ionicons
                             name="send"
                             size={18}
-                            color={inputMessage.trim() === '' ? '#C7C7CC' : '#fff'}
+                            color={dc(inputMessage.trim() === '' ? '#C7C7CC' : '#fff')}
                         />
                     </TouchableOpacity>
                 </View>

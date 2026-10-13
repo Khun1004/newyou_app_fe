@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg, dc } from '@/constants/theme';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useRequireLogin } from '@/components/RequireLogin';
 import { useMoney, findCategory, formatWon, MoneyRecord, MoneyType } from '@/components/Money/moneyStore';
@@ -141,11 +141,11 @@ export default function MoneyBook() {
 
                 {/* 빠른 등록 버튼 */}
                 <View style={styles.quickRow}>
-                    <TouchableOpacity style={[styles.quickButton, { backgroundColor: '#E7F5EC' }]} onPress={() => openAdd('INCOME')} activeOpacity={0.85}>
+                    <TouchableOpacity style={[styles.quickButton, { backgroundColor: dbg('#E7F5EC') }]} onPress={() => openAdd('INCOME')} activeOpacity={0.85}>
                         <Ionicons name="add-circle" size={22} color={INCOME_COLOR} />
                         <Text style={[styles.quickText, { color: INCOME_COLOR }]}>돈 받았어요</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.quickButton, { backgroundColor: '#FDECEC' }]} onPress={() => openAdd('EXPENSE')} activeOpacity={0.85}>
+                    <TouchableOpacity style={[styles.quickButton, { backgroundColor: dbg('#FDECEC') }]} onPress={() => openAdd('EXPENSE')} activeOpacity={0.85}>
                         <Ionicons name="remove-circle" size={22} color={EXPENSE_COLOR} />
                         <Text style={[styles.quickText, { color: EXPENSE_COLOR }]}>돈 썼어요</Text>
                     </TouchableOpacity>
@@ -158,7 +158,7 @@ export default function MoneyBook() {
                         {/* 전체 막대 */}
                         <View style={styles.stackBar}>
                             {byCategory.map((c) => (
-                                <View key={c.name} style={{ flex: c.total, backgroundColor: c.color }} />
+                                <View key={c.name} style={{ flex: c.total, backgroundColor: dbg(c.color) }} />
                             ))}
                         </View>
                         {byCategory.slice(0, 5).map((c) => {
@@ -168,7 +168,7 @@ export default function MoneyBook() {
                                     <Text style={styles.catEmoji}>{c.emoji}</Text>
                                     <Text style={styles.catName}>{c.name}</Text>
                                     <View style={styles.catBarTrack}>
-                                        <View style={[styles.catBarFill, { width: `${pct}%`, backgroundColor: c.color }]} />
+                                        <View style={[styles.catBarFill, { width: `${pct}%`, backgroundColor: dbg(c.color) }]} />
                                     </View>
                                     <Text style={styles.catPct}>{pct}%</Text>
                                     <Text style={styles.catAmount}>{formatWon(c.total)}원</Text>
@@ -264,7 +264,7 @@ export default function MoneyBook() {
 
             {/* 오른쪽 아래 + 버튼 (지출 기록) */}
             <TouchableOpacity style={styles.fab} onPress={() => openAdd('EXPENSE')} activeOpacity={0.85} accessibilityLabel="기록 추가">
-                <Ionicons name="add" size={30} color="#fff" />
+                <Ionicons name="add" size={30} color={dc('#fff')} />
             </TouchableOpacity>
         </View>
     );

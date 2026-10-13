@@ -10,7 +10,7 @@ import { useSchedules, ScheduleItem } from '@/components/Schedule/scheduleStore'
 import { usePlans, Plan } from '@/components/Plan/PlanContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useRequireLogin } from '@/components/RequireLogin';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dbg, dgrad } from '@/constants/theme';
 
 // ============================================================
 // 시간표 설정
@@ -102,7 +102,7 @@ const NowCard = ({ now, schedules }: { now: Date; schedules: ScheduleItem[] }) =
     const dateText = `${now.getMonth() + 1}월 ${now.getDate()}일 ${DAY_LABEL[todayKey]}요일`;
 
     return (
-        <LinearGradient colors={COLORS.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.nowCard}>
+        <LinearGradient colors={dgrad(COLORS.sunrise as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.nowCard}>
             <View>
                 <Text style={styles.nowDate}>{dateText}</Text>
                 <View style={styles.clockRow}>
@@ -139,11 +139,11 @@ const NowCard = ({ now, schedules }: { now: Date; schedules: ScheduleItem[] }) =
 // 그날 계획 모두 보기 (아래에서 올라오는 창)
 // ============================================================
 const DayPlansSheet = ({
-                           visible,
-                           date,
-                           plans,
-                           onClose,
-                       }: {
+    visible,
+    date,
+    plans,
+    onClose,
+}: {
     visible: boolean;
     date: Date | null;
     plans: Plan[];
@@ -180,7 +180,7 @@ const DayPlansSheet = ({
                             <View
                                 style={[
                                     styles.sheetBar,
-                                    { backgroundColor: p.color && p.color !== '#FFFFFF' ? p.color : COLORS.pink },
+                                    { backgroundColor: dbg(p.color) && p.color !== '#FFFFFF' ? p.color : COLORS.pink },
                                 ]}
                             />
                             <View style={{ flex: 1 }}>
@@ -194,7 +194,7 @@ const DayPlansSheet = ({
                     ))}
                 </ScrollView>
                 <TouchableOpacity style={styles.sheetAdd} onPress={addPlan} activeOpacity={0.85}>
-                    <Ionicons name="add" size={18} color="#fff" />
+                    <Ionicons name="add" size={18} color={dc('#fff')} />
                     <Text style={styles.sheetAddText}>이 날 계획 추가</Text>
                 </TouchableOpacity>
             </View>
@@ -352,7 +352,7 @@ const TimetableBody = ({
                                                     key={s.id}
                                                     activeOpacity={0.85}
                                                     onPress={() => router.push({ pathname: '/Schedule', params: { id: s.id } })}
-                                                    style={[styles.card, { top: top + 2, height, backgroundColor: s.color || THEME.primarySoft }]}
+                                                    style={[styles.card, { top: top + 2, height, backgroundColor: dbg(s.color) || THEME.primarySoft }]}
                                                 >
                                                     <View style={styles.cardBar} />
                                                     <Text style={styles.cardTitle} numberOfLines={3}>{s.title}</Text>
@@ -481,7 +481,7 @@ export default function Timetable() {
             {scheduleData.length === 0 && (
                 <View style={styles.emptyHint} pointerEvents="box-none">
                     <TouchableOpacity style={styles.emptyButton} onPress={openAddSchedule} activeOpacity={0.85}>
-                        <Ionicons name="add" size={18} color="#fff" />
+                        <Ionicons name="add" size={18} color={dc('#fff')} />
                         <Text style={styles.emptyButtonText}>첫 일정 추가하기</Text>
                     </TouchableOpacity>
                 </View>

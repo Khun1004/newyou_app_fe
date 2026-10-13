@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 interface HeaderProps {
     searchText: string;
     onSearchChange: (text: string) => void;
@@ -28,13 +29,13 @@ const PresentHeader: React.FC<HeaderProps> = ({ searchText, onSearchChange, onBa
             {/* 검색창 (헤더 아래 한 줄) */}
             <View style={styles.searchRow}>
                 <View style={styles.searchContainer}>
-                    <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
+                    <Ionicons name="search" size={20} color={dc('#999')} style={styles.searchIcon} />
                     <TextInput
                         style={styles.searchInput}
                         placeholder="검색"
                         value={searchText}
                         onChangeText={onSearchChange}
-                        placeholderTextColor="#999"
+                        placeholderTextColor={dc('#999')}
                     />
                 </View>
             </View>

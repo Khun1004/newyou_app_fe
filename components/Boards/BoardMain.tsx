@@ -12,7 +12,7 @@ import {
 import { router } from "expo-router";
 import { useBoard, BoardPost } from '@/components/contexts/BoardContext';
 import { Ionicons } from '@expo/vector-icons';
-import { THEME } from '@/constants/theme';
+import { THEME, dc } from '@/constants/theme';
 import { toImageUrl } from '@/config';
 
 const BoardMain = () => {
@@ -137,7 +137,7 @@ const BoardMain = () => {
                 activeOpacity={0.85}
                 accessibilityLabel="글쓰기"
             >
-                <Ionicons name="create-outline" size={24} color="#fff" />
+                <Ionicons name="create-outline" size={24} color={dc('#fff')} />
             </TouchableOpacity>
         </SafeAreaView>
     );

@@ -22,6 +22,7 @@ import { useSentGifts } from '@/components/contexts/SentGiftsContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 // 행복 메시지 템플릿
 const happyMessageTemplates = [
     '생일 축하합니다! 🎂',
@@ -107,7 +108,7 @@ const GiftPurchase = () => {
             <View style={styles.container}>
                 <AppHeader title="선물하기" />
                 <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
+                    <Ionicons name="alert-circle-outline" size={64} color={dc('#ccc')} />
                     <Text style={styles.errorText}>상품을 찾을 수 없습니다.</Text>
                     <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
                         <Text style={styles.goBackText}>돌아가기</Text>
@@ -253,7 +254,7 @@ const GiftPurchase = () => {
                     {/* ... (보내는 사람 정보 영역은 기존과 동일) ... */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="person-outline" size={20} color="#007AFF" />
+                            <Ionicons name="person-outline" size={20} color={dc('#007AFF')} />
                             <Text style={styles.sectionTitle}>보내는 분 정보</Text>
                         </View>
                         <View style={styles.inputGroup}>
@@ -263,7 +264,7 @@ const GiftPurchase = () => {
                                 placeholder="이름을 입력해주세요"
                                 value={senderName}
                                 onChangeText={setSenderName}
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                         <View style={styles.inputGroup}>
@@ -275,7 +276,7 @@ const GiftPurchase = () => {
                                 onChangeText={(text) => setSenderPhone(formatPhoneNumber(text))}
                                 keyboardType="phone-pad"
                                 maxLength={13}
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                     </View>
@@ -284,7 +285,7 @@ const GiftPurchase = () => {
                     {/* ... (받는 사람 정보 영역은 기존과 동일) ... */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="gift-outline" size={20} color="#FF6B6B" />
+                            <Ionicons name="gift-outline" size={20} color={dc('#FF6B6B')} />
                             <Text style={styles.sectionTitle}>받는 분 정보</Text>
                         </View>
                         <View style={styles.inputGroup}>
@@ -294,7 +295,7 @@ const GiftPurchase = () => {
                                 placeholder="이름을 입력해주세요"
                                 value={receiverName}
                                 onChangeText={setReceiverName}
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                         <View style={styles.inputGroup}>
@@ -306,7 +307,7 @@ const GiftPurchase = () => {
                                 onChangeText={(text) => setReceiverPhone(formatPhoneNumber(text))}
                                 keyboardType="phone-pad"
                                 maxLength={13}
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                     </View>
@@ -314,7 +315,7 @@ const GiftPurchase = () => {
                     {/* 배송지 정보 */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="location-outline" size={20} color="#10B981" />
+                            <Ionicons name="location-outline" size={20} color={dc('#10B981')} />
                             <Text style={styles.sectionTitle}>배송지 정보</Text>
                         </View>
                         <View style={styles.inputGroup}>
@@ -328,7 +329,7 @@ const GiftPurchase = () => {
                                     keyboardType="number-pad"
                                     maxLength={5}
                                     editable={false} // ❗️ 주소 검색으로만 입력 가능
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={dc('#999')}
                                 />
                                 <TouchableOpacity
                                     style={styles.searchButton}
@@ -346,7 +347,7 @@ const GiftPurchase = () => {
                                 value={receiverAddress}
                                 onChangeText={setReceiverAddress}
                                 editable={false} // ❗️ 주소 검색으로만 입력 가능
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                         <View style={styles.inputGroup}>
@@ -356,7 +357,7 @@ const GiftPurchase = () => {
                                 placeholder="상세주소를 입력해주세요"
                                 value={receiverDetailAddress}
                                 onChangeText={setReceiverDetailAddress}
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
                     </View>
@@ -365,7 +366,7 @@ const GiftPurchase = () => {
                     {/* ... (결제 수단 영역은 기존과 동일) ... */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="card-outline" size={20} color="#8B5CF6" />
+                            <Ionicons name="card-outline" size={20} color={dc('#8B5CF6')} />
                             <Text style={styles.sectionTitle}>결제 수단</Text>
                         </View>
 
@@ -383,10 +384,10 @@ const GiftPurchase = () => {
                                             setShowPaymentModal(false);
                                         }}
                                     >
-                                        <Ionicons name={method.icon} size={24} color="#333" />
+                                        <Ionicons name={method.icon} size={24} color={dc('#333')} />
                                         <Text style={styles.paymentName}>{method.name}</Text>
                                         {selectedPayment === method.id && (
-                                            <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+                                            <Ionicons name="checkmark-circle" size={24} color={dc('#007AFF')} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -400,13 +401,13 @@ const GiftPurchase = () => {
                                     <Ionicons
                                         name={paymentMethods.find(m => m.id === selectedPayment)?.icon || 'card-outline'}
                                         size={24}
-                                        color="#333"
+                                        color={dc('#333')}
                                     />
                                     <Text style={styles.paymentCardText}>
                                         {paymentMethods.find(m => m.id === selectedPayment)?.name || '결제 수단 선택'}
                                     </Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#999" />
+                                <Ionicons name="chevron-forward" size={20} color={dc('#999')} />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -415,7 +416,7 @@ const GiftPurchase = () => {
                     {/* ... (행복 메시지 영역은 기존과 동일) ... */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Ionicons name="heart-outline" size={20} color="#FF4757" />
+                            <Ionicons name="heart-outline" size={20} color={dc('#FF4757')} />
                             <Text style={styles.sectionTitle}>행복 메시지</Text>
                         </View>
                         <Text style={styles.messageSubtitle}>
@@ -466,7 +467,7 @@ const GiftPurchase = () => {
                                 multiline
                                 maxLength={200}
                                 textAlignVertical="top"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                         </View>
 
@@ -475,7 +476,7 @@ const GiftPurchase = () => {
                             <View style={styles.messagePreview}>
                                 <Text style={styles.previewLabel}>미리보기</Text>
                                 <View style={styles.previewCard}>
-                                    <Ionicons name="mail-outline" size={24} color="#FF6B6B" />
+                                    <Ionicons name="mail-outline" size={24} color={dc('#FF6B6B')} />
                                     <Text style={styles.previewText}>{happyMessage}</Text>
                                     <Text style={styles.previewFrom}>From. {senderName || '보내는 이'}</Text>
                                 </View>
@@ -515,7 +516,7 @@ const GiftPurchase = () => {
                     <Text style={styles.bottomPriceValue}>{totalPrice.toLocaleString()}원</Text>
                 </View>
                 <TouchableOpacity style={styles.purchaseButton} onPress={handleGiftPurchase}>
-                    <Ionicons name="gift" size={20} color="#fff" style={{ marginRight: 8 }} />
+                    <Ionicons name="gift" size={20} color={dc('#fff')} style={{ marginRight: 8 }} />
                     <Text style={styles.purchaseButtonText}>선물하기</Text>
                 </TouchableOpacity>
             </View>
@@ -533,7 +534,7 @@ const GiftPurchase = () => {
                             style={styles.closeButton}
                             onPress={() => setIsAddressModalVisible(false)}
                         >
-                            <Ionicons name="close" size={28} color="#333" />
+                            <Ionicons name="close" size={28} color={dc('#333')} />
                         </TouchableOpacity>
                     </View>
                     <WebView

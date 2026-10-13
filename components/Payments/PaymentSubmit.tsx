@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { dc, isDark } from '@/constants/theme';
 const PaymentSubmit = () => {
     const [showForm, setShowForm] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('card');
@@ -115,7 +116,7 @@ const PaymentSubmit = () => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#f9f9f9" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} backgroundColor="#f9f9f9" />
             <AppHeader title="결제 수단 관리" />
 
             <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -128,13 +129,13 @@ const PaymentSubmit = () => {
                                 setShowForm(true);
                             }}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color="#6C63FF" />
+                            <Ionicons name="add-circle-outline" size={24} color={dc('#6C63FF')} />
                             <Text style={styles.addButtonText}>새 결제 수단 등록</Text>
                         </TouchableOpacity>
 
                         {paymentMethods.length === 0 ? (
                             <View style={styles.emptyContainer}>
-                                <Ionicons name="card-outline" size={60} color="#ccc" />
+                                <Ionicons name="card-outline" size={60} color={dc('#ccc')} />
                                 <Text style={styles.emptyText}>등록된 결제 수단이 없습니다</Text>
                                 <Text style={styles.emptySubText}>위 버튼을 눌러 결제 수단을 등록하세요</Text>
                             </View>
@@ -148,7 +149,7 @@ const PaymentSubmit = () => {
                                                 <Ionicons
                                                     name={payment.type === 'card' ? 'card' : 'business'}
                                                     size={24}
-                                                    color="#6C63FF"
+                                                    color={dc('#6C63FF')}
                                                 />
                                             </View>
                                             <View style={styles.paymentDetails}>
@@ -181,13 +182,13 @@ const PaymentSubmit = () => {
                                                 style={styles.actionButton}
                                                 onPress={() => handleEdit(payment)}
                                             >
-                                                <Ionicons name="create-outline" size={20} color="#6C63FF" />
+                                                <Ionicons name="create-outline" size={20} color={dc('#6C63FF')} />
                                             </TouchableOpacity>
                                             <TouchableOpacity
                                                 style={styles.actionButton}
                                                 onPress={() => handleDelete(payment.id)}
                                             >
-                                                <Ionicons name="trash-outline" size={20} color="#FF6B6B" />
+                                                <Ionicons name="trash-outline" size={20} color={dc('#FF6B6B')} />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -207,7 +208,7 @@ const PaymentSubmit = () => {
                                 resetForm();
                                 setShowForm(false);
                             }}>
-                                <Ionicons name="close" size={24} color="#666" />
+                                <Ionicons name="close" size={24} color={dc('#666')} />
                             </TouchableOpacity>
                         </View>
 

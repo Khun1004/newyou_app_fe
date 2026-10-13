@@ -22,6 +22,7 @@ import {
 } from '@/components/contexts/AddressManageContext'; // 실제 파일 경로에 맞게 수정
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 // 전화번호 포맷팅 함수
 const formatPhoneNumber = (text: string) => {
     const cleaned = text.replace(/\D/g, '');
@@ -159,7 +160,7 @@ const AddAddress = () => {
                             value={form.name}
                             onChangeText={(text) => handleChange('name', text)}
                             placeholder="배송지 이름을 입력해주세요"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                         />
                     </View>
 
@@ -170,7 +171,7 @@ const AddAddress = () => {
                             value={form.recipient}
                             onChangeText={(text) => handleChange('recipient', text)}
                             placeholder="받는 분 이름을 입력해주세요"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                         />
                     </View>
 
@@ -183,7 +184,7 @@ const AddAddress = () => {
                             keyboardType="phone-pad"
                             maxLength={13}
                             placeholder="010-0000-0000"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                         />
                     </View>
 
@@ -196,7 +197,7 @@ const AddAddress = () => {
                                 value={form.postalCode}
                                 editable={false}
                                 placeholder="우편번호"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                             />
                             <TouchableOpacity
                                 style={styles.searchButton}
@@ -210,7 +211,7 @@ const AddAddress = () => {
                             value={form.address}
                             editable={false}
                             placeholder="주소 검색 버튼을 눌러주세요"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                         />
                         <TextInput
                             ref={detailAddressRef}
@@ -218,7 +219,7 @@ const AddAddress = () => {
                             value={form.detailAddress}
                             onChangeText={(text) => handleChange('detailAddress', text)}
                             placeholder="상세 주소 (예: 동호수) *"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                         />
                     </View>
 
@@ -230,7 +231,7 @@ const AddAddress = () => {
                         <Ionicons
                             name={form.isDefault ? "checkmark-circle" : "ellipse-outline"}
                             size={24}
-                            color={form.isDefault ? "#007AFF" : "#ccc"}
+                            color={dc(form.isDefault ? "#007AFF" : "#ccc")}
                         />
                         <Text style={styles.defaultToggleText}>이 배송지를 기본 주소로 설정</Text>
                     </TouchableOpacity>
@@ -260,7 +261,7 @@ const AddAddress = () => {
                             style={styles.closeButton}
                             onPress={() => setIsAddressModalVisible(false)}
                         >
-                            <Ionicons name="close" size={28} color="#333" />
+                            <Ionicons name="close" size={28} color={dc('#333')} />
                         </TouchableOpacity>
                     </View>
                     <WebView

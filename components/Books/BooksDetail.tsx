@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 import { useBookContext } from '@/components/contexts/BookContext';
 import { findBook, readingTime } from '@/components/Books/bookData';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, isDark, dbg } from '@/constants/theme';
 
 /**
  * 책 정보
@@ -49,14 +49,14 @@ const BooksDetail: React.FC = () => {
 
     return (
         <View style={styles.screen}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
             <AppHeader title="책 정보" />
 
             <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
                 {/* 위쪽: 책 색 배경 + 표지 */}
                 <LinearGradient colors={[book.color, `${book.color}AA`, THEME.background]} style={styles.top}>
                     <View style={styles.coverWrap}>
-                        <View style={[styles.cover, { backgroundColor: book.color }]}>
+                        <View style={[styles.cover, { backgroundColor: dbg(book.color) }]}>
                             <Text style={styles.coverFallback}>{book.title}</Text>
                             <Image source={{ uri: book.coverImage }} style={StyleSheet.absoluteFill} />
                             <LinearGradient
@@ -128,7 +128,7 @@ const BooksDetail: React.FC = () => {
             <View style={styles.footer}>
                 <TouchableOpacity onPress={handleRead} activeOpacity={0.85}>
                     <LinearGradient colors={THEME.buttonGradient as any} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.readBtn}>
-                        <Ionicons name={isReading ? 'play' : 'book-outline'} size={20} color="#FFFFFF" />
+                        <Ionicons name={isReading ? 'play' : 'book-outline'} size={20} color={dc('#FFFFFF')} />
                         <Text style={styles.readText}>{isReading ? `이어 읽기 (${progress}%)` : '읽기 시작'}</Text>
                     </LinearGradient>
                 </TouchableOpacity>

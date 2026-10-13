@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { useBookContext } from '@/components/contexts/BookContext'; // Make sure this path is correct
 import AppHeader from '@/components/AppHeader';
 
+import { dbg } from '@/constants/theme';
 const { width, height } = Dimensions.get('window');
 
 function Slider(props: {
@@ -78,7 +79,7 @@ const ReadBook: React.FC = () => {
     // 책 정보가 없으면 (예: 앱을 새로 켜고 바로 이 화면) 안내만 보여줘요
     if (!book) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="책 읽기" />
                 <SafeAreaView style={styles.container}>
                     <Text style={styles.errorText}>책 정보를 불러올 수 없습니다.</Text>

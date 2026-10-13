@@ -9,7 +9,7 @@ import { useAlarms, Alarm } from '@/components/contexts/AlarmContext';
 import { useFriends } from '@/components/contexts/FriendContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '@/config';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg, dc, isDark } from '@/constants/theme';
 import { useHomeCards } from '@/components/HomeCards/homeCardsStore';
 import { useSchedules } from '@/components/Schedule/scheduleStore';
 // 로고 이미지 (require로 불러오면 VS Code에서 빨간 줄이 생기지 않아요)
@@ -113,18 +113,18 @@ export default function HomeScreen() {
     // 메뉴마다 아이콘 색(color)과 동그라미 배경색(bg)을 따로 정해요.
     // lib: 'mci' 이면 MaterialCommunityIcons 아이콘을 써요 (없으면 Ionicons).
     const menuItems = [
-        { id: '1', title: '알람', icon: 'alarm', color: '#F2994A', bg: '#FFF1E3' },
-        { id: '2', title: '생일', icon: 'cake-variant', lib: 'mci', color: '#F06292', bg: '#FFE4EC' },
-        { id: '3', title: '계획', icon: 'calendar', color: '#3FA36B', bg: '#E4F5EA' },
-        { id: '4', title: '일정', icon: 'time', color: '#3B82F6', bg: '#E6F0FF' },
-        { id: '5', title: '채팅', icon: 'chatbubbles', color: '#8B5CF6', bg: '#F1EAFF' },
-        { id: '6', title: '강의', icon: 'school', color: '#14B8A6', bg: '#DFF6F2' },
-        { id: '7', title: '메모', icon: 'document-text', color: '#D9A400', bg: '#FFF6D1' },
-        { id: '8', title: '책읽기', icon: 'book', color: '#B7713F', bg: '#F8ECE2' },
-        { id: '9', title: '선물', icon: 'gift', color: '#EF4444', bg: '#FFE7E7' },
-        { id: '10', title: '좋아요', icon: 'heart', color: '#EC4899', bg: '#FDE6F2' },
-        { id: '11', title: '게시판', icon: 'reader', color: '#6366F1', bg: '#E9EAFF' },
-        { id: '12', title: '가계부', icon: 'wallet', color: '#0EA5E9', bg: '#DFF3FC' },
+        { id: '1', title: '알람', icon: 'alarm', color: dc('#F2994A'), bg: '#FFF1E3' },
+        { id: '2', title: '생일', icon: 'cake-variant', lib: 'mci', color: dc('#F06292'), bg: '#FFE4EC' },
+        { id: '3', title: '계획', icon: 'calendar', color: dc('#3FA36B'), bg: '#E4F5EA' },
+        { id: '4', title: '일정', icon: 'time', color: dc('#3B82F6'), bg: '#E6F0FF' },
+        { id: '5', title: '채팅', icon: 'chatbubbles', color: dc('#8B5CF6'), bg: '#F1EAFF' },
+        { id: '6', title: '강의', icon: 'school', color: dc('#14B8A6'), bg: '#DFF6F2' },
+        { id: '7', title: '메모', icon: 'document-text', color: dc('#D9A400'), bg: '#FFF6D1' },
+        { id: '8', title: '책읽기', icon: 'book', color: dc('#B7713F'), bg: '#F8ECE2' },
+        { id: '9', title: '선물', icon: 'gift', color: dc('#EF4444'), bg: '#FFE7E7' },
+        { id: '10', title: '좋아요', icon: 'heart', color: dc('#EC4899'), bg: '#FDE6F2' },
+        { id: '11', title: '게시판', icon: 'reader', color: dc('#6366F1'), bg: '#E9EAFF' },
+        { id: '12', title: '가계부', icon: 'wallet', color: dc('#0EA5E9'), bg: '#DFF3FC' },
     ];
 
     const groupedMenuItems = [];
@@ -254,7 +254,7 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
             {/* 로그인 화면처럼 위까지 이어지는 둥근 그라데이션 헤더 */}
             <HeroBackground>
                 <View style={styles.header}>
@@ -262,12 +262,12 @@ export default function HomeScreen() {
                         <Image source={NewYouLogo} style={styles.newYouLogoImage} resizeMode="contain" />
                     </View>
                     <View style={styles.centerTimeContainer}>
-                        <Ionicons name="calendar-outline" size={18} color="#666" />
+                        <Ionicons name="calendar-outline" size={18} color={dc('#666')} />
                         <View style={styles.dateTimeWrapper}>
                             <Text style={styles.currentDateText}>{currentDate}</Text>
                             <Text style={styles.currentTimeText}>{currentTimeAndDay}</Text>
                         </View>
-                        <Ionicons name="time-outline" size={18} color="#666" />
+                        <Ionicons name="time-outline" size={18} color={dc('#666')} />
                     </View>
                     <TouchableOpacity style={styles.notificationIconContainer} onPress={handleNotificationPress}>
                         <Ionicons name="notifications-outline" size={26} color={THEME.text} />
@@ -278,151 +278,151 @@ export default function HomeScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.functionSection}>
                         {isOn('plan') && (
-                            <View style={styles.functionCard}>
-                                <View style={styles.functionHeader}>
-                                    <View style={styles.functionHeaderLeft}>
-                                        <Ionicons name="calendar" size={20} color="#4ECDC4" />
-                                        <Text style={styles.functionTitle}>{formattedDate} (오늘 계획)</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => router.push('/Plan')}>
-                                        <Text style={styles.seeAllText}>모두 보기</Text>
-                                    </TouchableOpacity>
+                        <View style={styles.functionCard}>
+                            <View style={styles.functionHeader}>
+                                <View style={styles.functionHeaderLeft}>
+                                    <Ionicons name="calendar" size={20} color={dc('#4ECDC4')} />
+                                    <Text style={styles.functionTitle}>{formattedDate} (오늘 계획)</Text>
                                 </View>
-                                {sortedPlans.length > 0 ? (
-                                    sortedPlans.map(section => (
-                                        <View key={section.title}>
-                                            <Text style={styles.planDateHeader}>{section.title}</Text>
-                                            {section.data.map(schedule => (
-                                                <View key={schedule.id} style={styles.scheduleItem}>
-                                                    <View style={styles.scheduleLeft}>
-                                                        <TouchableOpacity style={[styles.checkBox, { backgroundColor: '#fff', borderColor: schedule.color || '#4ECDC4' }]}>
-                                                        </TouchableOpacity>
-                                                        <View style={styles.scheduleInfo}>
-                                                            <Text style={styles.scheduleTitle}>
-                                                                {schedule.title}
-                                                            </Text>
-                                                            <Text style={styles.scheduleDetails}>
-                                                                {schedule.content.substring(0, 20)}...
-                                                            </Text>
-                                                        </View>
+                                <TouchableOpacity onPress={() => router.push('/Plan')}>
+                                    <Text style={styles.seeAllText}>모두 보기</Text>
+                                </TouchableOpacity>
+                            </View>
+                            {sortedPlans.length > 0 ? (
+                                sortedPlans.map(section => (
+                                    <View key={section.title}>
+                                        <Text style={styles.planDateHeader}>{section.title}</Text>
+                                        {section.data.map(schedule => (
+                                            <View key={schedule.id} style={styles.scheduleItem}>
+                                                <View style={styles.scheduleLeft}>
+                                                    <TouchableOpacity style={[styles.checkBox, { backgroundColor: dbg('#fff'), borderColor: schedule.color || '#4ECDC4' }]}>
+                                                    </TouchableOpacity>
+                                                    <View style={styles.scheduleInfo}>
+                                                        <Text style={styles.scheduleTitle}>
+                                                            {schedule.title}
+                                                        </Text>
+                                                        <Text style={styles.scheduleDetails}>
+                                                            {schedule.content.substring(0, 20)}...
+                                                        </Text>
                                                     </View>
                                                 </View>
-                                            ))}
-                                        </View>
-                                    ))
-                                ) : (
-                                    <View style={styles.emptyState}>
-                                        <Text style={styles.emptyStateText}>오늘 등록된 계획이 없습니다</Text>
+                                            </View>
+                                        ))}
                                     </View>
-                                )}
-                            </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <Text style={styles.emptyStateText}>오늘 등록된 계획이 없습니다</Text>
+                                </View>
+                            )}
+                        </View>
                         )}
                         {isOn('alarm') && (
-                            <View style={styles.functionCard}>
-                                <View style={styles.functionHeader}>
-                                    <View style={styles.functionHeaderLeft}>
-                                        <Ionicons name="alarm" size={20} color="#FF6B6B" />
-                                        <Text style={styles.functionTitle}>알람</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => router.push('/AlarmList')}>
-                                        <Text style={styles.seeAllText}>모두 보기</Text>
-                                    </TouchableOpacity>
+                        <View style={styles.functionCard}>
+                            <View style={styles.functionHeader}>
+                                <View style={styles.functionHeaderLeft}>
+                                    <Ionicons name="alarm" size={20} color={dc('#FF6B6B')} />
+                                    <Text style={styles.functionTitle}>알람</Text>
                                 </View>
-                                {activeAlarms.length > 0 ? (
-                                    activeAlarms.slice(0, 2).map((alarm: Alarm) => (
-                                        <View key={alarm.id} style={styles.alarmItem}>
-                                            <View style={styles.alarmLeft}>
-                                                <Text style={styles.alarmTime}>
-                                                    {alarm.time}
-                                                </Text>
-                                                <Text style={styles.alarmLabel}>
-                                                    {alarm.label}
-                                                </Text>
-                                            </View>
-                                            <TouchableOpacity
-                                                style={[styles.alarmToggle, { backgroundColor: alarm.isActive ? '#4ECDC4' : '#E8E8E8' }]}
-                                                onPress={() => handleToggleAlarm(alarm.id)}
-                                            >
-                                                <View style={[styles.alarmToggleCircle, { transform: [{ translateX: alarm.isActive ? 18 : 2 }] }]} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))
-                                ) : (
-                                    <View style={styles.emptyState}>
-                                        <Text style={styles.emptyStateText}>설정된 알람이 없습니다</Text>
-                                    </View>
-                                )}
+                                <TouchableOpacity onPress={() => router.push('/AlarmList')}>
+                                    <Text style={styles.seeAllText}>모두 보기</Text>
+                                </TouchableOpacity>
                             </View>
+                            {activeAlarms.length > 0 ? (
+                                activeAlarms.slice(0, 2).map((alarm: Alarm) => (
+                                    <View key={alarm.id} style={styles.alarmItem}>
+                                        <View style={styles.alarmLeft}>
+                                            <Text style={styles.alarmTime}>
+                                                {alarm.time}
+                                            </Text>
+                                            <Text style={styles.alarmLabel}>
+                                                {alarm.label}
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.alarmToggle, { backgroundColor: alarm.isActive ? '#4ECDC4' : '#E8E8E8' }]}
+                                            onPress={() => handleToggleAlarm(alarm.id)}
+                                        >
+                                            <View style={[styles.alarmToggleCircle, { transform: [{ translateX: alarm.isActive ? 18 : 2 }] }]} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <Text style={styles.emptyStateText}>설정된 알람이 없습니다</Text>
+                                </View>
+                            )}
+                        </View>
                         )}
                         {isOn('birthday') && (
-                            <View style={styles.functionCard}>
-                                <View style={styles.functionHeader}>
-                                    <View style={styles.functionHeaderLeft}>
-                                        <Ionicons name="gift" size={20} color="#9B59B6" />
-                                        <Text style={styles.functionTitle}>생일 알람</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => router.push('/Birthday')}>
-                                        <Text style={styles.seeAllText}>모두 보기</Text>
-                                    </TouchableOpacity>
+                        <View style={styles.functionCard}>
+                            <View style={styles.functionHeader}>
+                                <View style={styles.functionHeaderLeft}>
+                                    <Ionicons name="gift" size={20} color={dc('#9B59B6')} />
+                                    <Text style={styles.functionTitle}>생일 알람</Text>
                                 </View>
-                                {upcomingBirthdays.length > 0 ? (
-                                    upcomingBirthdays.map((birthday) => (
-                                        <TouchableOpacity
-                                            key={birthday.id}
-                                            style={styles.birthdayItem}
-                                            onPress={handleBirthdayPress}
-                                            activeOpacity={0.8}
-                                        >
-                                            {renderBirthdayProfile(birthday.id)}
-                                            <View style={styles.birthdayInfo}>
-                                                <Text style={styles.birthdayName}>{birthday.name}</Text>
-                                                <Text style={styles.birthdayDate}>
-                                                    {birthday.month} {birthday.day} ({birthday.date})
-                                                </Text>
-                                            </View>
-                                            <View style={[styles.birthdayBadge, {
-                                                backgroundColor: birthday.daysUntil <= 7 ? '#ffebee' : '#fff2e5'
-                                            }]}>
-                                                <Text style={styles.birthdayBadgeText}>
-                                                    {birthday.daysUntil === 0 ? '🎉' : birthday.daysUntil <= 7 ? '🔔' : '🎂'}
-                                                </Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                ) : (
-                                    <View style={styles.emptyState}>
-                                        <Text style={styles.emptyStateText}>등록된 생일이 없습니다</Text>
-                                    </View>
-                                )}
+                                <TouchableOpacity onPress={() => router.push('/Birthday')}>
+                                    <Text style={styles.seeAllText}>모두 보기</Text>
+                                </TouchableOpacity>
                             </View>
+                            {upcomingBirthdays.length > 0 ? (
+                                upcomingBirthdays.map((birthday) => (
+                                    <TouchableOpacity
+                                        key={birthday.id}
+                                        style={styles.birthdayItem}
+                                        onPress={handleBirthdayPress}
+                                        activeOpacity={0.8}
+                                    >
+                                        {renderBirthdayProfile(birthday.id)}
+                                        <View style={styles.birthdayInfo}>
+                                            <Text style={styles.birthdayName}>{birthday.name}</Text>
+                                            <Text style={styles.birthdayDate}>
+                                                {birthday.month} {birthday.day} ({birthday.date})
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.birthdayBadge, {
+                                            backgroundColor: birthday.daysUntil <= 7 ? '#ffebee' : '#fff2e5'
+                                        }]}>
+                                            <Text style={styles.birthdayBadgeText}>
+                                                {birthday.daysUntil === 0 ? '🎉' : birthday.daysUntil <= 7 ? '🔔' : '🎂'}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <Text style={styles.emptyStateText}>등록된 생일이 없습니다</Text>
+                                </View>
+                            )}
+                        </View>
                         )}
                         {isOn('schedule') && (
-                            <View style={styles.functionCard}>
-                                <View style={styles.functionHeader}>
-                                    <View style={styles.functionHeaderLeft}>
-                                        <Ionicons name="time" size={20} color="#3B82F6" />
-                                        <Text style={styles.functionTitle}>오늘 일정</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => router.push('/timetable')}>
-                                        <Text style={styles.seeAllText}>모두 보기</Text>
-                                    </TouchableOpacity>
+                        <View style={styles.functionCard}>
+                            <View style={styles.functionHeader}>
+                                <View style={styles.functionHeaderLeft}>
+                                    <Ionicons name="time" size={20} color={dc('#3B82F6')} />
+                                    <Text style={styles.functionTitle}>오늘 일정</Text>
                                 </View>
-                                {todaySchedules.length > 0 ? (
-                                    todaySchedules.slice(0, 3).map((item) => (
-                                        <View key={item.id} style={styles.scheduleItem}>
-                                            <View style={[styles.scheduleColorBar, { backgroundColor: item.color || '#E6F0FF' }]} />
-                                            <View style={styles.scheduleInfo}>
-                                                <Text style={styles.scheduleTitle}>{item.title}</Text>
-                                                <Text style={styles.scheduleDetails}>{formatScheduleTime(item.time, item.duration)}</Text>
-                                            </View>
-                                        </View>
-                                    ))
-                                ) : (
-                                    <View style={styles.emptyState}>
-                                        <Text style={styles.emptyStateText}>오늘 시간표 일정이 없습니다</Text>
-                                    </View>
-                                )}
+                                <TouchableOpacity onPress={() => router.push('/timetable')}>
+                                    <Text style={styles.seeAllText}>모두 보기</Text>
+                                </TouchableOpacity>
                             </View>
+                            {todaySchedules.length > 0 ? (
+                                todaySchedules.slice(0, 3).map((item) => (
+                                    <View key={item.id} style={styles.scheduleItem}>
+                                        <View style={[styles.scheduleColorBar, { backgroundColor: dbg(item.color) || '#E6F0FF' }]} />
+                                        <View style={styles.scheduleInfo}>
+                                            <Text style={styles.scheduleTitle}>{item.title}</Text>
+                                            <Text style={styles.scheduleDetails}>{formatScheduleTime(item.time, item.duration)}</Text>
+                                        </View>
+                                    </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <Text style={styles.emptyStateText}>오늘 시간표 일정이 없습니다</Text>
+                                </View>
+                            )}
+                        </View>
                         )}
                     </View>
                     <View style={styles.menuSection}>
@@ -463,7 +463,7 @@ export default function HomeScreen() {
                                             }
                                         }}
                                     >
-                                        <View style={[styles.iconContainer, { backgroundColor: item.bg }]}>
+                                        <View style={[styles.iconContainer, { backgroundColor: dbg(item.bg) }]}>
                                             {(item as any).lib === 'mci' ? (
                                                 <MaterialCommunityIcons name={item.icon as any} size={30} color={item.color} />
                                             ) : (
@@ -540,5 +540,5 @@ const styles = StyleSheet.create({
     dateTimeWrapper: { alignItems: 'center', marginHorizontal: 5 },
     currentDateText: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 2 },
     currentTimeText: { fontSize: 14, fontWeight: '600', color: '#666' },
-
+   
 });

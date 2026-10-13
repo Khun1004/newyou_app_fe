@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { THEME } from '@/constants/theme';
+import { THEME, isDark } from '@/constants/theme';
 
 /**
  * 모든 화면에서 같이 쓰는 공통 헤더
@@ -60,12 +60,15 @@ export function HeroBackground({ children }: { children: React.ReactNode }) {
             end={{ x: 1, y: 1 }}
             style={[styles.hero, { paddingTop: insets.top }]}
         >
-            <View pointerEvents="none" style={[styles.heroBubble, { width: 150, height: 150, top: -50, right: -40 }]} />
-            <View pointerEvents="none" style={[styles.heroBubble, { width: 80, height: 80, bottom: -30, left: -20 }]} />
+            <View pointerEvents="none" style={[styles.heroBubble, bubbleTint(), { width: 150, height: 150, top: -50, right: -40 }]} />
+            <View pointerEvents="none" style={[styles.heroBubble, bubbleTint(), { width: 80, height: 80, bottom: -30, left: -20 }]} />
             {children}
         </LinearGradient>
     );
 }
+
+// 헤더의 동그란 무늬 (다크 모드에서는 아주 옅게)
+const bubbleTint = () => ({ backgroundColor: isDark() ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.45)' });
 
 export const HEADER_HEIGHT = 64; // 헤더 막대 높이 (숫자를 바꾸면 모든 화면 헤더 높이가 바뀌어요)
 // ============================================================
@@ -77,36 +80,42 @@ export const HEADER_HEIGHT = 64; // 헤더 막대 높이 (숫자를 바꾸면 �
 // ============================================================
 const HEADER_STYLE: keyof typeof LIGHT_STYLES = 'newyou';
 
-const LIGHT_STYLES = {
+// 화면을 그릴 때마다 지금 모드(라이트/다크)의 색으로 만들어요
+const lightStyles = () => ({
     sprout: { colors: ['#E8F3DC', '#FFF7DD'], tint: '#2F4A1C', border: '#D9E7C8' },
     sunrise: { colors: ['#FFF3CF', '#FFE4EC'], tint: '#5A3B1E', border: '#F3E0C8' },
     brand: { colors: ['#3B5A24', '#6B8E3D'], tint: '#FFFFFF', border: '#2F4A1C' },
     newyou: { colors: THEME.headerGradient, tint: THEME.text, border: THEME.line },
-} as const;
+});
+const LIGHT_STYLES = lightStyles();
 
-const THEMES = {
-    light: {
-        background: LIGHT_STYLES[HEADER_STYLE].colors[0] as string,
-        gradient: LIGHT_STYLES[HEADER_STYLE].colors as unknown as [string, string],
-        tint: LIGHT_STYLES[HEADER_STYLE].tint as string,
-        border: LIGHT_STYLES[HEADER_STYLE].border as string,
-    },
-    dark: { background: '#000000', gradient: null, tint: '#FFFFFF', border: '#262626' },
+const getThemes = () => {
+    // 다크 모드에서는 'newyou'(앱 색) 헤더를 어두운 색으로 써요
+    const st = isDark() ? lightStyles().newyou : lightStyles()[HEADER_STYLE];
+    return {
+        light: {
+            background: st.colors[0] as string,
+            gradient: st.colors as unknown as [string, string],
+            tint: st.tint as string,
+            border: st.border as string,
+        },
+        dark: { background: '#000000', gradient: null, tint: '#FFFFFF', border: '#262626' },
+    };
 };
 
 export default function AppHeader({
-                                      title,
-                                      subtitle,
-                                      right = [],
-                                      left,
-                                      showBell = true,
-                                      showBack = true,
-                                      onBack,
-                                      backgroundColor,
-                                      variant = 'light',
-                                      hero = false,
-                                  }: Props) {
-    const theme = THEMES[variant];
+    title,
+    subtitle,
+    right = [],
+    left,
+    showBell = true,
+    showBack = true,
+    onBack,
+    backgroundColor,
+    variant = 'light',
+    hero = false,
+}: Props) {
+    const theme = getThemes()[variant];
     const tint = theme.tint;
     const insets = useSafeAreaInsets();
 
@@ -133,84 +142,84 @@ export default function AppHeader({
     const useGradient = !backgroundColor && theme.gradient;
 
     const bar = (
-        <View style={styles.bar}>
-            {/* 왼쪽: 뒤로가기 */}
-            <View style={styles.side}>
-                {left ? (
-                    <TouchableOpacity
-                        onPress={left.onPress}
-                        disabled={left.disabled}
-                        style={styles.iconButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        accessibilityLabel={left.accessibilityLabel ?? left.label}
-                    >
-                        <Ionicons name={left.icon!} size={24} color={left.color ?? tint} />
-                    </TouchableOpacity>
-                ) : showBack && (
-                    <TouchableOpacity
-                        onPress={handleBack}
-                        style={styles.iconButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        accessibilityLabel="뒤로 가기"
-                    >
-                        <Ionicons name="chevron-back" size={26} color={tint} />
-                    </TouchableOpacity>
-                )}
-            </View>
+            <View style={styles.bar}>
+                {/* 왼쪽: 뒤로가기 */}
+                <View style={styles.side}>
+                    {left ? (
+                        <TouchableOpacity
+                            onPress={left.onPress}
+                            disabled={left.disabled}
+                            style={styles.iconButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel={left.accessibilityLabel ?? left.label}
+                        >
+                            <Ionicons name={left.icon!} size={24} color={left.color ?? tint} />
+                        </TouchableOpacity>
+                    ) : showBack && (
+                        <TouchableOpacity
+                            onPress={handleBack}
+                            style={styles.iconButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            accessibilityLabel="뒤로 가기"
+                        >
+                            <Ionicons name="chevron-back" size={26} color={tint} />
+                        </TouchableOpacity>
+                    )}
+                </View>
 
-            {/* 가운데: 제목 (양쪽 버튼 개수와 상관없이 정가운데) */}
-            <View style={[styles.titleContainer, { paddingHorizontal: sideWidth }]} pointerEvents="none">
-                <Text style={[styles.title, { color: tint }]} numberOfLines={1}>
-                    {title}
-                </Text>
-                {subtitle ? (
-                    <Text style={[styles.subtitle, { color: tint }]} numberOfLines={1}>
-                        {subtitle}
+                {/* 가운데: 제목 (양쪽 버튼 개수와 상관없이 정가운데) */}
+                <View style={[styles.titleContainer, { paddingHorizontal: sideWidth }]} pointerEvents="none">
+                    <Text style={[styles.title, { color: tint }]} numberOfLines={1}>
+                        {title}
                     </Text>
-                ) : null}
-            </View>
+                    {subtitle ? (
+                        <Text style={[styles.subtitle, { color: tint }]} numberOfLines={1}>
+                            {subtitle}
+                        </Text>
+                    ) : null}
+                </View>
 
-            {/* 오른쪽: 추가 버튼 + 알림 */}
-            <View style={[styles.side, styles.rightSide]}>
-                {right.map((action, i) => (
-                    <TouchableOpacity
-                        key={`${action.icon ?? action.label}-${i}`}
-                        onPress={action.onPress}
-                        disabled={action.disabled}
-                        style={action.label ? styles.textButton : styles.iconButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                        accessibilityLabel={action.accessibilityLabel ?? action.label}
-                    >
-                        {action.label ? (
-                            <Text
-                                style={[
-                                    styles.textButtonLabel,
-                                    { color: action.disabled ? '#9CA3AF' : action.color ?? tint },
-                                ]}
-                            >
-                                {action.label}
-                            </Text>
-                        ) : (
-                            <Ionicons
-                                name={action.icon!}
-                                size={24}
-                                color={action.disabled ? '#9CA3AF' : action.color ?? tint}
-                            />
-                        )}
-                    </TouchableOpacity>
-                ))}
-                {showBell && (
-                    <TouchableOpacity
-                        onPress={() => router.push('/Notification')}
-                        style={styles.iconButton}
-                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
-                        accessibilityLabel="알림"
-                    >
-                        <Ionicons name="notifications-outline" size={24} color={tint} />
-                    </TouchableOpacity>
-                )}
+                {/* 오른쪽: 추가 버튼 + 알림 */}
+                <View style={[styles.side, styles.rightSide]}>
+                    {right.map((action, i) => (
+                        <TouchableOpacity
+                            key={`${action.icon ?? action.label}-${i}`}
+                            onPress={action.onPress}
+                            disabled={action.disabled}
+                            style={action.label ? styles.textButton : styles.iconButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                            accessibilityLabel={action.accessibilityLabel ?? action.label}
+                        >
+                            {action.label ? (
+                                <Text
+                                    style={[
+                                        styles.textButtonLabel,
+                                        { color: action.disabled ? '#9CA3AF' : action.color ?? tint },
+                                    ]}
+                                >
+                                    {action.label}
+                                </Text>
+                            ) : (
+                                <Ionicons
+                                    name={action.icon!}
+                                    size={24}
+                                    color={action.disabled ? '#9CA3AF' : action.color ?? tint}
+                                />
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                    {showBell && (
+                        <TouchableOpacity
+                            onPress={() => router.push('/Notification')}
+                            style={styles.iconButton}
+                            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                            accessibilityLabel="알림"
+                        >
+                            <Ionicons name="notifications-outline" size={24} color={tint} />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
-        </View>
     );
 
     // 탭 화면: 로그인 화면처럼 위까지 이어지는 둥근 그라데이션

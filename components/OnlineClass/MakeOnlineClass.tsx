@@ -19,6 +19,7 @@ import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import AppHeader from '@/components/AppHeader';
 import { toImageUrl } from '@/config';
 
+import { dc } from '@/constants/theme';
 const MakeOnlineClass = () => {
     const { currentUser } = useAuth();
     const { setClassData } = useOnlineClass();
@@ -135,7 +136,7 @@ const MakeOnlineClass = () => {
             <AppHeader
                 title="클래스 등록"
                 onBack={() => { if (!isLoading) handleCancel(); }}
-                right={[{ label: isLoading ? '등록중' : '등록', onPress: handleRegisterAndNavigate, disabled: isLoading, color: '#4E7D32' }]}
+                right={[{ label: isLoading ? '등록중' : '등록', onPress: handleRegisterAndNavigate, disabled: isLoading, color: dc('#4E7D32') }]}
             />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -149,7 +150,7 @@ const MakeOnlineClass = () => {
                                 />
                             ) : (
                                 <View style={styles.defaultProfileImage}>
-                                    <Ionicons name="person" size={30} color="#A3A794" />
+                                    <Ionicons name="person" size={30} color={dc('#A3A794')} />
                                 </View>
                             )}
                         </View>
@@ -170,7 +171,7 @@ const MakeOnlineClass = () => {
                             value={title}
                             onChangeText={setTitle}
                             placeholder="클래스 제목을 입력해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor={dc('#A3A794')}
                             maxLength={50}
                         />
                         <Text style={styles.charCount}>{title.length}/50</Text>
@@ -192,7 +193,7 @@ const MakeOnlineClass = () => {
                             value={description}
                             onChangeText={setDescription}
                             placeholder="수업 내용과 목표를 자세히 설명해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor={dc('#A3A794')}
                             multiline
                             numberOfLines={6}
                             textAlignVertical="top"
@@ -208,7 +209,7 @@ const MakeOnlineClass = () => {
                             value={introduction}
                             onChangeText={setIntroduction}
                             placeholder="자신의 경력, 전문 분야, 교육 철학 등을 소개해주세요"
-                            placeholderTextColor="#A3A794"
+                            placeholderTextColor={dc('#A3A794')}
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
@@ -224,7 +225,7 @@ const MakeOnlineClass = () => {
                                 <Image source={{ uri: certificationImage }} style={styles.uploadedImage} />
                             ) : (
                                 <View style={styles.imagePlaceholder}>
-                                    <Ionicons name="camera-outline" size={30} color="#A3A794" />
+                                    <Ionicons name="camera-outline" size={30} color={dc('#A3A794')} />
                                     <Text style={styles.imagePlaceholderText}>이미지 업로드</Text>
                                 </View>
                             )}
@@ -232,7 +233,7 @@ const MakeOnlineClass = () => {
                     </View>
 
                     <View style={styles.noteContainer}>
-                        <Ionicons name="information-circle-outline" size={20} color="#7C8070" />
+                        <Ionicons name="information-circle-outline" size={20} color={dc('#7C8070')} />
                         <Text style={styles.noteText}>
                             자격증 이미지는 클래스 승인 심사에 참고되며, 필수 사항은 아닙니다.
                         </Text>

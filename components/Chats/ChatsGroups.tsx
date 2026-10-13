@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ChatContext } from '@/components/contexts/ChatContext';
 import { Ionicons } from '@expo/vector-icons';
 
+import { dbg, dc } from '@/constants/theme';
 const ChatsGroups = () => {
     const router = useRouter();
     const { groupData } = useContext(ChatContext);
@@ -24,12 +25,12 @@ const ChatsGroups = () => {
                 {item.avatar ? (
                     <Image source={{ uri: item.avatar }} style={styles.avatar} />
                 ) : (
-                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF3CF' }]}>
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: dbg('#FFF3CF') }]}>
                         <Text style={{ fontSize: 26 }}>🎉</Text>
                     </View>
                 )}
                 <View style={styles.groupIcon}>
-                    <Ionicons name="people" size={12} color="#fff" />
+                    <Ionicons name="people" size={12} color={dc('#fff')} />
                 </View>
             </View>
             <View style={styles.chatContent}>

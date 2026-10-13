@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSentGifts } from '@/components/contexts/SentGiftsContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
 
@@ -81,7 +82,7 @@ const PresentCard = ({ item, type, onPress, onMessagePress }) => {
                     <Ionicons
                         name={type === 'sent' ? "paper-plane-outline" : "gift-outline"}
                         size={14}
-                        color="#666"
+                        color={dc('#666')}
                     />
                     <Text style={styles.personText}>
                         {type === 'sent' ? `받는 사람: ${item.recipient}` : `보낸 사람: ${item.sender}`}
@@ -95,7 +96,7 @@ const PresentCard = ({ item, type, onPress, onMessagePress }) => {
                         style={styles.messageButton}
                         onPress={() => onMessagePress(item.message)}
                     >
-                        <Ionicons name="chatbubble-outline" size={14} color="#007AFF" />
+                        <Ionicons name="chatbubble-outline" size={14} color={dc('#007AFF')} />
                         <Text style={styles.messageButtonText}>메시지 보기</Text>
                     </TouchableOpacity>
                 )}
@@ -110,7 +111,7 @@ const EmptyPresents = ({ type }) => (
         <Ionicons
             name={type === 'sent' ? "paper-plane-outline" : "gift-outline"}
             size={64}
-            color="#ccc"
+            color={dc('#ccc')}
         />
         <Text style={styles.emptyTitle}>
             {type === 'sent' ? '보낸 선물이 없어요' : '받은 선물이 없어요'}
@@ -165,7 +166,7 @@ const PresentStorage = () => {
                     <Ionicons
                         name="paper-plane-outline"
                         size={18}
-                        color={activeTab === 'sent' ? '#007AFF' : '#666'}
+                        color={dc(activeTab === 'sent' ? '#007AFF' : '#666')}
                     />
                     <Text style={[styles.tabText, activeTab === 'sent' && styles.activeTabText]}>
                         보낸 선물 ({sentGifts.length})
@@ -178,7 +179,7 @@ const PresentStorage = () => {
                     <Ionicons
                         name="gift-outline"
                         size={18}
-                        color={activeTab === 'received' ? '#007AFF' : '#666'}
+                        color={dc(activeTab === 'received' ? '#007AFF' : '#666')}
                     />
                     <Text style={[styles.tabText, activeTab === 'received' && styles.activeTabText]}>
                         받은 선물 ({sampleReceivedData.length})
@@ -217,7 +218,7 @@ const PresentStorage = () => {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>선물 메시지</Text>
                             <TouchableOpacity onPress={() => setShowMessageModal(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
+                                <Ionicons name="close" size={24} color={dc('#333')} />
                             </TouchableOpacity>
                         </View>
                         <View style={styles.messageContent}>

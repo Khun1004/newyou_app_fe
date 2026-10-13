@@ -21,6 +21,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFriends } from '@/components/contexts/FriendContext';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
+import { THEME, dc, isDark, dgrad } from '@/constants/theme';
+import FriendAvatar from '@/components/Birthday/FriendAvatar';
 
 /**
  * 친구 생일 등록 / 수정
@@ -31,13 +33,13 @@ import AppHeader from '@/components/AppHeader';
 
 // 생일 화면과 같은 색
 const COLORS = {
-    background: '#FFFBF5',
+    background: THEME.background,
     card: '#FFFFFF',
-    text: '#3F2A1E',
-    subText: '#8A7565',
-    border: '#F3E6DA',
-    pink: '#F06292',
-    button: ['#FFB75E', '#F06292'] as [string, string],
+    text: THEME.text,
+    subText: THEME.subText,
+    border: THEME.line,
+    pink: THEME.primary, // 강조색 (예전 핑크 → 앱의 초록)
+    button: THEME.buttonGradient as [string, string],
 };
 
 interface Friend {
@@ -218,7 +220,7 @@ const AddFriBirthday: React.FC = () => {
 
     return (
         <View style={styles.screen}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
             <AppHeader title={isEditing ? '친구 정보 수정' : '생일 친구 추가'} />
 
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -226,7 +228,7 @@ const AddFriBirthday: React.FC = () => {
                     {/* ---------- 미리보기 카드 ---------- */}
                     <Animated.View style={{ transform: [{ scale: pop }] }}>
                         <LinearGradient
-                            colors={friendData.profileColor as any}
+                            colors={dgrad(COLORS.button as any)}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.preview}
@@ -239,14 +241,10 @@ const AddFriBirthday: React.FC = () => {
                                 <View style={styles.avatarRing}>
                                     {isUploadingImage ? (
                                         <View style={[styles.avatar, styles.avatarFallback]}>
-                                            <ActivityIndicator color="#fff" />
+                                            <ActivityIndicator color={dc('#fff')} />
                                         </View>
-                                    ) : imageUri ? (
-                                        <Image source={{ uri: imageUri }} style={styles.avatar} />
                                     ) : (
-                                        <LinearGradient colors={friendData.profileColor as any} style={[styles.avatar, styles.avatarFallback]}>
-                                            <Text style={styles.avatarText}>{initial}</Text>
-                                        </LinearGradient>
+                                        <FriendAvatar name={friendData.nickname || '?'} photo={friendData.profileImage} size={96} onDark />
                                     )}
                                     <View style={styles.cameraBadge}>
                                         <Ionicons name="camera" size={14} color={COLORS.text} />
@@ -258,7 +256,7 @@ const AddFriBirthday: React.FC = () => {
                                 {friendData.nickname.trim() || '친구 이름'}
                             </Text>
                             <View style={styles.previewPill}>
-                                <Ionicons name="gift" size={14} color="#FFFFFF" />
+                                <Ionicons name="gift" size={14} color={dc('#FFFFFF')} />
                                 <Text style={styles.previewPillText}>
                                     {hasBirthday
                                         ? `${monthNum}월 ${dayNum}일 · ${dday === 0 ? '오늘!' : `D-${dday}`}`
@@ -273,33 +271,6 @@ const AddFriBirthday: React.FC = () => {
                         </LinearGradient>
                     </Animated.View>
 
-                    {/* ---------- 카드 색 ---------- */}
-                    <View style={styles.section}>
-                        <Text style={styles.label}>카드 색</Text>
-                        <View style={styles.swatches}>
-                            {colorPalette.map((p) => {
-                                const active = sameColors(friendData.profileColor, p.colors);
-                                return (
-                                    <TouchableOpacity
-                                        key={p.name}
-                                        onPress={() => setFriendData((prev) => ({ ...prev, profileColor: p.colors }))}
-                                        style={styles.swatchItem}
-                                        accessibilityLabel={`${p.name} 색`}
-                                    >
-                                        <View style={[styles.swatchRing, active && { borderColor: p.colors[1] }]}>
-                                            <LinearGradient colors={p.colors as any} style={styles.swatch}>
-                                                {active && <Ionicons name="checkmark" size={18} color="#FFFFFF" />}
-                                            </LinearGradient>
-                                        </View>
-                                        <Text style={[styles.swatchName, active && { color: COLORS.text, fontWeight: '800' }]}>
-                                            {p.name}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    </View>
-
                     {/* ---------- 이름 ---------- */}
                     <View style={styles.section}>
                         <View style={styles.labelRow}>
@@ -313,7 +284,7 @@ const AddFriBirthday: React.FC = () => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="예) Moe Htet"
-                                placeholderTextColor="#C4B3A4"
+                                placeholderTextColor={THEME.placeholder}
                                 value={friendData.nickname}
                                 onChangeText={(text) => {
                                     setFriendData((prev) => ({ ...prev, nickname: text }));
@@ -333,7 +304,7 @@ const AddFriBirthday: React.FC = () => {
                                 <TextInput
                                     style={styles.dateInput}
                                     placeholder="10"
-                                    placeholderTextColor="#D9CABD"
+                                    placeholderTextColor={dc('#D9CABD')}
                                     value={friendData.month}
                                     onChangeText={(t) => setFriendData((prev) => ({ ...prev, month: t.replace(/[^0-9]/g, '').slice(0, 2) }))}
                                     keyboardType="number-pad"
@@ -345,7 +316,7 @@ const AddFriBirthday: React.FC = () => {
                                 <TextInput
                                     style={styles.dateInput}
                                     placeholder="16"
-                                    placeholderTextColor="#D9CABD"
+                                    placeholderTextColor={dc('#D9CABD')}
                                     value={friendData.day}
                                     onChangeText={(t) => setFriendData((prev) => ({ ...prev, day: t.replace(/[^0-9]/g, '').slice(0, 2) }))}
                                     keyboardType="number-pad"
@@ -371,7 +342,7 @@ const AddFriBirthday: React.FC = () => {
                             <TextInput
                                 style={styles.memoInput}
                                 placeholder="좋아하는 것, 선물 아이디어를 적어 두세요 🎁"
-                                placeholderTextColor="#C4B3A4"
+                                placeholderTextColor={THEME.placeholder}
                                 value={friendData.memo}
                                 onChangeText={(t) => setFriendData((prev) => ({ ...prev, memo: t }))}
                                 multiline
@@ -382,7 +353,7 @@ const AddFriBirthday: React.FC = () => {
 
                     {isEditing && (
                         <TouchableOpacity style={styles.deleteLink} onPress={handleDelete}>
-                            <Ionicons name="trash-outline" size={16} color="#D9534F" />
+                            <Ionicons name="trash-outline" size={16} color={dc('#D9534F')} />
                             <Text style={styles.deleteLinkText}>이 친구 삭제하기</Text>
                         </TouchableOpacity>
                     )}
@@ -407,10 +378,10 @@ const AddFriBirthday: React.FC = () => {
                         style={styles.saveBtn}
                     >
                         {isSaving ? (
-                            <ActivityIndicator color="#fff" />
+                            <ActivityIndicator color={dc('#fff')} />
                         ) : (
                             <>
-                                <Ionicons name={isEditing ? 'checkmark' : 'add'} size={20} color="#FFFFFF" />
+                                <Ionicons name={isEditing ? 'checkmark' : 'add'} size={20} color={dc('#FFFFFF')} />
                                 <Text style={styles.saveText}>{isEditing ? '수정 완료' : '친구 추가하기'}</Text>
                             </>
                         )}
@@ -422,7 +393,7 @@ const AddFriBirthday: React.FC = () => {
 };
 
 const shadow = {
-    shadowColor: '#C9A68A',
+    shadowColor: '#4B5A3A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
@@ -504,7 +475,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         height: 52,
     },
-    inputBoxActive: { borderColor: '#F7A8C2' },
+    inputBoxActive: { borderColor: THEME.primary },
     input: { flex: 1, fontSize: 16, color: COLORS.text, fontWeight: '600' },
     dateRow: { flexDirection: 'row', gap: 12 },
     dateBox: {
@@ -552,7 +523,7 @@ const styles = StyleSheet.create({
         width: 90,
         height: 54,
         borderRadius: 18,
-        backgroundColor: '#F5EFE9',
+        backgroundColor: '#F1F2EA',
         alignItems: 'center',
         justifyContent: 'center',
     },

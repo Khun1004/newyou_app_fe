@@ -4,14 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 // Mock data for friends
 const mockFriends = [
     { id: 'f1', name: 'James', schedule: [
-            { id: '12', title: 'Coffee meeting', time: '10:00', day: 'Mon', duration: 1, color: '#D7FFD7' },
-            { id: '13', title: 'Gym', time: '17:00', day: 'Tue', duration: 1.5, color: '#D7FFD7' },
+            { id: '12', title: 'Coffee meeting', time: '10:00', day: 'Mon', duration: 1, color: dc('#D7FFD7') },
+            { id: '13', title: 'Gym', time: '17:00', day: 'Tue', duration: 1.5, color: dc('#D7FFD7') },
         ]},
     { id: 'f2', name: 'Laura', schedule: [
-            { id: '14', title: 'Lunch with team', time: '12:00', day: 'Wed', duration: 1, color: '#E8F4F8' },
+            { id: '14', title: 'Lunch with team', time: '12:00', day: 'Wed', duration: 1, color: dc('#E8F4F8') },
         ]},
 ];
 
@@ -32,7 +33,7 @@ const renderFriendItem = ({ item }) => (
         style={styles.friendContainer}
         onPress={() => router.push({ pathname: 'friendTimetable', params: { friendId: item.id } })}
     >
-        <Ionicons name="person-circle-outline" size={40} color="#666" />
+        <Ionicons name="person-circle-outline" size={40} color={dc('#666')} />
         <Text style={styles.friendName}>{item.name}</Text>
     </TouchableOpacity>
 );

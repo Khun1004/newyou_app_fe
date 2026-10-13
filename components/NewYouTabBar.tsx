@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dbg } from '@/constants/theme';
 
 /**
  * New You 전용 아래 탭 바 (탭 바가 실제로 움푹 파인 모양)
@@ -100,7 +100,7 @@ export default function NewYouTabBar({ state, navigation, insets }: BottomTabBar
                 {/* 탭 바 배경 (파인 모양) */}
                 {barWidth > 0 && (
                     <Svg width={barWidth} height={BAR_HEIGHT} style={styles.svg} pointerEvents="none">
-                        <Path d={barPath(barWidth, cx)} fill="#FFFFFF" stroke={THEME.line} strokeWidth={1} />
+                        <Path d={barPath(barWidth, cx)} fill={dbg('#FFFFFF')} stroke={THEME.line} strokeWidth={1} />
                     </Svg>
                 )}
 
@@ -113,7 +113,7 @@ export default function NewYouTabBar({ state, navigation, insets }: BottomTabBar
                             { left: cx - CIRCLE / 2, top: CENTER_Y - CIRCLE / 2, transform: [{ scale: pop }] },
                         ]}
                     >
-                        <Ionicons name={activeInfo.iconActive} size={23} color="#FFFFFF" />
+                        <Ionicons name={activeInfo.iconActive} size={23} color={dc('#FFFFFF')} />
                     </Animated.View>
                 )}
 

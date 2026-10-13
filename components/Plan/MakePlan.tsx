@@ -19,6 +19,7 @@ import { useFocusEffect, router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AppHeader from '@/components/AppHeader';
 
+import { dc, isDark } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 
 // YYYY-MM-DD 형식의 문자열에서 Date 객체를 생성하는 헬퍼 함수
@@ -202,7 +203,7 @@ const MakePlan = () => {
                         style={styles.datePickerButton}
                         onPress={() => setShowDatePicker(true)}
                     >
-                        <Ionicons name="calendar-outline" size={20} color="#6C63FF" style={{ marginRight: 10 }} />
+                        <Ionicons name="calendar-outline" size={20} color={dc('#6C63FF')} style={{ marginRight: 10 }} />
                         <Text style={styles.dateText}>
                             {selectedDateString}
                         </Text>
@@ -213,6 +214,7 @@ const MakePlan = () => {
                             mode="date"
                             display="default"
                             onChange={onChangeDate}
+                            themeVariant={isDark() ? 'dark' : 'light'}
                             minimumDate={new Date(new Date().setHours(0,0,0,0))}
                         />
                     )}
@@ -222,7 +224,7 @@ const MakePlan = () => {
                     <TextInput
                         style={[styles.input, styles.titleInput]}
                         placeholder="계획 제목"
-                        placeholderTextColor="#a0aec0"
+                        placeholderTextColor={dc('#a0aec0')}
                         value={planTitle}
                         onChangeText={setPlanTitle}
                         maxLength={100}
@@ -233,7 +235,7 @@ const MakePlan = () => {
                     <TextInput
                         style={[styles.input, styles.contentInput]}
                         placeholder="계획 내용"
-                        placeholderTextColor="#a0aec0"
+                        placeholderTextColor={dc('#a0aec0')}
                         value={planContent}
                         onChangeText={setPlanContent}
                         multiline

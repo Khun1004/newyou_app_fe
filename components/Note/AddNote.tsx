@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
 import AppHeader from '@/components/AppHeader';
 
+import { dc, isDark, dbg } from '@/constants/theme';
 export default function AddNote() {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -59,7 +60,7 @@ export default function AddNote() {
 
     return (
         <View style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} backgroundColor="#fff" />
             {/* 공통 헤더 */}
             <AppHeader title={noteId ? '노트 수정' : '새 노트 작성'} onBack={handleCancel} />
             <View style={styles.container}>
@@ -80,7 +81,7 @@ export default function AddNote() {
                                     style={[
                                         styles.designOption,
                                         {
-                                            backgroundColor: design.backgroundColor,
+                                            backgroundColor: dbg(design.backgroundColor),
                                             borderColor: selectedDesign === design.id ? design.headerColor : design.borderColor,
                                             borderWidth: selectedDesign === design.id ? 3 : 1.5,
                                         }
@@ -150,7 +151,7 @@ export default function AddNote() {
                                     {/* 선택 표시 */}
                                     {selectedDesign === design.id && (
                                         <View style={[styles.selectedBadge, { backgroundColor: design.headerColor }]}>
-                                            <Ionicons name="checkmark" size={16} color="#fff" />
+                                            <Ionicons name="checkmark" size={16} color={dc('#fff')} />
                                         </View>
                                     )}
 
@@ -164,7 +165,7 @@ export default function AddNote() {
                         <TextInput
                             style={styles.titleInput}
                             placeholder="제목을 입력하세요"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                             value={title}
                             onChangeText={setTitle}
                         />
@@ -174,7 +175,7 @@ export default function AddNote() {
                         <TextInput
                             style={styles.contentInput}
                             placeholder="내용을 입력하세요"
-                            placeholderTextColor="#999"
+                            placeholderTextColor={dc('#999')}
                             multiline
                             value={content}
                             onChangeText={setContent}

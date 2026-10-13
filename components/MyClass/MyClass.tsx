@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 // ClassItem 인터페이스 (OnlineClass와 동일하게 사용)
 interface ClassItem {
     id: string | number;
@@ -145,17 +146,17 @@ const MyClass: React.FC = () => {
                     <Text style={styles.instructor}>강사: {item.instructor}</Text>
                     <View style={styles.detailsRow}>
                         <Text style={styles.detailText}>
-                            <Ionicons name="time-outline" size={12} color="#666" /> {item.duration}
+                            <Ionicons name="time-outline" size={12} color={dc('#666')} /> {item.duration}
                         </Text>
                         <Text style={styles.detailText}>
-                            <Ionicons name="people-outline" size={12} color="#666" /> {item.participants}명
+                            <Ionicons name="people-outline" size={12} color={dc('#666')} /> {item.participants}명
                         </Text>
                     </View>
 
                     <View style={styles.tagRow}>
                         {item.isMVPPurchased && <Text style={styles.mvpTag}>MVP</Text>}
                         {/* ❤️ [수정] isCurrentlyLiked 사용 */}
-                        {isCurrentlyLiked && <Ionicons name="heart" size={14} color="#dc3545" />}
+                        {isCurrentlyLiked && <Ionicons name="heart" size={14} color={dc('#dc3545')} />}
                     </View>
 
                 </View>
@@ -170,7 +171,7 @@ const MyClass: React.FC = () => {
 
     const renderEmptyState = () => (
         <View style={styles.emptyContainer}>
-            <Ionicons name="information-circle-outline" size={50} color="#999" />
+            <Ionicons name="information-circle-outline" size={50} color={dc('#999')} />
             <Text style={styles.emptyText}>
                 {activeTab === 'liked'
                     ? '좋아요 한 강의가 없습니다.'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     View,
@@ -21,10 +21,25 @@ import * as FileSystem from 'expo-file-system/legacy';
 // 💡 수정된 부분: 서버 IP를 가져오기 위해 상수를 import 합니다.
 import { SERVER_IP } from '@/config';
 import AppHeader from '@/components/AppHeader';
+import api from '@/components/utils/api';
 
+import { dbg, dc } from '@/constants/theme';
 const ProfileEdit = () => {
     const { currentUser, updateProfile } = useAuth();
     const [nickname, setNickname] = useState(currentUser?.name || '');
+    // 아이디 (바꿀 수 없어요, 보여주기만 해요)
+    const [loginId, setLoginId] = useState<string>(currentUser?.loginId || '');
+    useEffect(() => {
+        let alive = true;
+        api.get('/mypage')
+            .then((res) => {
+                if (alive && res.data?.loginId) setLoginId(res.data.loginId);
+            })
+            .catch(() => {});
+        return () => {
+            alive = false;
+        };
+    }, []);
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
@@ -32,7 +47,7 @@ const ProfileEdit = () => {
     const [profileImage, setProfileImage] = useState(currentUser?.profileImage || null);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [focusedInput, setFocusedInput] = useState(null);
+    const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
     // 💡 수정된 함수: 서버 상대 경로를 표시용 절대 경로로 변환합니다.
     const getFullDisplayUri = (path: string | null): string | null => {
@@ -53,11 +68,11 @@ const ProfileEdit = () => {
     // currentUser가 없으면 에러 화면 표시
     if (!currentUser) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="프로필 편집" />
                 <SafeAreaView style={styles.container}>
                     <View style={styles.content}>
-                        <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" style={styles.errorIcon} />
+                        <Ionicons name="alert-circle-outline" size={60} color={dc('#FF6B6B')} style={styles.errorIcon} />
                         <Text style={styles.errorText}>사용자 정보를 불러올 수 없습니다</Text>
                         <Text style={styles.errorSubtext}>로그인 상태를 확인해주세요</Text>
                         <TouchableOpacity
@@ -293,7 +308,7 @@ const ProfileEdit = () => {
                             ) : (
                                 <View style={styles.defaultProfileImage}>
                                     <View style={styles.iconGradientBg}>
-                                        <Ionicons name="person" size={50} color="#fff" />
+                                        <Ionicons name="person" size={50} color={dc('#fff')} />
                                     </View>
                                 </View>
                             )}
@@ -302,7 +317,7 @@ const ProfileEdit = () => {
                                 onPress={handleImageUpload}
                                 disabled={isLoading}
                             >
-                                <Ionicons name="camera" size={20} color="#fff" />
+                                <Ionicons name="camera" size={20} color={dc('#fff')} />
                             </TouchableOpacity>
                         </View>
 
@@ -312,7 +327,7 @@ const ProfileEdit = () => {
                                 onPress={handleImageDelete}
                                 disabled={isLoading}
                             >
-                                <Ionicons name="trash-outline" size={16} color="#FF6B6B" />
+                                <Ionicons name="trash-outline" size={16} color={dc('#FF6B6B')} />
                                 <Text style={styles.deleteImageText}>사진 삭제</Text>
                             </TouchableOpacity>
                         )}
@@ -323,7 +338,7 @@ const ProfileEdit = () => {
                         {/* Nickname Input */}
                         <View style={styles.inputCard}>
                             <View style={styles.inputHeader}>
-                                <Ionicons name="person-outline" size={20} color="#007AFF" />
+                                <Ionicons name="person-outline" size={20} color={dc('#007AFF')} />
                                 <Text style={styles.inputLabel}>닉네임</Text>
                             </View>
                             <TextInput
@@ -334,7 +349,7 @@ const ProfileEdit = () => {
                                 value={nickname}
                                 onChangeText={setNickname}
                                 placeholder="2-20자 이내로 입력하세요"
-                                placeholderTextColor="#999"
+                                placeholderTextColor={dc('#999')}
                                 maxLength={20}
                                 editable={!isLoading}
                                 autoCorrect={false}
@@ -355,7 +370,7 @@ const ProfileEdit = () => {
                         {/* Password Input */}
                         <View style={styles.inputCard}>
                             <View style={styles.inputHeader}>
-                                <Ionicons name="lock-closed-outline" size={20} color="#007AFF" />
+                                <Ionicons name="lock-closed-outline" size={20} color={dc('#007AFF')} />
                                 <Text style={styles.inputLabel}>비밀번호</Text>
                             </View>
                             <View style={[
@@ -367,7 +382,7 @@ const ProfileEdit = () => {
                                     value={password}
                                     onChangeText={setPassword}
                                     placeholder="변경하려면 6자리 이상 입력"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={dc('#999')}
                                     secureTextEntry={!showPassword}
                                     maxLength={20}
                                     editable={!isLoading}
@@ -383,7 +398,7 @@ const ProfileEdit = () => {
                                     <Ionicons
                                         name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                                         size={22}
-                                        color="#007AFF"
+                                        color={dc('#007AFF')}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -392,15 +407,28 @@ const ProfileEdit = () => {
                             </Text>
                         </View>
 
+                        {/* 아이디 (바꿀 수 없음) */}
+                        <View style={[styles.inputCard, styles.disabledCard]}>
+                            <View style={styles.inputHeader}>
+                                <Ionicons name="at-outline" size={20} color={dc('#999')} />
+                                <Text style={[styles.inputLabel, styles.disabledLabel]}>아이디</Text>
+                            </View>
+                            <View style={styles.disabledInputContainer}>
+                                <Text style={styles.disabledInputText}>{loginId || '아이디 없음'}</Text>
+                                <Ionicons name="lock-closed" size={16} color={dc('#ccc')} />
+                            </View>
+                            <Text style={styles.helperText}>아이디는 변경할 수 없습니다</Text>
+                        </View>
+
                         {/* Phone Number (Read-only) */}
                         <View style={[styles.inputCard, styles.disabledCard]}>
                             <View style={styles.inputHeader}>
-                                <Ionicons name="call-outline" size={20} color="#999" />
+                                <Ionicons name="call-outline" size={20} color={dc('#999')} />
                                 <Text style={[styles.inputLabel, styles.disabledLabel]}>전화번호</Text>
                             </View>
                             <View style={styles.disabledInputContainer}>
                                 <Text style={styles.disabledInputText}>{formattedPhoneNumber}</Text>
-                                <Ionicons name="lock-closed" size={16} color="#ccc" />
+                                <Ionicons name="lock-closed" size={16} color={dc('#ccc')} />
                             </View>
                             <Text style={styles.helperText}>전화번호는 변경할 수 없습니다</Text>
                         </View>
@@ -419,10 +447,10 @@ const ProfileEdit = () => {
                         activeOpacity={0.8}
                     >
                         {isLoading ? (
-                            <ActivityIndicator color="#fff" size="small" />
+                            <ActivityIndicator color={dc('#fff')} size="small" />
                         ) : (
                             <>
-                                <Ionicons name="checkmark-circle" size={24} color="#fff" />
+                                <Ionicons name="checkmark-circle" size={24} color={dc('#fff')} />
                                 <Text style={styles.saveButtonText}>저장하기</Text>
                             </>
                         )}

@@ -18,7 +18,7 @@ import AppHeader from '@/components/AppHeader';
 import { giftData } from '@/components/Presents/GiftData';
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
 import { useFriends } from '@/components/contexts/FriendContext';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dgrad } from '@/constants/theme';
 
 /**
  * 선물 화면
@@ -128,7 +128,7 @@ const Present = () => {
                     <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
                     {!!item.rating && (
                         <View style={styles.ratingRow}>
-                            <Ionicons name="star" size={11} color="#F2B705" />
+                            <Ionicons name="star" size={11} color={dc('#F2B705')} />
                             <Text style={styles.rating}>{item.rating}</Text>
                             <Text style={styles.reviews}>({item.reviews?.toLocaleString()})</Text>
                         </View>
@@ -162,7 +162,7 @@ const Present = () => {
             {/* 배너 */}
             {!query.trim() && (
                 <TouchableOpacity activeOpacity={0.9} onPress={() => router.push(soon ? '/Birthday' : '/Like')}>
-                    <LinearGradient colors={['#FFB75E', '#F06292']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.banner}>
+                    <LinearGradient colors={dgrad(['#FFB75E', '#F06292'] as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.banner}>
                         <Text style={[styles.bannerDeco, { top: 10, right: 70 }]}>✦</Text>
                         <Text style={[styles.bannerDeco, { bottom: 14, right: 110, fontSize: 10 }]}>✦</Text>
                         <View style={{ flex: 1 }}>
@@ -174,7 +174,7 @@ const Present = () => {
                             </Text>
                             <View style={styles.bannerBtn}>
                                 <Text style={styles.bannerBtnText}>{soon ? '생일 보러 가기' : `찜한 선물 ${likedItems.length}개`}</Text>
-                                <Ionicons name="chevron-forward" size={14} color="#E0466A" />
+                                <Ionicons name="chevron-forward" size={14} color={dc('#E0466A')} />
                             </View>
                         </View>
                         <Text style={styles.bannerEmoji}>🎁</Text>

@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
+import { dc } from '@/constants/theme';
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2;
 
@@ -62,7 +63,7 @@ const GiftCard = ({ item, isLiked, onLikePress, onPress }) => (
                 <Ionicons
                     name={isLiked ? "heart" : "heart-outline"}
                     size={20}
-                    color={isLiked ? "#FF4757" : "#999"}
+                    color={dc(isLiked ? "#FF4757" : "#999")}
                 />
             </TouchableOpacity>
             {item.discount && (
@@ -99,7 +100,7 @@ const PerfumeCard = ({ item, isLiked, onLikePress, onPress }) => (
                 <Ionicons
                     name={isLiked ? "heart" : "heart-outline"}
                     size={20}
-                    color={isLiked ? "#FF4757" : "#999"}
+                    color={dc(isLiked ? "#FF4757" : "#999")}
                 />
             </TouchableOpacity>
             {item.discount && (
@@ -114,7 +115,7 @@ const PerfumeCard = ({ item, isLiked, onLikePress, onPress }) => (
             <Text style={styles.perfumeName} numberOfLines={2}>{item.name}</Text>
 
             <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={12} color="#FFD700" />
+                <Ionicons name="star" size={12} color={dc('#FFD700')} />
                 <Text style={styles.rating}>{item.rating}</Text>
                 <Text style={styles.reviewCount}>({item.reviews?.toLocaleString()})</Text>
             </View>
@@ -186,7 +187,7 @@ const PresentsProductLists = ({
                     <Text style={styles.sectionTitle}>{title}</Text>
                     <TouchableOpacity style={styles.moreButton} onPress={() => onMorePress(title)}>
                         <Text style={styles.moreText}>더 보기</Text>
-                        <Ionicons name="chevron-forward" size={16} color="#666" />
+                        <Ionicons name="chevron-forward" size={16} color={dc('#666')} />
                     </TouchableOpacity>
                 </View>
                 <FlatList
@@ -232,7 +233,7 @@ const PresentsProductLists = ({
                 )}
                 <TouchableOpacity style={styles.sortButton} onPress={onSortPress}>
                     <Text style={styles.sortText}>{selectedSort}</Text>
-                    <Ionicons name="chevron-down" size={16} color="#666" />
+                    <Ionicons name="chevron-down" size={16} color={dc('#666')} />
                 </TouchableOpacity>
             </View>
 

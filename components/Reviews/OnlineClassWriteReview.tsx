@@ -18,6 +18,7 @@ import { useAuth } from '@/components/contexts/AuthProvider';
 import { useOnlineClassReviews } from '@/components/contexts/OnlineClassReviewContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const OnlineClassWriteReview = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
@@ -46,7 +47,7 @@ const OnlineClassWriteReview = () => {
                     <Ionicons
                         name={i <= rating ? "star" : "star-outline"}
                         size={32}
-                        color={i <= rating ? "#ffc107" : "#E6E8DA"}
+                        color={dc(i <= rating ? "#ffc107" : "#E6E8DA")}
                     />
                 </TouchableOpacity>
             );
@@ -198,15 +199,15 @@ const OnlineClassWriteReview = () => {
                 <View style={styles.guidelineSection}>
                     <Text style={styles.guidelineTitle}>리뷰 작성 가이드라인</Text>
                     <View style={styles.guidelineItem}>
-                        <Ionicons name="checkmark-circle" size={16} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={16} color={dc('#4E7D32')} />
                         <Text style={styles.guidelineText}>클래스 내용과 품질에 대해 솔직하게 작성해주세요</Text>
                     </View>
                     <View style={styles.guidelineItem}>
-                        <Ionicons name="checkmark-circle" size={16} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={16} color={dc('#4E7D32')} />
                         <Text style={styles.guidelineText}>구체적인 경험과 느낀 점을 공유해주세요</Text>
                     </View>
                     <View style={styles.guidelineItem}>
-                        <Ionicons name="close-circle" size={16} color="#dc3545" />
+                        <Ionicons name="close-circle" size={16} color={dc('#dc3545')} />
                         <Text style={styles.guidelineText}>욕설이나 부적절한 내용은 삼가해주세요</Text>
                     </View>
                 </View>
@@ -223,12 +224,12 @@ const OnlineClassWriteReview = () => {
                 >
                     {isSubmitting ? (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color={dc('#fff')} />
                             <Text style={styles.submitButtonText}>작성 중...</Text>
                         </View>
                     ) : (
                         <>
-                            <Ionicons name="send" size={20} color="#fff" />
+                            <Ionicons name="send" size={20} color={dc('#fff')} />
                             <Text style={styles.submitButtonText}>리뷰 작성 완료</Text>
                         </>
                     )}

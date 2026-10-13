@@ -21,7 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // ✅ 오류 해결: useAuth 훅을 가져옵니다. 경로가 정확한지 확인해 주세요!
 import { useAuth } from '@/components/contexts/AuthProvider';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dgrad } from '@/constants/theme';
 
 // 로고 이미지 (require로 불러오면 VS Code에서 빨간 줄이 생기지 않아요)
 const NewYouLogo = require('@/assets/NewYou.png');
@@ -35,6 +35,14 @@ export default function SignUp() {
     // 기본 상태
     const [phoneNumber, setPhoneNumber] = useState(params.phoneNumber as string || '');
     const [nickname, setNickname] = useState('');
+
+    // 아이디 + 중복 확인
+    const [loginId, setLoginId] = useState('');
+    const [idChecked, setIdChecked] = useState(false); // 중복 확인을 통과했는지
+    const [idMessage, setIdMessage] = useState('');
+    const [idOk, setIdOk] = useState(false);
+    const [isCheckingId, setIsCheckingId] = useState(false);
+    const [loginIdFocused, setLoginIdFocused] = useState(false);
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +90,39 @@ export default function SignUp() {
     };
 
     const cleanPhone = phoneNumber;
+
+    // 아이디 규칙: 영어 소문자로 시작, 소문자·숫자·_ 4~16자
+    const ID_RULE = /^[a-z][a-z0-9_]{3,15}$/;
+
+    const handleLoginIdChange = (text: string) => {
+        // 영어 소문자, 숫자, _ 만 남겨요 (대문자는 소문자로)
+        setLoginId(text.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+        setIdChecked(false);
+        setIdOk(false);
+        setIdMessage('');
+    };
+
+    const handleCheckId = async () => {
+        if (!ID_RULE.test(loginId)) {
+            setIdOk(false);
+            setIdMessage('영어 소문자로 시작하는 4~16자(소문자·숫자·_)로 만들어 주세요.');
+            return;
+        }
+        setIsCheckingId(true);
+        try {
+            const response = await fetch(`${AUTH_URL}/check-id?loginId=${encodeURIComponent(loginId)}`);
+            const data = await response.json();
+            setIdOk(!!data.available);
+            setIdChecked(!!data.available);
+            setIdMessage(data.message || (data.available ? '사용할 수 있는 아이디예요.' : '이미 사용 중인 아이디예요.'));
+        } catch (error) {
+            console.error('아이디 확인 에러:', error);
+            setIdOk(false);
+            setIdMessage('서버에 연결할 수 없어요. 잠시 후 다시 해 주세요.');
+        } finally {
+            setIsCheckingId(false);
+        }
+    };
 
     const handleSendCode = async () => {
         if (cleanPhone.length < 10) {
@@ -157,7 +198,7 @@ export default function SignUp() {
 
             if (response.ok) {
                 setIsVerified(true);
-                Alert.alert('성공', '휴대폰 인증이 완료되었습니다. 닉네임과 비밀번호를 입력하고 가입을 진행해 주세요.');
+                Alert.alert('성공', '휴대폰 인증이 완료되었습니다. 아이디, 닉네임, 비밀번호를 입력하고 가입을 진행해 주세요.');
             } else {
                 let errorMessage = `인증번호가 일치하지 않습니다. (HTTP 상태: ${response.status})`;
                 try {
@@ -182,6 +223,10 @@ export default function SignUp() {
             Alert.alert('알림', '휴대폰 번호 인증을 먼저 완료해 주세요.');
             return;
         }
+        if (!idChecked) {
+            Alert.alert('알림', '아이디 중복 확인을 해 주세요.');
+            return;
+        }
         if (nickname.trim() === '' || password.trim() === '') {
             Alert.alert('알림', '닉네임과 비밀번호를 모두 입력해 주세요.');
             return;
@@ -196,7 +241,7 @@ export default function SignUp() {
         try {
             // 🚨 변경된 부분: AuthProvider의 signUp 함수를 사용하여 서버에 회원가입을 요청합니다.
             // signUp 함수는 cleanPhone, nickname, password, photoUrl, isSocial을 인수로 받습니다.
-            const result = await signUp(cleanPhone, nickname, password, null, false);
+            const result = await signUp(cleanPhone, nickname, password, null, false, loginId);
 
             if (result.success) {
                 setIsLoading(false);
@@ -208,7 +253,7 @@ export default function SignUp() {
                 setTimeout(() => {
                     Alert.alert(
                         '회원가입 완료! 🎉',
-                        `${nickname}님 환영합니다! 로그인해주세요.`,
+                        `${nickname}님 환영합니다!\n아이디 '${loginId}'(으)로 로그인해 주세요.`,
                         [{ text: '확인' }]
                     );
                 }, 300);
@@ -223,18 +268,19 @@ export default function SignUp() {
         }
     };
 
-    const isFormValid = cleanPhone.length >= 10 && nickname.length > 0 && password.length >= 6;
+    const isFormValid = cleanPhone.length >= 10 && idChecked && nickname.length > 0 && password.length >= 6;
     const isButtonDisabled = !isFormValid || isLoading || !isVerified;
 
     // 010-1234-5678 처럼 보기 좋게 (입력값 자체는 숫자만 저장)
     const displayPhone = phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (_, a, b, c) => [a, b, c].filter(Boolean).join('-'));
     const sendDisabled = isSendingCode || cleanPhone.length < 10;
+    const checkIdDisabled = !isVerified || isCheckingId || loginId.length < 4 || idChecked;
     const verifyDisabled = !isCodeSent || isVerifyingCode || verificationInput.length !== 6;
 
     return (
         <View style={styles.screen}>
             {/* 배경: 위쪽 햇살 그라데이션 + 동그란 장식 */}
-            <LinearGradient colors={COLORS.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.topBg}>
+            <LinearGradient colors={dgrad(COLORS.sunrise as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.topBg}>
                 <View style={[styles.bubble, { width: 160, height: 160, top: -40, right: -40 }]} />
                 <View style={[styles.bubble, { width: 90, height: 90, top: 110, left: -30 }]} />
             </LinearGradient>
@@ -270,7 +316,7 @@ export default function SignUp() {
                                 <View style={styles.step}>
                                     <View style={[styles.stepCircle, styles.stepCircleOn, isVerified && styles.stepCircleDone]}>
                                         {isVerified ? (
-                                            <Ionicons name="checkmark" size={15} color="#FFF" />
+                                            <Ionicons name="checkmark" size={15} color={dc('#FFF')} />
                                         ) : (
                                             <Text style={styles.stepNumOn}>1</Text>
                                         )}
@@ -328,7 +374,7 @@ export default function SignUp() {
                                             activeOpacity={0.8}
                                         >
                                             {isSendingCode ? (
-                                                <ActivityIndicator color="#fff" size="small" />
+                                                <ActivityIndicator color={dc('#fff')} size="small" />
                                             ) : (
                                                 <Text style={[styles.smallButtonText, sendDisabled && styles.smallButtonTextOff]}>
                                                     {isCodeSent ? '재전송' : '인증 요청'}
@@ -379,7 +425,7 @@ export default function SignUp() {
                                             activeOpacity={0.8}
                                         >
                                             {isVerifyingCode ? (
-                                                <ActivityIndicator color="#fff" size="small" />
+                                                <ActivityIndicator color={dc('#fff')} size="small" />
                                             ) : (
                                                 <Text style={[styles.smallButtonText, verifyDisabled && styles.smallButtonTextOff]}>
                                                     확인
@@ -399,7 +445,62 @@ export default function SignUp() {
 
                             {/* 2단계 카드: 닉네임 + 비밀번호 */}
                             <View style={[styles.card, { marginTop: 14 }, !isVerified && styles.cardOff]}>
-                                <Text style={styles.label}>닉네임</Text>
+                                <Text style={styles.label}>아이디</Text>
+                                <View style={styles.row}>
+                                    <View
+                                        style={[
+                                            styles.inputBox,
+                                            { flex: 1 },
+                                            loginIdFocused && styles.inputBoxFocused,
+                                            idChecked && styles.inputBoxDone,
+                                            !isVerified && styles.inputBoxOff,
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name="at-outline"
+                                            size={20}
+                                            color={idChecked ? COLORS.green : loginIdFocused ? COLORS.pink : COLORS.icon}
+                                        />
+                                        <TextInput
+                                            style={styles.input}
+                                            value={loginId}
+                                            onChangeText={handleLoginIdChange}
+                                            placeholder="영어 소문자·숫자 4~16자"
+                                            placeholderTextColor={COLORS.placeholder}
+                                            maxLength={16}
+                                            autoCapitalize="none"
+                                            autoCorrect={false}
+                                            editable={!isLoading && isVerified}
+                                            onFocus={() => setLoginIdFocused(true)}
+                                            onBlur={() => setLoginIdFocused(false)}
+                                        />
+                                    </View>
+                                    {idChecked ? (
+                                        <View style={styles.doneBadge}>
+                                            <Ionicons name="checkmark-circle" size={22} color={COLORS.green} />
+                                        </View>
+                                    ) : (
+                                        <TouchableOpacity
+                                            style={[styles.smallButton, checkIdDisabled && styles.smallButtonOff]}
+                                            onPress={handleCheckId}
+                                            disabled={checkIdDisabled}
+                                            activeOpacity={0.8}
+                                        >
+                                            {isCheckingId ? (
+                                                <ActivityIndicator color={dc('#fff')} size="small" />
+                                            ) : (
+                                                <Text style={[styles.smallButtonText, checkIdDisabled && styles.smallButtonTextOff]}>
+                                                    중복 확인
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                                <Text style={[styles.helper, idMessage ? { color: idOk ? COLORS.green : '#E5534B' } : null]}>
+                                    {idMessage || '로그인할 때 쓰는 아이디예요 (영어 소문자로 시작)'}
+                                </Text>
+
+                                <Text style={[styles.label, { marginTop: 16 }]}>닉네임</Text>
                                 <View
                                     style={[
                                         styles.inputBox,
@@ -472,14 +573,14 @@ export default function SignUp() {
                                     style={{ marginTop: 20 }}
                                 >
                                     <LinearGradient
-                                        colors={isButtonDisabled ? ['#ECEDE3', '#ECEDE3'] : COLORS.button}
+                                        colors={isButtonDisabled ? dgrad(['#ECEDE3', '#ECEDE3']) : COLORS.button}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 0 }}
                                         style={[styles.primaryButton, !isButtonDisabled && styles.primaryShadow]}
                                     >
                                         {isLoading ? (
                                             <>
-                                                <ActivityIndicator color="#FFF" style={{ marginRight: 8 }} />
+                                                <ActivityIndicator color={dc('#FFF')} style={{ marginRight: 8 }} />
                                                 <Text style={styles.primaryText}>가입 중...</Text>
                                             </>
                                         ) : (

@@ -18,6 +18,7 @@ import {
 } from '@/components/contexts/AddressManageContext'; // 실제 파일 경로에 맞게 수정
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const AddressManagement = () => {
     const router = useRouter();
     // ❗️ Context 훅 사용
@@ -111,7 +112,7 @@ const AddressManagement = () => {
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
                 {addresses.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="location-outline" size={64} color="#ccc" />
+                        <Ionicons name="location-outline" size={64} color={dc('#ccc')} />
                         <Text style={styles.emptyText}>등록된 배송지가 없습니다.</Text>
                         <Text style={styles.emptySubText}>새 배송지를 등록하여 편리하게 이용해보세요.</Text>
                     </View>
@@ -126,7 +127,7 @@ const AddressManagement = () => {
                     style={styles.addButton}
                     onPress={() => router.push('/AddAddress')}
                 >
-                    <Ionicons name="add-circle-outline" size={24} color="#fff" style={{ marginRight: 8 }} />
+                    <Ionicons name="add-circle-outline" size={24} color={dc('#fff')} style={{ marginRight: 8 }} />
                     <Text style={styles.addButtonText}>새 배송지 추가</Text>
                 </TouchableOpacity>
             </View>

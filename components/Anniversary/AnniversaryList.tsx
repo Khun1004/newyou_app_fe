@@ -22,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
 
+import { dc, isDark, dbg } from '@/constants/theme';
 const { height: screenHeight } = Dimensions.get('window');
 
 // 이미지 경로를 절대 경로로 변환하는 유틸리티 함수
@@ -75,7 +76,7 @@ const AnimalAvatar = ({ animal, size = 60 }: { animal: string; size?: number }) 
     return (
         <View style={[
             styles.avatarCircle,
-            { backgroundColor: config.bgColor, width: size, height: size, borderRadius: size / 2, }
+            { backgroundColor: dbg(config.bgColor), width: size, height: size, borderRadius: size / 2, }
         ]}>
             <Text style={{ fontSize: size * 0.5 }}>{config.emoji}</Text>
         </View>
@@ -234,7 +235,7 @@ export default function AnniversaryList() {
                                         style={styles.avatarImage}
                                     />
                                 ) : (
-                                    <Ionicons name="person" size={30} color="#999" />
+                                    <Ionicons name="person" size={30} color={dc('#999')} />
                                 )}
                             </View>
                             <Text style={styles.profileLabel}>{myNickname}</Text>
@@ -258,7 +259,7 @@ export default function AnniversaryList() {
                                 <AnimalAvatar animal={partnerProfileImageKey} size={60} />
                             ) : (
                                 <View style={styles.avatarCircle}>
-                                    <Ionicons name="person" size={30} color="#999" />
+                                    <Ionicons name="person" size={30} color={dc('#999')} />
                                 </View>
                             )}
                             <Text style={styles.profileLabel}>{item.partnerNickname}</Text>
@@ -287,7 +288,7 @@ export default function AnniversaryList() {
                         activeOpacity={0.6}
                         style={styles.actionButton}
                     >
-                        <Ionicons name="color-palette-outline" size={16} color="#666" />
+                        <Ionicons name="color-palette-outline" size={16} color={dc('#666')} />
                         <Text style={styles.actionButtonText}>배경</Text>
                     </TouchableOpacity>
 
@@ -298,7 +299,7 @@ export default function AnniversaryList() {
                         activeOpacity={0.6}
                         style={styles.actionButton}
                     >
-                        <Ionicons name="pencil-outline" size={16} color="#666" />
+                        <Ionicons name="pencil-outline" size={16} color={dc('#666')} />
                         <Text style={styles.actionButtonText}>정보 편집</Text>
                     </TouchableOpacity>
 
@@ -309,8 +310,8 @@ export default function AnniversaryList() {
                         activeOpacity={0.6}
                         style={styles.actionButton}
                     >
-                        <Ionicons name="trash-outline" size={16} color="#ff4444" />
-                        <Text style={[styles.actionButtonText, { color: '#ff4444' }]}>삭제</Text>
+                        <Ionicons name="trash-outline" size={16} color={dc('#ff4444')} />
+                        <Text style={[styles.actionButtonText, { color: dc('#ff4444') }]}>삭제</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -327,10 +328,10 @@ export default function AnniversaryList() {
     if (isLoading && anniversaries.length === 0) {
         return (
             <View style={styles.loadingContainer}>
-                <StatusBar barStyle="dark-content" />
+                <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
                 <AppHeader title="기념일 관리" />
                 <View style={styles.loadingContent}>
-                    <ActivityIndicator size="large" color="#6C63FF" />
+                    <ActivityIndicator size="large" color={dc('#6C63FF')} />
                     <Text style={styles.loadingText}>데이터를 불러오는 중입니다...</Text>
                 </View>
             </View>
@@ -339,7 +340,7 @@ export default function AnniversaryList() {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
 
             {/* 공통 헤더: < 기념일 관리 [+] 🔔 */}
             <AppHeader title="기념일 관리" right={[{ icon: 'add-circle-outline', onPress: handleAddPress, accessibilityLabel: '기념일 추가' }]} />
@@ -349,13 +350,13 @@ export default function AnniversaryList() {
                 <View style={styles.scrollContent}>
                     {sortedAnniversaries.length === 0 ? (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="calendar-outline" size={80} color="#ccc" />
+                            <Ionicons name="calendar-outline" size={80} color={dc('#ccc')} />
                             <Text style={styles.emptyTitle}>등록된 기념일이 없습니다</Text>
                             <Text style={styles.emptySubtitle}>
                                 추가 버튼을 눌러{'\n'}소중한 사람과의 기념일을 등록해보세요
                             </Text>
                             <TouchableOpacity onPress={handleAddPress} style={styles.emptyButton}>
-                                <Ionicons name="add-circle-outline" size={24} color="#fff" />
+                                <Ionicons name="add-circle-outline" size={24} color={dc('#fff')} />
                                 <Text style={styles.emptyButtonText}>새 기념일 등록</Text>
                             </TouchableOpacity>
                         </View>

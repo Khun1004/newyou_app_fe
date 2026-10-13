@@ -19,6 +19,7 @@ import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext
 import { SERVER_IP } from '@/config';
 import { useRequireLogin } from '@/components/RequireLogin';
 
+import { dc, dbg } from '@/constants/theme';
 const { width, height } = Dimensions.get('window');
 
 interface Profile {
@@ -51,7 +52,7 @@ const AnimalAvatar = ({ animal, size }: { animal: string; size: number }) => {
     return (
         <View style={[
             styles.profileImageContainerBase,
-            { width: size, height: size, borderRadius: size / 2, backgroundColor: config.bgColor },
+            { width: size, height: size, borderRadius: size / 2, backgroundColor: dbg(config.bgColor) },
             // 테두리는 profileImageBorder 스타일에서 처리
         ]}>
             <Text style={{ fontSize: emojiSize, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
@@ -273,7 +274,7 @@ const AnniversaryScreen: React.FC = () => {
                         <Ionicons
                             name="settings-outline"
                             size={24}
-                            color="#FFFFFF"
+                            color={dc('#FFFFFF')}
                             style={styles.iconShadow}
                         />
                     </TouchableOpacity>
@@ -303,81 +304,81 @@ const AnniversaryScreen: React.FC = () => {
                                 : '기념일을 등록하려면 먼저 로그인해 주세요.'}
                         </Text>
                         <TouchableOpacity style={styles.emptyButton} onPress={handleEditPress} activeOpacity={0.85}>
-                            <Ionicons name="add" size={20} color="#F06292" />
+                            <Ionicons name="add" size={20} color={dc('#F06292')} />
                             <Text style={styles.emptyButtonText}>기념일 등록하기</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    <View style={styles.content}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.titleEmoji}>{getRelationshipEmoji()}</Text>
-                            <Text style={styles.title}>우리의 특별한 날</Text>
-                        </View>
+                <View style={styles.content}>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.titleEmoji}>{getRelationshipEmoji()}</Text>
+                        <Text style={styles.title}>우리의 특별한 날</Text>
+                    </View>
 
-                        <View style={styles.profilesContainer}>
-                            {/* 나의 프로필 */}
-                            <TouchableOpacity style={styles.profileSection} onPress={handleLeftProfilePress}>
-                                <View style={styles.profileImageContainer}>
-                                    <View style={styles.profileImageBorder}>
-                                        {renderProfileContent(myProfile)}
-                                    </View>
-                                    <View style={styles.profileGlow} />
+                    <View style={styles.profilesContainer}>
+                        {/* 나의 프로필 */}
+                        <TouchableOpacity style={styles.profileSection} onPress={handleLeftProfilePress}>
+                            <View style={styles.profileImageContainer}>
+                                <View style={styles.profileImageBorder}>
+                                    {renderProfileContent(myProfile)}
                                 </View>
-                                <Text style={styles.nickname}>{myProfile.nickname}</Text>
-                            </TouchableOpacity>
-
-                            <View style={styles.connectionContainer}>
-                                <View style={styles.connectionLine} />
-                                <View style={styles.heartContainer}>
-                                    <Text style={styles.connectionHeart}>
-                                        {relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
-                                    </Text>
-                                </View>
-                                <View style={styles.connectionLine} />
+                                <View style={styles.profileGlow} />
                             </View>
+                            <Text style={styles.nickname}>{myProfile.nickname}</Text>
+                        </TouchableOpacity>
 
-                            {/* ⭐️ 파트너 프로필 (수정된 부분) */}
-                            <View style={styles.profileSection}>
-                                <View style={styles.profileImageContainer}>
-                                    <View style={styles.profileImageBorder}>
-                                        {/* ⭐️ renderProfileContent 함수를 사용하여 파트너 이미지 렌더링 */}
-                                        {renderProfileContent(partnerProfile)}
-                                    </View>
-                                    <View style={styles.profileGlow} />
-                                </View>
-                                <Text style={styles.nickname}>{partnerProfile.nickname}</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.relationshipContainer}>
-                            <View style={[
-                                styles.relationshipCard,
-                                settings.backgroundImageUri && styles.relationshipCardWithImage
-                            ]}>
-                                <View style={styles.relationshipHeader}>
-                                    <Text style={styles.relationshipType}>{getRelationshipText()}</Text>
-                                    <View style={styles.divider} />
-                                    <Text style={styles.duration}>{duration}</Text>
-                                </View>
-
-                                <Text style={[
-                                    styles.celebrationText,
-                                    settings.backgroundImageUri && styles.celebrationTextWithImage
-                                ]}>
-                                    {settings.celebrationMessage}
+                        <View style={styles.connectionContainer}>
+                            <View style={styles.connectionLine} />
+                            <View style={styles.heartContainer}>
+                                <Text style={styles.connectionHeart}>
+                                    {relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
                                 </Text>
                             </View>
+                            <View style={styles.connectionLine} />
                         </View>
 
-                        <View style={styles.bottomDecoration}>
+                        {/* ⭐️ 파트너 프로필 (수정된 부분) */}
+                        <View style={styles.profileSection}>
+                            <View style={styles.profileImageContainer}>
+                                <View style={styles.profileImageBorder}>
+                                    {/* ⭐️ renderProfileContent 함수를 사용하여 파트너 이미지 렌더링 */}
+                                    {renderProfileContent(partnerProfile)}
+                                </View>
+                                <View style={styles.profileGlow} />
+                            </View>
+                            <Text style={styles.nickname}>{partnerProfile.nickname}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.relationshipContainer}>
+                        <View style={[
+                            styles.relationshipCard,
+                            settings.backgroundImageUri && styles.relationshipCardWithImage
+                        ]}>
+                            <View style={styles.relationshipHeader}>
+                                <Text style={styles.relationshipType}>{getRelationshipText()}</Text>
+                                <View style={styles.divider} />
+                                <Text style={styles.duration}>{duration}</Text>
+                            </View>
+
                             <Text style={[
-                                styles.decorativeText,
-                                settings.backgroundImageUri && styles.decorativeTextWithImage
+                                styles.celebrationText,
+                                settings.backgroundImageUri && styles.celebrationTextWithImage
                             ]}>
-                                ✨ 더 많은 추억을 만들어가요 ✨
+                                {settings.celebrationMessage}
                             </Text>
                         </View>
                     </View>
+
+                    <View style={styles.bottomDecoration}>
+                        <Text style={[
+                            styles.decorativeText,
+                            settings.backgroundImageUri && styles.decorativeTextWithImage
+                        ]}>
+                            ✨ 더 많은 추억을 만들어가요 ✨
+                        </Text>
+                    </View>
+                </View>
                 )}
             </SafeAreaView>
         </View>

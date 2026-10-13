@@ -17,6 +17,7 @@ import { giftData } from '@/components/Presents/GiftData';
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 const { width, height } = Dimensions.get('window');
 
 // 더미 리뷰 데이터 (생략)
@@ -64,7 +65,7 @@ const StarRating = ({ rating, size = 16 }) => {
                     key={star}
                     name={star <= rating ? "star" : star - 0.5 <= rating ? "star-half" : "star-outline"}
                     size={size}
-                    color="#FFD700"
+                    color={dc('#FFD700')}
                 />
             ))}
         </View>
@@ -83,7 +84,7 @@ const ReviewItem = ({ review }) => (
         </View>
         <Text style={styles.reviewComment}>{review.comment}</Text>
         <TouchableOpacity style={styles.helpfulButton}>
-            <Ionicons name="thumbs-up-outline" size={14} color="#666" />
+            <Ionicons name="thumbs-up-outline" size={14} color={dc('#666')} />
             <Text style={styles.helpfulText}>도움돼요 {review.helpful}</Text>
         </TouchableOpacity>
     </View>
@@ -127,11 +128,11 @@ const ProductDetail = () => {
 
     if (!productInfo) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="상품 상세" />
                 <SafeAreaView style={styles.container}>
                     <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle-outline" size={64} color="#ccc" />
+                        <Ionicons name="alert-circle-outline" size={64} color={dc('#ccc')} />
                         <Text style={styles.errorText}>상품을 찾을 수 없습니다.</Text>
                         <TouchableOpacity style={styles.goBackButton} onPress={() => router.back()}>
                             <Text style={styles.goBackText}>돌아가기</Text>
@@ -297,14 +298,14 @@ const ProductDetail = () => {
             <View style={styles.bottomContainer}>
                 <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.cartButton} onPress={handleAddToCart}>
-                        <Ionicons name="cart-outline" size={20} color="#007AFF" />
+                        <Ionicons name="cart-outline" size={20} color={dc('#007AFF')} />
                         <Text style={styles.cartButtonText}>장바구니</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.buyButton} onPress={handleBuyNow}>
                         <Text style={styles.buyButtonText}>바로 구매</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.giftButton} onPress={handleGiftSend}>
-                        <Ionicons name="gift-outline" size={20} color="#fff" />
+                        <Ionicons name="gift-outline" size={20} color={dc('#fff')} />
                         <Text style={styles.giftButtonText}>선물하기</Text>
                     </TouchableOpacity>
                 </View>
@@ -322,7 +323,7 @@ const ProductDetail = () => {
                             style={styles.imageModalClose}
                             onPress={() => setShowImageModal(false)}
                         >
-                            <Ionicons name="close" size={24} color="#fff" />
+                            <Ionicons name="close" size={24} color={dc('#fff')} />
                         </TouchableOpacity>
                         <Image
                             source={{ uri: images[selectedImageIndex] }}
@@ -340,7 +341,7 @@ const ProductDetail = () => {
                         <View style={styles.quantityModalHeader}>
                             <Text style={styles.quantityModalTitle}>수량 선택</Text>
                             <TouchableOpacity onPress={() => setShowQuantityModal(false)}>
-                                <Ionicons name="close" size={24} color="#333" />
+                                <Ionicons name="close" size={24} color={dc('#333')} />
                             </TouchableOpacity>
                         </View>
 
@@ -361,14 +362,14 @@ const ProductDetail = () => {
                                         onPress={() => setQuantity(Math.max(1, quantity - 1))}
                                         disabled={quantity <= 1}
                                     >
-                                        <Ionicons name="remove" size={20} color={quantity <= 1 ? "#ccc" : "#333"} />
+                                        <Ionicons name="remove" size={20} color={dc(quantity <= 1 ? "#ccc" : "#333")} />
                                     </TouchableOpacity>
                                     <Text style={styles.quantityValue}>{quantity}</Text>
                                     <TouchableOpacity
                                         style={styles.quantityButton}
                                         onPress={() => setQuantity(quantity + 1)}
                                     >
-                                        <Ionicons name="add" size={20} color="#333" />
+                                        <Ionicons name="add" size={20} color={dc('#333')} />
                                     </TouchableOpacity>
                                 </View>
                             </View>

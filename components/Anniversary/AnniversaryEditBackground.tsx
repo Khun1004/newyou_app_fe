@@ -20,6 +20,7 @@ import { useAnniversary } from '@/components/contexts/AnniversaryContext';
 import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 type RelationshipType = 'married' | 'relationship' | 'friendship';
 
 interface BackgroundOption {
@@ -170,7 +171,7 @@ export default function AnniversaryEditBackground() {
             )}
             <Text style={styles.name}>{bg.name}</Text>
             {selectedBg.id === bg.id && (
-                <Ionicons name="checkmark-circle" size={28} color="#FFD700" style={styles.check} />
+                <Ionicons name="checkmark-circle" size={28} color={dc('#FFD700')} style={styles.check} />
             )}
         </TouchableOpacity>
     );
@@ -201,7 +202,7 @@ export default function AnniversaryEditBackground() {
                 title="배경 · 메시지 편집"
                 variant="dark"
                 backgroundColor="transparent"
-                right={[{ label: '저장', onPress: handleSave, color: '#FF6B9D' }]}
+                right={[{ label: '저장', onPress: handleSave, color: dc('#FF6B9D') }]}
             />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>

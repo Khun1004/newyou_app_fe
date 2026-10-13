@@ -12,6 +12,7 @@ import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext
 import { AppFriend } from '@/components/hooks/AppFriend'; // AppFriend 타입을 직접 import
 import AppHeader from '@/components/AppHeader';
 
+import { dc, isDark, dbg } from '@/constants/theme';
 // AnniversaryContext.tsx에 정의된 타입을 재사용
 type RelationshipType = 'married' | 'relationship' | 'friendship';
 interface Anniversary {
@@ -56,7 +57,7 @@ const AnimalAvatar = ({ animal, size = 40 }: { animal: string; size?: number }) 
                 width: size,
                 height: size,
                 borderRadius: size / 2,
-                backgroundColor: config.bgColor
+                backgroundColor: dbg(config.bgColor)
             }
         ]}>
             <Text style={{ fontSize: size * 0.5 }}>{config.emoji}</Text>
@@ -206,7 +207,7 @@ export default function AnniversaryEdit() {
             <AppHeader
                 title={isEditMode ? '기념일 수정' : '새 기념일 등록'}
                 onBack={() => { if (!isSaving) router.back(); }}
-                right={[{ label: isSaving ? '저장 중' : '저장', onPress: handleSave, disabled: isSaving || !partnerNickname.trim(), color: '#6C63FF' }]}
+                right={[{ label: isSaving ? '저장 중' : '저장', onPress: handleSave, disabled: isSaving || !partnerNickname.trim(), color: dc('#6C63FF') }]}
             />
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {/* 1. 파트너 닉네임 / 친구 선택 섹션 */}
@@ -220,7 +221,7 @@ export default function AnniversaryEdit() {
                                 <Text style={styles.selectedFriendNickname}>{selectedFriend.nickname}</Text>
                             </View>
                             <TouchableOpacity onPress={handleFriendDeselect} style={styles.deselectButton}>
-                                <Ionicons name="close-circle" size={24} color="#aaa" />
+                                <Ionicons name="close-circle" size={24} color={dc('#aaa')} />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -229,12 +230,12 @@ export default function AnniversaryEdit() {
                             <TouchableOpacity style={styles.friendSelectButton} onPress={handleSelectFriend} disabled={isFriendsLoading} >
                                 {isFriendsLoading ? (
                                     <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                                        <ActivityIndicator color="#6C63FF" size="small" style={{ marginRight: 8 }} />
+                                        <ActivityIndicator color={dc('#6C63FF')} size="small" style={{ marginRight: 8 }} />
                                         <Text style={styles.friendSelectButtonText}>친구 목록 로딩 중...</Text>
                                     </View>
                                 ) : (
                                     <>
-                                        <Ionicons name="people-outline" size={24} color="#6C63FF" />
+                                        <Ionicons name="people-outline" size={24} color={dc('#6C63FF')} />
                                         <Text style={styles.friendSelectButtonText}>친구 목록에서 선택</Text>
                                     </>
                                 )}
@@ -282,7 +283,7 @@ export default function AnniversaryEdit() {
                 <View style={styles.section}>
                     <Text style={styles.label}>시작일</Text>
                     <TouchableOpacity style={styles.dateBtn} onPress={showDatepicker}>
-                        <Ionicons name="calendar-outline" size={24} color="#6C63FF" />
+                        <Ionicons name="calendar-outline" size={24} color={dc('#6C63FF')} />
                         <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                     </TouchableOpacity>
                     {showDatePicker && (
@@ -293,6 +294,7 @@ export default function AnniversaryEdit() {
                             // 'default'는 iOS에서 팝업 다이얼로그로 표시됩니다.
                             display={Platform.OS === 'ios' ? 'default' : 'default'}
                             onChange={handleDateChange}
+                            themeVariant={isDark() ? 'dark' : 'light'}
                             maximumDate={new Date()}
                         />
                     )}

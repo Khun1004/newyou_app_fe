@@ -4,14 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 // Mock data for friends
 const mockFriends = [
     { id: 'f1', name: 'James', schedule: [
-            { id: '12', title: 'Coffee meeting', time: '10:00', day: 'Mon', duration: 1, color: '#D7FFD7' },
-            { id: '13', title: 'Gym', time: '17:00', day: 'Tue', duration: 1.5, color: '#D7FFD7' },
+            { id: '12', title: 'Coffee meeting', time: '10:00', day: 'Mon', duration: 1, color: dc('#D7FFD7') },
+            { id: '13', title: 'Gym', time: '17:00', day: 'Tue', duration: 1.5, color: dc('#D7FFD7') },
         ]},
     { id: 'f2', name: 'Laura', schedule: [
-            { id: '14', title: 'Lunch with team', time: '12:00', day: 'Wed', duration: 1, color: '#E8F4F8' },
+            { id: '14', title: 'Lunch with team', time: '12:00', day: 'Wed', duration: 1, color: dc('#E8F4F8') },
         ]},
 ];
 
@@ -30,7 +31,7 @@ export default function FriendTimetable() {
 
     if (!friend) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="친구 시간표" />
                 <View style={styles.loadingContainer}>
                     <Text>Loading...</Text>
@@ -61,10 +62,10 @@ export default function FriendTimetable() {
                 </View>
                 <View style={styles.weekNavigation}>
                     <TouchableOpacity>
-                        <Ionicons name="chevron-back" size={20} color="#666" />
+                        <Ionicons name="chevron-back" size={20} color={dc('#666')} />
                     </TouchableOpacity>
                     <TouchableOpacity>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
+                        <Ionicons name="chevron-forward" size={20} color={dc('#666')} />
                     </TouchableOpacity>
                 </View>
             </View>

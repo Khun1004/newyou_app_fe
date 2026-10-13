@@ -16,6 +16,7 @@ import { NoteContext } from '@/components/contexts/NoteContext';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, isDark } from '@/constants/theme';
 export default function NoteDetail() {
     const router = useRouter();
     const { noteId } = useLocalSearchParams();
@@ -49,7 +50,7 @@ export default function NoteDetail() {
 
     if (!note) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="노트 상세" />
                 <View style={styles.loadingContainer}>
                     <Text style={styles.loadingText}>노트를 불러오는 중...</Text>
@@ -80,7 +81,7 @@ export default function NoteDetail() {
 
     return (
         <>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} backgroundColor="#fff" />
             <View style={styles.safeArea}>
                 {/* 공통 헤더 */}
                 <AppHeader title="노트 상세" />
@@ -91,7 +92,7 @@ export default function NoteDetail() {
                             style={styles.scrollView}
                             showsVerticalScrollIndicator={false}
                         >
-                            <View style={[styles.noteContainer, { backgroundColor: designStyle.backgroundColor }]}>
+                            <View style={[styles.noteContainer, { backgroundColor: dbg(designStyle.backgroundColor) }]}>
                                 {/* 디자인 패턴 렌더링 */}
                                 {designStyle.pattern === 'ribbon' && (
                                     <View style={[styles.ribbonTop, { backgroundColor: designStyle.headerColor }]} />

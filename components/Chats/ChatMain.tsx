@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Modal, TextInpu
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
-import { THEME } from '@/constants/theme';
+import { THEME, dc } from '@/constants/theme';
 import * as Contacts from 'expo-contacts';
 import { ChatContext } from '@/components/contexts/ChatContext';
 import Chats from '@/components/Chats/Chats';
@@ -245,7 +245,7 @@ const ChatsMain = () => {
 
             <View style={styles.searchContainer}>
                 <View style={styles.searchBar}>
-                    <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+                    <Ionicons name="search" size={20} color={dc('#8E8E93')} style={styles.searchIcon} />
                     <Text style={styles.searchPlaceholder}>Search</Text>
                 </View>
             </View>
@@ -286,7 +286,7 @@ const ChatsMain = () => {
                 <SafeAreaView style={styles.modalContainer}>
                     <View style={styles.addFriendsHeader}>
                         <TouchableOpacity onPress={() => setShowAddFriendModal(false)} style={styles.backButton}>
-                            <Ionicons name="chevron-back" size={24} color="#333" />
+                            <Ionicons name="chevron-back" size={24} color={dc('#333')} />
                         </TouchableOpacity>
                         <Text style={styles.addFriendsTitle}>Add Friends</Text>
                     </View>
@@ -315,7 +315,7 @@ const ChatsMain = () => {
                                 <TextInput
                                     style={styles.textInput}
                                     placeholder="Enter Nickname"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={dc('#999')}
                                     value={nickname}
                                     onChangeText={setNickname}
                                     maxLength={20}
@@ -325,12 +325,12 @@ const ChatsMain = () => {
                                 <View style={styles.phoneInputWrapper}>
                                     <TouchableOpacity style={styles.countryCode}>
                                         <Text style={styles.countryCodeText}>+82</Text>
-                                        <Ionicons name="chevron-down" size={16} color="#666" />
+                                        <Ionicons name="chevron-down" size={16} color={dc('#666')} />
                                     </TouchableOpacity>
                                     <TextInput
                                         style={styles.phoneInput}
                                         placeholder="Enter Phone Number"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor={dc('#999')}
                                         keyboardType="phone-pad"
                                         value={phoneNumber}
                                         onChangeText={setPhoneNumber}
@@ -366,7 +366,7 @@ const ChatsMain = () => {
                                 <TextInput
                                     style={styles.textInput}
                                     placeholder="Enter User ID"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={dc('#999')}
                                     value={friendId}
                                     onChangeText={setFriendId}
                                 />
@@ -402,7 +402,7 @@ const ChatsMain = () => {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>New Group</Text>
                         <TouchableOpacity onPress={() => setShowNewGroupModal(false)}>
-                            <Ionicons name="close" size={24} color="#333" />
+                            <Ionicons name="close" size={24} color={dc('#333')} />
                         </TouchableOpacity>
                     </View>
                     <View style={styles.inputContainer}>
@@ -423,7 +423,7 @@ const ChatsMain = () => {
 
                     <View style={styles.searchContainerModal}>
                         <View style={styles.searchBar}>
-                            <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
+                            <Ionicons name="search" size={20} color={dc('#8E8E93')} style={styles.searchIcon} />
                             <TextInput
                                 style={styles.searchInput}
                                 placeholder="Search Contacts"

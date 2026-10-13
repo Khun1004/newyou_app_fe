@@ -18,7 +18,7 @@ import { giftData } from '@/components/Presents/GiftData';
 import { useLikedItems } from '@/components/contexts/LikedItemsContext';
 import { useFriends } from '@/components/contexts/FriendContext';
 import AppHeader from '@/components/AppHeader';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dgrad } from '@/constants/theme';
 
 /**
  * 좋아요(찜) 화면
@@ -132,7 +132,7 @@ const Like = () => {
                     </View>
                 )}
                 <TouchableOpacity style={styles.heart} onPress={() => unlike(item)} hitSlop={8}>
-                    <Ionicons name="heart" size={18} color="#FF4D6D" />
+                    <Ionicons name="heart" size={18} color={dc('#FF4D6D')} />
                 </TouchableOpacity>
                 <View style={styles.catPill}>
                     <Text style={styles.catPillText}>
@@ -146,7 +146,7 @@ const Like = () => {
                 <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
                 {!!item.rating && (
                     <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={12} color="#F2B705" />
+                        <Ionicons name="star" size={12} color={dc('#F2B705')} />
                         <Text style={styles.rating}>{item.rating}</Text>
                         <Text style={styles.reviews}>({item.reviews?.toLocaleString()})</Text>
                     </View>
@@ -162,10 +162,10 @@ const Like = () => {
     const Header = (
         <View>
             {/* 요약 카드 */}
-            <LinearGradient colors={['#FFE3EA', '#FFF6D6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+            <LinearGradient colors={dgrad(['#FFE3EA', '#FFF6D6'] as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
                 <View style={styles.heroTop}>
                     <View style={styles.heroHeart}>
-                        <Ionicons name="heart" size={22} color="#FFFFFF" />
+                        <Ionicons name="heart" size={22} color={dc('#FFFFFF')} />
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.heroTitle}>내가 찜한 선물 {liked.length}개</Text>
@@ -181,7 +181,7 @@ const Like = () => {
                     <View style={styles.heroStat}>
                         {/* 할인된 선물이 있으면 아낀 돈, 없으면 평균 가격 */}
                         <Text style={styles.heroStatLabel}>{saved > 0 ? '할인으로 아껴요' : '평균 가격'}</Text>
-                        <Text style={[styles.heroStatValue, saved > 0 && { color: '#E0466A' }]}>
+                        <Text style={[styles.heroStatValue, saved > 0 && { color: dc('#E0466A') }]}>
                             {formatWon(saved > 0 ? saved : Math.round(total / Math.max(liked.length, 1)))}
                         </Text>
                     </View>
@@ -237,8 +237,8 @@ const Like = () => {
 
             {liked.length === 0 ? (
                 <View style={styles.empty}>
-                    <LinearGradient colors={['#FFE3EA', '#FFF6D6']} style={styles.emptyCircle}>
-                        <Ionicons name="heart-outline" size={52} color="#FF4D6D" />
+                    <LinearGradient colors={dgrad(['#FFE3EA', '#FFF6D6'] as any)} style={styles.emptyCircle}>
+                        <Ionicons name="heart-outline" size={52} color={dc('#FF4D6D')} />
                     </LinearGradient>
                     <Text style={styles.emptyTitle}>아직 찜한 선물이 없어요</Text>
                     <Text style={styles.emptySub}>선물 구경하다가 마음에 드는 상품에{'\n'}하트를 눌러 보세요</Text>
@@ -249,7 +249,7 @@ const Like = () => {
                             end={{ x: 1, y: 0 }}
                             style={styles.emptyBtn}
                         >
-                            <Ionicons name="gift-outline" size={18} color="#FFFFFF" />
+                            <Ionicons name="gift-outline" size={18} color={dc('#FFFFFF')} />
                             <Text style={styles.emptyBtnText}>선물 보러 가기</Text>
                         </LinearGradient>
                     </TouchableOpacity>

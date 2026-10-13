@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Switch, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '@/components/AppHeader';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg } from '@/constants/theme';
 import { HOME_CARDS, MAX_HOME_CARDS, useHomeCards } from '@/components/HomeCards/homeCardsStore';
 
 /**
@@ -58,7 +58,7 @@ export default function HomeAlarmSettings() {
                                         onValueChange={() => handleToggle(c.id)}
                                         trackColor={{ false: '#E4E6DA', true: THEME.primary }}
                                         thumbColor="#FFFFFF"
-                                        ios_backgroundColor="#E4E6DA"
+                                        ios_backgroundColor={dbg('#E4E6DA')}
                                     />
                                 </View>
                                 {i < HOME_CARDS.length - 1 && <View style={styles.divider} />}

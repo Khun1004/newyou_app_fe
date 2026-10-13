@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import OnlineClassMyDetail from "@/components/OnlineClass/OnlineClassMyDetail";
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 interface TabButtonProps {
     title: string;
     isActive: boolean;
@@ -170,7 +171,7 @@ const MyBoard = () => {
                         <Image source={{ uri: toImageUrl(post.profileImage) }} style={styles.avatarImage} />
                     ) : (
                         <View style={styles.defaultAvatar}>
-                            <Ionicons name="person-circle-outline" size={40} color="#7C8070" />
+                            <Ionicons name="person-circle-outline" size={40} color={dc('#7C8070')} />
                         </View>
                     )}
                 </View>
@@ -193,13 +194,13 @@ const MyBoard = () => {
                     style={styles.actionButton}
                     onPress={() => handleEditPost(post)}
                 >
-                    <Ionicons name="create-outline" size={20} color="#4E7D32" />
+                    <Ionicons name="create-outline" size={20} color={dc('#4E7D32')} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.actionButton, styles.deleteButton]}
                     onPress={() => handleDeletePost(post.id, post.title)}
                 >
-                    <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                    <Ionicons name="trash-outline" size={20} color={dc('#ff4444')} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -216,7 +217,7 @@ const MyBoard = () => {
                     <Image source={{ uri: classItem.certificationImage }} style={styles.classImage} />
                 ) : (
                     <View style={styles.defaultClassImage}>
-                        <Ionicons name="videocam-outline" size={40} color="#A3A794" />
+                        <Ionicons name="videocam-outline" size={40} color={dc('#A3A794')} />
                     </View>
                 )}
             </View>
@@ -235,7 +236,7 @@ const MyBoard = () => {
                 <Ionicons
                     name={activeTab === 'board' ? "document-outline" : "videocam-outline"}
                     size={80}
-                    color="#C9CCB8"
+                    color={dc('#C9CCB8')}
                 />
                 <Text style={styles.emptyTitle}>{emptyStateText.title}</Text>
                 <Text style={styles.emptyDescription}>
@@ -366,7 +367,7 @@ const MyBoard = () => {
                     activeOpacity={0.85}
                     accessibilityLabel="게시글 작성하기"
                 >
-                    <Ionicons name="create-outline" size={22} color="#fff" />
+                    <Ionicons name="create-outline" size={22} color={dc('#fff')} />
                     <Text style={styles.writeFabText}>글쓰기</Text>
                 </TouchableOpacity>
             )}

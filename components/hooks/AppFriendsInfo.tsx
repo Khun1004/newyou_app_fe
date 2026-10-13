@@ -9,6 +9,7 @@ import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext
 import { AppFriend } from '@/components/hooks/AppFriend';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 // 메인 컬러 정의 (일관성을 위해 사용)
 const PRIMARY_COLOR = '#6C63FF';
 const DANGER_COLOR = '#ff4444';
@@ -25,7 +26,7 @@ const AnimalAvatar = ({ animal, size = 80 }: { animal: string; size?: number }) 
     return (
         <View style={[
             styles.avatarContainer,
-            { width: size, height: size, borderRadius: size / 2, backgroundColor: config.bgColor }
+            { width: size, height: size, borderRadius: size / 2, backgroundColor: dbg(config.bgColor) }
         ]}>
             <Text style={{ fontSize: size * 0.5 }}>{config.emoji}</Text>
         </View>
@@ -45,7 +46,7 @@ const InfoItem = ({ icon, text, onPress, isLast = false }: { icon: keyof typeof 
             </View>
             <Text style={styles.infoText}>{text}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#aaa" />
+        <Ionicons name="chevron-forward" size={20} color={dc('#aaa')} />
     </TouchableOpacity>
 );
 
@@ -129,7 +130,7 @@ export default function AppFriendsInfo() {
                     <View style={styles.actionButtonRow}>
 
                         <TouchableOpacity style={styles.primaryActionButton}>
-                            <Ionicons name="chatbox-ellipses-outline" size={20} color="#FFFFFF" />
+                            <Ionicons name="chatbox-ellipses-outline" size={20} color={dc('#FFFFFF')} />
                             <Text style={styles.primaryActionButtonText}>메시지 보내기</Text>
                         </TouchableOpacity>
 
@@ -148,7 +149,7 @@ export default function AppFriendsInfo() {
 }
 
 const sharedCardStyle = {
-    backgroundColor: '#fff',
+    backgroundColor: dbg('#fff'),
     borderRadius: 16,
     paddingHorizontal: 20,
     marginBottom: 20,

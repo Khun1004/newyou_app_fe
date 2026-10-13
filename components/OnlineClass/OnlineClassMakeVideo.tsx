@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useOnlineClass, ClassData } from '@/components/contexts/OnlineClassContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 interface VideoData {
     id: string;
     videoTitle: string;
@@ -276,7 +277,7 @@ const OnlineClassMakeVideo = () => {
                     onPress={() => handleRemoveVideo(video.id, video.type)}
                     style={styles.removeButton}
                 >
-                    <Ionicons name="close-circle" size={28} color="#ff4444" />
+                    <Ionicons name="close-circle" size={28} color={dc('#ff4444')} />
                 </TouchableOpacity>
             </View>
 
@@ -287,7 +288,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.classTitle}
                     onChangeText={text => handleUpdateVideo(video.id, 'classTitle', text)}
                     placeholder="수업 제목을 입력하세요"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor={dc('#A3A794')}
                     maxLength={50}
                 />
             </View>
@@ -299,7 +300,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.duration}
                     onChangeText={text => handleUpdateVideo(video.id, 'duration', text)}
                     placeholder="예: 2시간 30분"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor={dc('#A3A794')}
                 />
             </View>
 
@@ -315,7 +316,7 @@ const OnlineClassMakeVideo = () => {
                     value={video.videoTitle}
                     onChangeText={text => handleUpdateVideo(video.id, 'videoTitle', text)}
                     placeholder="영상 제목을 입력하세요"
-                    placeholderTextColor="#A3A794"
+                    placeholderTextColor={dc('#A3A794')}
                     maxLength={50}
                 />
             </View>
@@ -331,7 +332,7 @@ const OnlineClassMakeVideo = () => {
                             handleUpdateVideo(video.id, 'price', price);
                         }}
                         placeholder="0"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor={dc('#A3A794')}
                         keyboardType="numeric"
                     />
                 </View>
@@ -343,7 +344,7 @@ const OnlineClassMakeVideo = () => {
                     <Ionicons
                         name={video.uri ? 'checkmark-circle' : 'videocam-outline'}
                         size={24}
-                        color={video.uri ? '#4E7D32' : '#4E7D32'}
+                        color={dc(video.uri ? '#4E7D32' : '#4E7D32')}
                     />
                     <Text style={[styles.videoPickerText, video.uri && styles.videoPickerTextSelected]}>
                         {video.fileName || '갤러리 또는 파일에서 영상 선택'}
@@ -363,7 +364,7 @@ const OnlineClassMakeVideo = () => {
             <AppHeader
                 title="영상 등록"
                 onBack={() => { if (!isLoading) router.back(); }}
-                right={[{ label: isLoading ? '처리중' : '다음', onPress: handleSubmit, disabled: isLoading, color: '#4E7D32', accessibilityLabel: '결제하러 가기' }]}
+                right={[{ label: isLoading ? '처리중' : '다음', onPress: handleSubmit, disabled: isLoading, color: dc('#4E7D32'), accessibilityLabel: '결제하러 가기' }]}
             />
 
             <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -374,22 +375,22 @@ const OnlineClassMakeVideo = () => {
                             onPress={() => handleAddVideo('free')}
                             disabled={isLoading}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color="#4E7D32" />
-                            <Text style={[styles.addButtonText, { color: '#4E7D32' }]}>무료 영상 추가</Text>
+                            <Ionicons name="add-circle-outline" size={24} color={dc('#4E7D32')} />
+                            <Text style={[styles.addButtonText, { color: dc('#4E7D32') }]}>무료 영상 추가</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.addButton, styles.mvpButton]}
                             onPress={() => handleAddVideo('mvp')}
                             disabled={isLoading}
                         >
-                            <Ionicons name="add-circle-outline" size={24} color="#4E7D32" />
-                            <Text style={[styles.addButtonText, { color: '#4E7D32' }]}>MVP 영상 추가</Text>
+                            <Ionicons name="add-circle-outline" size={24} color={dc('#4E7D32')} />
+                            <Text style={[styles.addButtonText, { color: dc('#4E7D32') }]}>MVP 영상 추가</Text>
                         </TouchableOpacity>
                     </View>
 
                     {contextVideos.length === 0 && (
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="film-outline" size={48} color="#C9CCB8" />
+                            <Ionicons name="film-outline" size={48} color={dc('#C9CCB8')} />
                             <Text style={styles.emptyText}>위의 버튼을 눌러 영상을 추가해보세요</Text>
                         </View>
                     )}
@@ -406,7 +407,7 @@ const OnlineClassMakeVideo = () => {
                                     value={bankName}
                                     onChangeText={setBankName}
                                     placeholder="예: 국민은행"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor={dc('#A3A794')}
                                 />
                             </View>
                             <View style={styles.inputGroup}>
@@ -416,7 +417,7 @@ const OnlineClassMakeVideo = () => {
                                     value={accountNumber}
                                     onChangeText={setAccountNumber}
                                     placeholder="계좌번호를 입력하세요"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor={dc('#A3A794')}
                                     keyboardType="numeric"
                                 />
                             </View>
@@ -427,7 +428,7 @@ const OnlineClassMakeVideo = () => {
                                     value={accountHolder}
                                     onChangeText={setAccountHolder}
                                     placeholder="예금주명을 입력하세요"
-                                    placeholderTextColor="#A3A794"
+                                    placeholderTextColor={dc('#A3A794')}
                                 />
                             </View>
                             <View style={styles.feesContainer}>
@@ -449,7 +450,7 @@ const OnlineClassMakeVideo = () => {
                     )}
 
                     <View style={styles.noteContainer}>
-                        <Ionicons name="information-circle-outline" size={20} color="#7C8070" />
+                        <Ionicons name="information-circle-outline" size={20} color={dc('#7C8070')} />
                         <Text style={styles.noteText}>
                             • 무료 영상은 모든 사용자가 볼 수 있습니다.{'\n'}
                             • MVP 영상은 결제 후 시청 가능합니다.{'\n'}

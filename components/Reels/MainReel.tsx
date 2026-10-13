@@ -16,7 +16,7 @@ import { router } from 'expo-router';
 import Reels from './Reels';
 import MyReels from './MyReels';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg } from '@/constants/theme';
 
 // bottomInset: 아래쪽 탭 바에 가리지 않게 둘 여백 (채팅 화면 안에서 쓸 때)
 const MainReel = ({ bottomInset = 0 }: { bottomInset?: number }) => {
@@ -49,7 +49,7 @@ const MainReel = ({ bottomInset = 0 }: { bottomInset?: number }) => {
     const headerHeight = insets.top + 54;
 
     return (
-        <View style={[styles.container, !isReels && { backgroundColor: '#FFFFFF' }]}>
+        <View style={[styles.container, !isReels && { backgroundColor: dbg('#FFFFFF') }]}>
             <StatusBar barStyle={isReels ? 'light-content' : 'dark-content'} />
 
             {/* 내용: 릴스는 화면 전체(헤더 뒤까지), 내 릴스는 헤더 아래부터 */}

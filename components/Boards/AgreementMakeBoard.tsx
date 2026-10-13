@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const AgreementMakeBoard = () => {
     const { currentUser } = useAuth();
 
@@ -54,7 +55,7 @@ const AgreementMakeBoard = () => {
                         <Image source={{ uri: profileImage }} style={styles.profileImage} />
                     ) : (
                         <View style={styles.defaultProfileImage}>
-                            <Ionicons name="person" size={40} color="#4E7D32" />
+                            <Ionicons name="person" size={40} color={dc('#4E7D32')} />
                         </View>
                     )}
                 </View>
@@ -64,14 +65,14 @@ const AgreementMakeBoard = () => {
                         style={[styles.textInput, styles.disabledInput]}
                         value={nickname}
                         placeholder="닉네임"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor={dc('#A3A794')}
                         editable={false}
                     />
                     <TextInput
                         style={[styles.textInput, styles.disabledInput]}
                         value={formattedPhoneNumber}
                         placeholder="전화번호"
-                        placeholderTextColor="#A3A794"
+                        placeholderTextColor={dc('#A3A794')}
                         editable={false}
                     />
                 </View>

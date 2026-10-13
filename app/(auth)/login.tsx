@@ -22,7 +22,7 @@ import { AUTH_URL } from '@/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dgrad } from '@/constants/theme';
 
 // 로고 이미지 (require로 불러오면 VS Code에서 빨간 줄이 생기지 않아요)
 const NewYouLogo = require('@/assets/NewYou.png');
@@ -31,6 +31,7 @@ export default function Login() {
     const { login, currentUser } = useAuth();
     const params = useLocalSearchParams();
 
+    // 아이디 또는 전화번호 (둘 다 로그인할 수 있어요)
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -83,10 +84,10 @@ export default function Login() {
     };
 
     const handlePhoneChange = (text: string) => {
-        const cleaned = text.replace(/[^0-9]/g, '');
-        if (cleaned.length <= 11) {
-            setPhoneNumber(cleaned);
-        }
+        // 공백은 빼고, 영어는 소문자로 (아이디는 소문자만 써요)
+        const t = text.replace(/\s/g, '').toLowerCase();
+        // 숫자와 - 만 있으면 전화번호 → 숫자만 저장
+        setPhoneNumber(/^[0-9-]+$/.test(t) ? t.replace(/-/g, '').slice(0, 11) : t);
     };
 
     const handlePasswordChange = (text: string) => {
@@ -95,15 +96,18 @@ export default function Login() {
 
     const handleLogin = async () => {
         if (phoneNumber.trim() === '' || password.trim() === '') {
-            Alert.alert('알림', '전화번호와 비밀번호를 입력해 주세요.');
+            Alert.alert('알림', '아이디(또는 전화번호)와 비밀번호를 입력해 주세요.');
             return;
         }
 
-        const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
-        const phoneRegex = /^[0-9]{10,11}$/;
-
-        if (!phoneRegex.test(cleanPhone)) {
+        const input = phoneNumber.trim();
+        const looksLikePhone = /^[0-9-]+$/.test(input);
+        if (looksLikePhone && !/^01[0-9]{8,9}$/.test(input.replace(/-/g, ''))) {
             Alert.alert('알림', '올바른 전화번호를 입력해 주세요 (10-11자리 숫자).');
+            return;
+        }
+        if (!looksLikePhone && input.length < 4) {
+            Alert.alert('알림', '아이디를 다시 확인해 주세요 (4자 이상).');
             return;
         }
 
@@ -111,7 +115,7 @@ export default function Login() {
 
         try {
             // AuthProvider의 login 함수 사용
-            const result = await login(cleanPhone, password);
+            const result = await login(input, password);
 
             if (!result.success && result.error) {
                 Alert.alert('로그인 실패', result.error);
@@ -127,13 +131,16 @@ export default function Login() {
 
     const isButtonDisabled = phoneNumber.trim() === '' || password.trim() === '' || isLoading;
 
-    // 010-1234-5678 처럼 보기 좋게 (입력값 자체는 숫자만 저장)
-    const displayPhone = phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (_, a, b, c) => [a, b, c].filter(Boolean).join('-'));
+    // 숫자만 입력하면 010-1234-5678 처럼 보기 좋게, 아이디는 그대로
+    const isDigitsOnly = /^[0-9]+$/.test(phoneNumber);
+    const displayPhone = isDigitsOnly
+        ? phoneNumber.slice(0, 11).replace(/^(\d{3})(\d{3,4})(\d{0,4}).*/, (_, a, b, c) => [a, b, c].filter(Boolean).join('-'))
+        : phoneNumber;
 
     return (
         <View style={styles.screen}>
             {/* 배경: 위쪽 햇살 그라데이션 + 동그란 장식 */}
-            <LinearGradient colors={COLORS.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.topBg}>
+            <LinearGradient colors={dgrad(COLORS.sunrise as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.topBg}>
                 <View style={[styles.bubble, { width: 180, height: 180, top: -40, right: -50 }]} />
                 <View style={[styles.bubble, { width: 110, height: 110, top: 120, left: -40 }]} />
             </LinearGradient>
@@ -157,23 +164,24 @@ export default function Login() {
 
                             {/* 입력 카드 */}
                             <View style={styles.card}>
-                                <Text style={styles.label}>전화번호</Text>
+                                <Text style={styles.label}>아이디 또는 전화번호</Text>
                                 <View style={[styles.inputBox, phoneNumberFocused && styles.inputBoxFocused]}>
                                     <Ionicons
-                                        name="call-outline"
+                                        name={isDigitsOnly ? 'call-outline' : 'person-outline'}
                                         size={20}
                                         color={phoneNumberFocused ? COLORS.pink : COLORS.icon}
                                     />
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="010-1234-5678"
+                                        placeholder="아이디 또는 010-1234-5678"
                                         placeholderTextColor={COLORS.placeholder}
-                                        keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'numeric'}
+                                        keyboardType="default"
+                                        textContentType="username"
                                         value={displayPhone}
                                         onChangeText={handlePhoneChange}
                                         onFocus={() => setPhoneNumberFocused(true)}
                                         onBlur={() => setPhoneNumberFocused(false)}
-                                        maxLength={13}
+                                        maxLength={16}
                                         autoCapitalize="none"
                                         autoCorrect={false}
                                     />
@@ -209,22 +217,33 @@ export default function Login() {
                                     </TouchableOpacity>
                                 </View>
 
+                                {/* 아이디 찾기 · 비밀번호 찾기 */}
+                                <View style={styles.findRow}>
+                                    <TouchableOpacity onPress={() => router.push('/FindId')} disabled={isLoading} hitSlop={8}>
+                                        <Text style={styles.findText}>아이디 찾기</Text>
+                                    </TouchableOpacity>
+                                    <View style={styles.findDivider} />
+                                    <TouchableOpacity onPress={() => router.push('/ResetPassword')} disabled={isLoading} hitSlop={8}>
+                                        <Text style={styles.findText}>비밀번호 찾기</Text>
+                                    </TouchableOpacity>
+                                </View>
+
                                 {/* 로그인 버튼 */}
                                 <TouchableOpacity
                                     onPress={handleLogin}
                                     disabled={isButtonDisabled}
                                     activeOpacity={0.85}
-                                    style={{ marginTop: 24 }}
+                                    style={{ marginTop: 16 }}
                                 >
                                     <LinearGradient
-                                        colors={isButtonDisabled ? ['#ECEDE3', '#ECEDE3'] : COLORS.button}
+                                        colors={isButtonDisabled ? dgrad(['#ECEDE3', '#ECEDE3']) : COLORS.button}
                                         start={{ x: 0, y: 0 }}
                                         end={{ x: 1, y: 0 }}
                                         style={[styles.primaryButton, !isButtonDisabled && styles.primaryShadow]}
                                     >
                                         {isLoading ? (
                                             <>
-                                                <ActivityIndicator color="#FFF" style={{ marginRight: 8 }} />
+                                                <ActivityIndicator color={dc('#FFF')} style={{ marginRight: 8 }} />
                                                 <Text style={styles.primaryText}>로그인 중...</Text>
                                             </>
                                         ) : (
@@ -397,6 +416,23 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 17,
         fontWeight: '800',
+    },
+    findRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginTop: 12,
+        gap: 10,
+    },
+    findText: {
+        fontSize: 13,
+        color: COLORS.subText,
+        fontWeight: '600',
+    },
+    findDivider: {
+        width: 1,
+        height: 11,
+        backgroundColor: COLORS.line,
     },
     signupRow: {
         alignItems: 'center',

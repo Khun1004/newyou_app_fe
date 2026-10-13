@@ -21,6 +21,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { useReels } from '@/components/contexts/ReelContext'; // 경로는 프로젝트에 맞게 확인
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 const { height } = Dimensions.get('window');
 
 // 🚨 실제 프로젝트에서는 expo-constants에서 정확한 StatusBar.currentHeight를 가져와야 합니다.
@@ -145,10 +146,10 @@ const YourReel = () => {
 
     if (!currentReel) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#000' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#000') }}>
                 <AppHeader title="릴스" variant="dark" />
                 <View style={[styles.container, styles.center]}>
-                    <ActivityIndicator size="large" color="#fff" />
+                    <ActivityIndicator size="large" color={dc('#fff')} />
                     <Text style={styles.loadingText}>릴 데이터를 로드하는 중이거나 찾을 수 없습니다.</Text>
                 </View>
             </View>
@@ -193,7 +194,7 @@ const YourReel = () => {
                 {/* 좋아요/저장/숨김 상태 표시 로직 개선 */}
                 {statusBadge && (
                     <View style={styles.statusBadge}>
-                        <Icon name={statusBadge.icon} size={18} color="#fff" />
+                        <Icon name={statusBadge.icon} size={18} color={dc('#fff')} />
                         <Text style={styles.statusText}>
                             {statusBadge.text}
                         </Text>
@@ -205,7 +206,7 @@ const YourReel = () => {
                     <View style={styles.actionButtons}>
                         {/* 숨김/숨김 해제 버튼 */}
                         <TouchableOpacity style={styles.actionButton} onPress={handleToggleHide}>
-                            <Icon name={currentReel.isHidden ? "eye" : "eye-off"} size={24} color="#fff" />
+                            <Icon name={currentReel.isHidden ? "eye" : "eye-off"} size={24} color={dc('#fff')} />
                             <Text style={styles.actionText}>
                                 {currentReel.isHidden ? '숨김 해제' : '릴 숨기기'}
                             </Text>
@@ -213,8 +214,8 @@ const YourReel = () => {
 
                         {/* 삭제 버튼 */}
                         <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-                            <Icon name="trash" size={24} color="#ff4444" />
-                            <Text style={[styles.actionText, { color: '#ff4444' }]}>삭제</Text>
+                            <Icon name="trash" size={24} color={dc('#ff4444')} />
+                            <Text style={[styles.actionText, { color: dc('#ff4444') }]}>삭제</Text>
                         </TouchableOpacity>
                     </View>
                 )}

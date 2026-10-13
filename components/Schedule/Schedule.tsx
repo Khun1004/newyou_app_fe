@@ -16,7 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AppHeader from '@/components/AppHeader';
 import { useRequireLogin } from '@/components/RequireLogin';
 import { useSchedules, ScheduleItem } from '@/components/Schedule/scheduleStore';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, isDark, dbg } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 /**
@@ -175,7 +175,7 @@ export default function Schedule() {
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
                     {/* 미리보기: 시간표에 이렇게 보여요 */}
-                    <View style={[styles.preview, { backgroundColor: color }]}>
+                    <View style={[styles.preview, { backgroundColor: dbg(color) }]}>
                         <View style={styles.previewIcon}>
                             <Ionicons name="time" size={22} color={THEME.primaryDark} />
                         </View>
@@ -230,9 +230,9 @@ export default function Schedule() {
                                         <Text
                                             style={[
                                                 styles.dayChipText,
-                                                i === 6 && { color: '#E05A5A' },
-                                                i === 5 && { color: '#3B82F6' },
-                                                active && { color: '#fff' },
+                                                i === 6 && { color: dc('#E05A5A') },
+                                                i === 5 && { color: dc('#3B82F6') },
+                                                active && { color: dc('#fff') },
                                             ]}
                                         >
                                             {d.label}
@@ -260,7 +260,7 @@ export default function Schedule() {
                                     minuteInterval={5}
                                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                                     // 휴대폰이 다크 모드여도 밝은 배경에 검은 글씨로 보이게 해요
-                                    themeVariant="light"
+                                    themeVariant={isDark() ? 'dark' : 'light'}
                                     textColor={THEME.text}
                                     locale="ko-KR"
                                     onChange={(_, date) => {
@@ -316,7 +316,7 @@ export default function Schedule() {
                             end={{ x: 1, y: 0 }}
                             style={styles.saveButton}
                         >
-                            <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                            <Ionicons name="checkmark-circle" size={20} color={dc('#fff')} />
                             <Text style={styles.saveText}>{saving ? '저장 중...' : editingId ? '수정 완료' : '시간표에 추가'}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -343,7 +343,7 @@ export default function Schedule() {
                                 onPress={() => fillForm(s)}
                                 activeOpacity={0.85}
                             >
-                                <View style={[styles.itemColor, { backgroundColor: s.color }]} />
+                                <View style={[styles.itemColor, { backgroundColor: dbg(s.color) }]} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.itemTitle}>{s.title}</Text>
                                     <Text style={styles.itemSub}>

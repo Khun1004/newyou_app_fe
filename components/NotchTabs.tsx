@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dbg } from '@/constants/theme';
 
 /**
  * 화면 안에서 쓰는 작은 탭 바 (아래 메인 탭 바와 같은 '움푹 파인' 디자인)
@@ -58,10 +58,10 @@ function barPath(W: number, cx: number) {
 }
 
 export default function NotchTabs({
-                                      items,
-                                      active,
-                                      onChange,
-                                  }: {
+    items,
+    active,
+    onChange,
+}: {
     items: NotchTabItem[];
     active: string;
     onChange: (key: string) => void;
@@ -88,7 +88,7 @@ export default function NotchTabs({
             <View style={styles.barArea} onLayout={(e: LayoutChangeEvent) => setBarWidth(e.nativeEvent.layout.width)}>
                 {barWidth > 0 && (
                     <Svg width={barWidth} height={BAR_HEIGHT} style={StyleSheet.absoluteFill} pointerEvents="none">
-                        <Path d={barPath(barWidth, cx)} fill="#FFFFFF" stroke={THEME.line} strokeWidth={1} />
+                        <Path d={barPath(barWidth, cx)} fill={dbg('#FFFFFF')} stroke={THEME.line} strokeWidth={1} />
                     </Svg>
                 )}
 
@@ -100,7 +100,7 @@ export default function NotchTabs({
                             { left: cx - CIRCLE / 2, top: CENTER_Y - CIRCLE / 2, transform: [{ scale: pop }] },
                         ]}
                     >
-                        <Ionicons name={activeItem.iconActive} size={23} color="#FFFFFF" />
+                        <Ionicons name={activeItem.iconActive} size={23} color={dc('#FFFFFF')} />
                     </Animated.View>
                 )}
 

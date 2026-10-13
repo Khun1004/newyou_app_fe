@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AppHeader from '@/components/AppHeader';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg, dc, isDark } from '@/constants/theme';
 import {
     useMoney,
     EXPENSE_CATEGORIES,
@@ -152,7 +152,7 @@ export default function AddMoney() {
                                 <TouchableOpacity
                                     key={t.key}
                                     onPress={() => changeType(t.key)}
-                                    style={[styles.typeButton, active && { backgroundColor: '#FFFFFF' }]}
+                                    style={[styles.typeButton, active && { backgroundColor: dbg('#FFFFFF') }]}
                                     activeOpacity={0.85}
                                 >
                                     <Ionicons name={t.icon} size={18} color={active ? c : THEME.icon} />
@@ -172,7 +172,7 @@ export default function AddMoney() {
                                 value={amountText ? formatWon(amount) : ''}
                                 onChangeText={(t) => setAmountText(t.replace(/[^0-9]/g, '').slice(0, 10))}
                                 placeholder="0"
-                                placeholderTextColor="#D3D5C8"
+                                placeholderTextColor={dc('#D3D5C8')}
                                 keyboardType="number-pad"
                                 autoFocus={!editing}
                             />
@@ -237,7 +237,7 @@ export default function AddMoney() {
                                 value={date}
                                 mode="date"
                                 display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                                themeVariant="light"
+                                themeVariant={isDark() ? 'dark' : 'light'}
                                 accentColor={THEME.primary}
                                 locale="ko-KR"
                                 maximumDate={new Date(new Date().getFullYear() + 1, 11, 31)}
@@ -267,7 +267,7 @@ export default function AddMoney() {
                         activeOpacity={0.85}
                         style={[styles.saveButton, { backgroundColor: color }, saving && { opacity: 0.6 }]}
                     >
-                        <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                        <Ionicons name="checkmark-circle" size={20} color={dc('#fff')} />
                         <Text style={styles.saveText}>
                             {saving ? '저장 중...' : editing ? '수정 완료' : type === 'INCOME' ? '수입 기록하기' : '지출 기록하기'}
                         </Text>

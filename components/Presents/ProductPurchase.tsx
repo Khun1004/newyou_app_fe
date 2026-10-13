@@ -17,6 +17,7 @@ import { giftData } from '@/components/Presents/GiftData'; // 상품 데이터 �
 import { useAddressManage, Address } from '@/components/contexts/AddressManageContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 // 결제 수단
 const paymentMethods = [
     { id: 'card', name: '신용/체크카드', icon: 'card-outline' },
@@ -74,7 +75,7 @@ const ProductPurchase = () => {
 
     if (!productInfo) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="주문/결제" />
                 <SafeAreaView style={styles.container}>
                     <View style={styles.errorContainer}>
@@ -239,10 +240,10 @@ const ProductPurchase = () => {
                                         setShowPaymentModal(false);
                                     }}
                                 >
-                                    <Ionicons name={method.icon} size={24} color="#333" />
+                                    <Ionicons name={method.icon} size={24} color={dc('#333')} />
                                     <Text style={styles.paymentName}>{method.name}</Text>
                                     {selectedPayment === method.id && (
-                                        <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+                                        <Ionicons name="checkmark-circle" size={24} color={dc('#007AFF')} />
                                     )}
                                 </TouchableOpacity>
                             ))}
@@ -256,13 +257,13 @@ const ProductPurchase = () => {
                                 <Ionicons
                                     name={paymentMethods.find(m => m.id === selectedPayment)?.icon as any}
                                     size={24}
-                                    color="#333"
+                                    color={dc('#333')}
                                 />
                                 <Text style={styles.paymentCardText}>
                                     {paymentMethods.find(m => m.id === selectedPayment)?.name}
                                 </Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color="#999" />
+                            <Ionicons name="chevron-forward" size={20} color={dc('#999')} />
                         </TouchableOpacity>
                     )}
                 </View>

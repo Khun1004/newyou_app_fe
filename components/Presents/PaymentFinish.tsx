@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const PaymentFinish = () => {
     const router = useRouter();
     const { type, orderNumber, amount, productName } = useLocalSearchParams();
@@ -82,7 +83,7 @@ const PaymentFinish = () => {
                         <Ionicons
                             name={isGift ? "gift" : "checkmark-circle"}
                             size={80}
-                            color={isGift ? "#FF6B6B" : "#10B981"}
+                            color={dc(isGift ? "#FF6B6B" : "#10B981")}
                         />
                     </View>
                 </Animated.View>
@@ -105,7 +106,7 @@ const PaymentFinish = () => {
                         <Ionicons
                             name="receipt-outline"
                             size={24}
-                            color="#007AFF"
+                            color={dc('#007AFF')}
                         />
                         <Text style={styles.orderHeaderText}>
                             {isGift ? '선물 정보' : '주문 정보'}
@@ -138,7 +139,7 @@ const PaymentFinish = () => {
                 {isGift && (
                     <Animated.View style={[styles.giftInfoCard, { opacity: fadeAnim }]}>
                         <View style={styles.giftInfoHeader}>
-                            <Ionicons name="heart" size={20} color="#FF6B6B" />
+                            <Ionicons name="heart" size={20} color={dc('#FF6B6B')} />
                             <Text style={styles.giftInfoTitle}>선물 전달 안내</Text>
                         </View>
                         <Text style={styles.giftInfoText}>
@@ -154,7 +155,7 @@ const PaymentFinish = () => {
                 {!isGift && (
                     <Animated.View style={[styles.deliveryInfoCard, { opacity: fadeAnim }]}>
                         <View style={styles.deliveryInfoHeader}>
-                            <Ionicons name="cube-outline" size={20} color="#007AFF" />
+                            <Ionicons name="cube-outline" size={20} color={dc('#007AFF')} />
                             <Text style={styles.deliveryInfoTitle}>배송 안내</Text>
                         </View>
                         <Text style={styles.deliveryInfoText}>
@@ -174,7 +175,7 @@ const PaymentFinish = () => {
                         <Ionicons
                             name="list-outline"
                             size={20}
-                            color="#007AFF"
+                            color={dc('#007AFF')}
                         />
                         <Text style={styles.secondaryButtonText}>
                             {isGift ? '선물 내역 보기' : '주문 내역 보기'}
@@ -188,7 +189,7 @@ const PaymentFinish = () => {
                         <Ionicons
                             name="home-outline"
                             size={20}
-                            color="#fff"
+                            color={dc('#fff')}
                         />
                         <Text style={styles.primaryButtonText}>홈으로 가기</Text>
                     </TouchableOpacity>
@@ -196,7 +197,7 @@ const PaymentFinish = () => {
 
                 {/* 추가 안내 */}
                 <Animated.View style={[styles.noticeCard, { opacity: fadeAnim }]}>
-                    <Ionicons name="information-circle-outline" size={16} color="#666" />
+                    <Ionicons name="information-circle-outline" size={16} color={dc('#666')} />
                     <Text style={styles.noticeText}>
                         궁금하신 사항은 고객센터로 문의해주세요
                     </Text>

@@ -17,6 +17,7 @@ import { useOnlineClassReviews } from '@/components/contexts/OnlineClassReviewCo
 import AppHeader from '@/components/AppHeader';
 import { toImageUrl } from '@/config';
 
+import { dc } from '@/constants/theme';
 // embedded: 다른 화면(내 게시판의 '온라인 수업' 탭) 안에 넣을 때 true → 자체 헤더를 숨겨요
 const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
     const router = useRouter();
@@ -99,14 +100,14 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
         const hasHalfStar = starRating % 1 !== 0;
 
         for (let i = 0; i < fullStars; i++) {
-            stars.push(<Ionicons key={`star-${i}`} name="star" size={16} color="#ffc107" />);
+            stars.push(<Ionicons key={`star-${i}`} name="star" size={16} color={dc('#ffc107')} />);
         }
         if (hasHalfStar) {
-            stars.push(<Ionicons key="half-star" name="star-half" size={16} color="#ffc107" />);
+            stars.push(<Ionicons key="half-star" name="star-half" size={16} color={dc('#ffc107')} />);
         }
         const remainingStars = 5 - Math.ceil(starRating);
         for (let i = 0; i < remainingStars; i++) {
-            stars.push(<Ionicons key={`empty-star-${i}`} name="star-outline" size={16} color="#ffc107" />);
+            stars.push(<Ionicons key={`empty-star-${i}`} name="star-outline" size={16} color={dc('#ffc107')} />);
         }
         return stars;
     };
@@ -114,7 +115,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
     const renderVideoThumbnail = () => (
         <View style={styles.videoThumbnail}>
             <View style={styles.thumbnailPlaceholder}>
-                <Ionicons name="play-circle" size={40} color="#4E7D32" />
+                <Ionicons name="play-circle" size={40} color={dc('#4E7D32')} />
             </View>
             <View style={styles.videoBadge}>
                 <Text style={styles.videoBadgeText}>HD</Text>
@@ -252,18 +253,18 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                             <>
                                 <View style={styles.actionButtonsContainer}>
                                     <TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={handleClassEdit}>
-                                        <Ionicons name="create-outline" size={18} color="#4E7D32" />
+                                        <Ionicons name="create-outline" size={18} color={dc('#4E7D32')} />
                                         <Text style={styles.editButtonText}>수정</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleClassDelete}>
-                                        <Ionicons name="trash-outline" size={18} color="#dc3545" />
+                                        <Ionicons name="trash-outline" size={18} color={dc('#dc3545')} />
                                         <Text style={styles.deleteButtonText}>삭제</Text>
                                     </TouchableOpacity>
                                 </View>
 
                                 <View style={styles.introCard}>
                                     <View style={styles.introHeader}>
-                                        <Ionicons name="person-circle" size={24} color="#4E7D32" />
+                                        <Ionicons name="person-circle" size={24} color={dc('#4E7D32')} />
                                         <Text style={styles.cardTitle}>강사 소개</Text>
                                     </View>
                                     <Text style={styles.bioText}>{instructorInfo.bio}</Text>
@@ -276,7 +277,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
 
                                 <View style={styles.infoCard}>
                                     <View style={styles.introHeader}>
-                                        <Ionicons name="book" size={24} color="#4E7D32" />
+                                        <Ionicons name="book" size={24} color={dc('#4E7D32')} />
                                         <Text style={styles.cardTitle}>강의 정보</Text>
                                     </View>
                                     <View style={styles.infoRow}>
@@ -304,7 +305,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 {paymentInfo && (
                                     <View style={styles.paymentCard}>
                                         <View style={styles.introHeader}>
-                                            <Ionicons name="card" size={24} color="#ffc107" />
+                                            <Ionicons name="card" size={24} color={dc('#ffc107')} />
                                             <Text style={styles.cardTitle}>결제 정보</Text>
                                         </View>
                                         <View style={styles.paymentInfo}>
@@ -326,7 +327,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                             </>
                         ) : (
                             <View style={styles.noInfoCard}>
-                                <Ionicons name="information-circle-outline" size={50} color="#C9CCB8" />
+                                <Ionicons name="information-circle-outline" size={50} color={dc('#C9CCB8')} />
                                 <Text style={styles.noInfoTitle}>아직 등록된 클래스 소개가 없습니다.</Text>
                                 <Text style={styles.noInfoSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 정보를 추가해 주세요.</Text>
                             </View>
@@ -339,7 +340,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="videocam" size={24} color="#4E7D32" />
+                                <Ionicons name="videocam" size={24} color={dc('#4E7D32')} />
                                 <Text style={styles.sectionTitle}>무료 영상</Text>
                                 <View style={styles.freeBadge}>
                                     <Text style={styles.freeBadgeText}>FREE</Text>
@@ -355,21 +356,21 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                             <View style={styles.videoTitleContainer}>
                                                 <Text style={styles.videoTitle}>{video.videoTitle || '제목 없음'}</Text>
                                                 <TouchableOpacity onPress={() => handleVideoDelete(video.id, video.videoTitle)}>
-                                                    <Ionicons name="trash-outline" size={20} color="#dc3545" />
+                                                    <Ionicons name="trash-outline" size={20} color={dc('#dc3545')} />
                                                 </TouchableOpacity>
                                             </View>
                                             <View style={styles.videoMetadata}>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="time-outline" size={16} color={dc('#7C8070')} />
                                                     <Text style={styles.metaText}>{video.duration || '시간 미정'}</Text>
                                                 </View>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="bar-chart-outline" size={16} color={dc('#7C8070')} />
                                                     <Text style={styles.metaText}>{video.level || '난이도 미정'}</Text>
                                                 </View>
                                             </View>
                                             <TouchableOpacity style={styles.playButton}>
-                                                <Ionicons name="play" size={16} color="#fff" />
+                                                <Ionicons name="play" size={16} color={dc('#fff')} />
                                                 <Text style={styles.playButtonText}>재생</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -377,7 +378,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="videocam-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="videocam-outline" size={50} color={dc('#C9CCB8')} />
                                     <Text style={styles.placeholderTitle}>무료 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 영상을 추가해 주세요.</Text>
                                 </View>
@@ -391,7 +392,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     <View style={styles.tabContent}>
                         <View style={styles.videoSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="diamond" size={24} color="#3B5A24" />
+                                <Ionicons name="diamond" size={24} color={dc('#3B5A24')} />
                                 <Text style={styles.sectionTitle}>MVP 영상</Text>
                                 <View style={styles.mvpBadge}>
                                     <Text style={styles.mvpBadgeText}>PREMIUM</Text>
@@ -403,23 +404,23 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                         <View style={styles.videoLeft}>
                                             {renderVideoThumbnail()}
                                             <View style={styles.premiumOverlay}>
-                                                <Ionicons name="lock-closed" size={20} color="#fff" />
+                                                <Ionicons name="lock-closed" size={20} color={dc('#fff')} />
                                             </View>
                                         </View>
                                         <View style={styles.videoRight}>
                                             <View style={styles.videoTitleContainer}>
                                                 <Text style={styles.videoTitle}>{video.videoTitle || '제목 없음'}</Text>
                                                 <TouchableOpacity onPress={() => handleVideoDelete(video.id, video.videoTitle)}>
-                                                    <Ionicons name="trash-outline" size={20} color="#dc3545" />
+                                                    <Ionicons name="trash-outline" size={20} color={dc('#dc3545')} />
                                                 </TouchableOpacity>
                                             </View>
                                             <View style={styles.videoMetadata}>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="time-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="time-outline" size={16} color={dc('#7C8070')} />
                                                     <Text style={styles.metaText}>{video.duration || '시간 미정'}</Text>
                                                 </View>
                                                 <View style={styles.metaItem}>
-                                                    <Ionicons name="bar-chart-outline" size={16} color="#7C8070" />
+                                                    <Ionicons name="bar-chart-outline" size={16} color={dc('#7C8070')} />
                                                     <Text style={styles.metaText}>{video.level || '난이도 미정'}</Text>
                                                 </View>
                                                 <View style={styles.priceTag}>
@@ -427,7 +428,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                                 </View>
                                             </View>
                                             <TouchableOpacity style={styles.purchaseButton}>
-                                                <Ionicons name="diamond" size={16} color="#fff" />
+                                                <Ionicons name="diamond" size={16} color={dc('#fff')} />
                                                 <Text style={styles.purchaseButtonText}>구매</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -435,7 +436,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.videoPlaceholder}>
-                                    <Ionicons name="diamond-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="diamond-outline" size={50} color={dc('#C9CCB8')} />
                                     <Text style={styles.placeholderTitle}>MVP 영상 준비 중</Text>
                                     <Text style={styles.placeholderSubtitle}>아래 '{getBottomButtonText()}' 버튼을 눌러 프리미엄 영상을 추가해 주세요.</Text>
                                 </View>
@@ -448,10 +449,10 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     <View style={styles.tabContent}>
                         <View style={styles.reviewSection}>
                             <View style={styles.sectionHeader}>
-                                <Ionicons name="chatbubbles" size={24} color="#ff6b6b" />
+                                <Ionicons name="chatbubbles" size={24} color={dc('#ff6b6b')} />
                                 <Text style={styles.sectionTitle}>리뷰 ({reviewCount}개)</Text>
                                 <View style={styles.ratingBadge}>
-                                    <Ionicons name="star" size={16} color="#ffc107" />
+                                    <Ionicons name="star" size={16} color={dc('#ffc107')} />
                                     <Text style={styles.ratingBadgeText}>{averageRating}</Text>
                                 </View>
                             </View>
@@ -478,7 +479,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                                 ))
                             ) : (
                                 <View style={styles.reviewPlaceholder}>
-                                    <Ionicons name="chatbubbles-outline" size={50} color="#C9CCB8" />
+                                    <Ionicons name="chatbubbles-outline" size={50} color={dc('#C9CCB8')} />
                                     <Text style={styles.placeholderTitle}>아직 작성된 리뷰가 없어요!</Text>
                                     <Text style={styles.placeholderSubtitle}>수강생의 첫 번째 리뷰를 기다립니다. ✨</Text>
                                 </View>
@@ -508,7 +509,7 @@ const OnlineClassMyDetail = ({ embedded = false }: { embedded?: boolean }) => {
                     </View>
                     <Text style={styles.profileName}>{instructorInfo.name}</Text>
                     <TouchableOpacity style={styles.messageButton} onPress={handleSendMessage}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#4E7D32" />
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color={dc('#4E7D32')} />
                         <Text style={styles.messageButtonText}>받은 메시지</Text>
                     </TouchableOpacity>
                 </View>

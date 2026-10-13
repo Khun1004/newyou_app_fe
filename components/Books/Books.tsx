@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 import { useBookContext } from '@/components/contexts/BookContext';
 import { BOOKS, Book, readingTime } from '@/components/Books/bookData';
-import { THEME } from '@/constants/theme';
+import { THEME, dc, dgrad, dbg } from '@/constants/theme';
 
 /**
  * 독서 화면
@@ -21,7 +21,7 @@ const GENRE_EMOJI: Record<string, string> = { 판타지: '🪄', SF: '🚀', 문
 
 // 표지 (사진이 없거나 안 나오면 색 + 제목으로)
 const Cover = ({ book, w, h }: { book: Book; w: number; h: number }) => (
-    <View style={[styles.cover, { width: w, height: h, backgroundColor: book.color }]}>
+    <View style={[styles.cover, { width: w, height: h, backgroundColor: dbg(book.color) }]}>
         <Text style={styles.coverFallback} numberOfLines={3}>{book.title}</Text>
         <Image source={{ uri: book.coverImage }} style={StyleSheet.absoluteFill} />
         {/* 책등 그림자 */}
@@ -61,7 +61,7 @@ const Books: React.FC = () => {
                 {/* 이어 읽기 / 오늘의 한 줄 */}
                 {reading ? (
                     <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/ReadBook')}>
-                        <LinearGradient colors={['#FFF6D6', '#E8F2DE']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.continue}>
+                        <LinearGradient colors={dgrad(['#FFF6D6', '#E8F2DE'] as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.continue}>
                             <Cover book={reading} w={64} h={92} />
                             <View style={{ flex: 1, marginLeft: 14 }}>
                                 <Text style={styles.continueSmall}>읽고 있는 책</Text>
@@ -72,12 +72,12 @@ const Books: React.FC = () => {
                                 <Text style={styles.progressText}>{progress}% 읽었어요</Text>
                             </View>
                             <View style={styles.playBtn}>
-                                <Ionicons name="book" size={18} color="#FFFFFF" />
+                                <Ionicons name="book" size={18} color={dc('#FFFFFF')} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
                 ) : (
-                    <LinearGradient colors={['#FFF6D6', '#E8F2DE']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quote}>
+                    <LinearGradient colors={dgrad(['#FFF6D6', '#E8F2DE'] as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quote}>
                         <Text style={styles.quoteMark}>“</Text>
                         <Text style={styles.quoteText}>가장 중요한 것은 눈에 보이지 않아.</Text>
                         <Text style={styles.quoteFrom}>— 어린왕자</Text>
@@ -133,7 +133,7 @@ const Books: React.FC = () => {
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                            <LinearGradient colors={['#C9A06B', '#A87C47']} style={styles.plank} />
+                            <LinearGradient colors={dgrad(['#C9A06B', '#A87C47'] as any)} style={styles.plank} />
                         </View>
                     </>
                 )}
@@ -151,7 +151,7 @@ const Books: React.FC = () => {
                             <Text style={styles.rowAuthor}>{b.author}</Text>
                             <Text style={styles.rowDesc} numberOfLines={2}>{b.description}</Text>
                             <View style={styles.meta}>
-                                <Ionicons name="star" size={12} color="#F2B705" />
+                                <Ionicons name="star" size={12} color={dc('#F2B705')} />
                                 <Text style={styles.metaStrong}>{b.rating}</Text>
                                 <Text style={styles.metaDot}>·</Text>
                                 <Text style={styles.metaText}>{b.pages}쪽</Text>

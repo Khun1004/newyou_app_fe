@@ -13,13 +13,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 
+import { isDark } from '@/constants/theme';
 const PaymentDetail = () => {
     const params = useLocalSearchParams();
     const item = JSON.parse(params.item);
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#f9f9f9" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} backgroundColor="#f9f9f9" />
             <AppHeader title="결제 상세" />
 
             <ScrollView contentContainerStyle={styles.contentContainer}>

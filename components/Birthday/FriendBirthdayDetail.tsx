@@ -16,6 +16,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useFriends } from '@/components/contexts/FriendContext';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
+import { THEME, dc, isDark, dbg, dgrad } from '@/constants/theme';
+import FriendAvatar from '@/components/Birthday/FriendAvatar';
 
 /**
  * 친구 생일 자세히 보기
@@ -26,13 +28,13 @@ import AppHeader from '@/components/AppHeader';
  */
 
 const COLORS = {
-    background: '#FFFBF5',
+    background: THEME.background,
     card: '#FFFFFF',
-    text: '#3F2A1E',
-    subText: '#8A7565',
-    border: '#F3E6DA',
-    pink: '#F06292',
-    button: ['#FFB75E', '#F06292'] as [string, string],
+    text: THEME.text,
+    subText: THEME.subText,
+    border: THEME.line,
+    pink: THEME.primary, // 강조색 (예전 핑크 → 앱의 초록)
+    button: THEME.buttonGradient as [string, string],
 };
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -66,12 +68,12 @@ const nextBirthdayOf = (b: { month: number; day: number }) => {
 
 // 색종이 위치 (고정)
 const CONFETTI = [
-    { left: '8%', top: 18, color: '#FFFFFF', r: 20 },
-    { left: '18%', top: 120, color: '#FFF3B0', r: -40 },
-    { left: '80%', top: 26, color: '#FFF3B0', r: 35 },
-    { left: '90%', top: 110, color: '#FFFFFF', r: -15 },
-    { left: '50%', top: 10, color: '#FFE0EC', r: 60 },
-    { left: '70%', top: 150, color: '#FFFFFF', r: 10 },
+    { left: '8%', top: 18, color: dc('#FFFFFF'), r: 20 },
+    { left: '18%', top: 120, color: dc('#FFF3B0'), r: -40 },
+    { left: '80%', top: 26, color: dc('#FFF3B0'), r: 35 },
+    { left: '90%', top: 110, color: dc('#FFFFFF'), r: -15 },
+    { left: '50%', top: 10, color: dc('#FFE0EC'), r: 60 },
+    { left: '70%', top: 150, color: dc('#FFFFFF'), r: 10 },
 ];
 
 const FriendBirthdayDetail: React.FC = () => {
@@ -103,7 +105,8 @@ const FriendBirthdayDetail: React.FC = () => {
     }
 
     const friend: Friend = JSON.parse(friendData as string);
-    const colors = (friend.profileColor?.length >= 2 ? friend.profileColor : COLORS.button) as [string, string];
+    // 카드 색은 친구마다 다르게 하지 않고 앱 색으로 통일해요
+    const colors = COLORS.button;
     const info = friend.birthdate ? nextBirthdayOf(friend.birthdate) : null;
     const isToday = info?.days === 0;
     const imageUri = getAbsoluteImageUrl(friend.profileImage);
@@ -138,7 +141,7 @@ const FriendBirthdayDetail: React.FC = () => {
 
     return (
         <View style={styles.screen}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
             <AppHeader
                 title="친구 생일"
                 right={[{ icon: 'create-outline', onPress: handleEdit, accessibilityLabel: '수정' }]}
@@ -147,7 +150,7 @@ const FriendBirthdayDetail: React.FC = () => {
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 {/* ---------- 큰 카드 ---------- */}
                 <Animated.View style={{ opacity: fade, transform: [{ translateY: rise }] }}>
-                    <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+                    <LinearGradient colors={dgrad(colors as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
                         {CONFETTI.map((c, i) => (
                             <View
                                 key={i}
@@ -159,13 +162,7 @@ const FriendBirthdayDetail: React.FC = () => {
                         ))}
 
                         <Animated.View style={[styles.avatarRing, { transform: [{ scale: bounce }] }]}>
-                            {imageUri ? (
-                                <Image source={{ uri: imageUri }} style={styles.avatar} />
-                            ) : (
-                                <LinearGradient colors={colors} style={[styles.avatar, styles.avatarFallback]}>
-                                    <Text style={styles.avatarText}>{friend.nickname.charAt(0).toUpperCase()}</Text>
-                                </LinearGradient>
-                            )}
+                            <FriendAvatar name={friend.nickname} photo={friend.profileImage} size={110} onDark />
                             {isToday && (
                                 <View style={styles.crown}>
                                     <Text style={{ fontSize: 22 }}>👑</Text>
@@ -237,14 +234,14 @@ const FriendBirthdayDetail: React.FC = () => {
 
                 {/* ---------- 버튼 ---------- */}
                 <TouchableOpacity onPress={handleEdit} activeOpacity={0.85} style={{ marginTop: 22 }}>
-                    <LinearGradient colors={COLORS.button} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
-                        <Ionicons name="pencil" size={18} color="#FFFFFF" />
+                    <LinearGradient colors={dgrad(COLORS.button as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.primaryBtn}>
+                        <Ionicons name="pencil" size={18} color={dc('#FFFFFF')} />
                         <Text style={styles.primaryText}>정보 수정하기</Text>
                     </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn} activeOpacity={0.8}>
-                    <Ionicons name="trash-outline" size={16} color="#D9534F" />
+                    <Ionicons name="trash-outline" size={16} color={dc('#D9534F')} />
                     <Text style={styles.deleteText}>친구 삭제</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -253,7 +250,7 @@ const FriendBirthdayDetail: React.FC = () => {
 };
 
 const shadow = {
-    shadowColor: '#C9A68A',
+    shadowColor: '#4B5A3A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
@@ -277,7 +274,7 @@ const styles = StyleSheet.create({
         ...shadow,
     },
     confetti: { position: 'absolute', width: 7, height: 16, borderRadius: 2, opacity: 0.8 },
-    avatarRing: { padding: 5, borderRadius: 70, backgroundColor: '#FFFFFF' },
+    avatarRing: { padding: 4, borderRadius: 70, backgroundColor: '#FFFFFF55' },
     avatar: { width: 110, height: 110, borderRadius: 55 },
     avatarFallback: { alignItems: 'center', justifyContent: 'center' },
     avatarText: { fontSize: 46, fontWeight: '900', color: '#FFFFFF' },
@@ -330,7 +327,7 @@ const styles = StyleSheet.create({
         width: 70,
         height: 18,
         borderRadius: 2,
-        backgroundColor: '#F7C6D6',
+        backgroundColor: '#CFE3BE',
         opacity: 0.9,
     },
     memoHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },

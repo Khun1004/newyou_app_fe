@@ -14,6 +14,7 @@ import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 interface PaymentMethod {
     id: string;
     name: string;
@@ -138,7 +139,7 @@ const OnlineClassPayment = () => {
                 <Ionicons
                     name={method.icon as any}
                     size={24}
-                    color={selectedPaymentMethod === method.id ? '#4E7D32' : '#7C8070'}
+                    color={dc(selectedPaymentMethod === method.id ? '#4E7D32' : '#7C8070')}
                 />
                 <View style={styles.paymentMethodInfo}>
                     <Text
@@ -153,7 +154,7 @@ const OnlineClassPayment = () => {
                 </View>
                 <View style={styles.radioButton}>
                     {selectedPaymentMethod === method.id && (
-                        <Ionicons name="checkmark-circle" size={20} color="#4E7D32" />
+                        <Ionicons name="checkmark-circle" size={20} color={dc('#4E7D32')} />
                     )}
                 </View>
             </View>
@@ -166,7 +167,7 @@ const OnlineClassPayment = () => {
             <View style={styles.container}>
                 <AppHeader title="결제" />
                 <View style={styles.loadingContainer}>
-                    <Text style={{ color: '#7C8070' }}>클래스 정보를 불러오는 중...</Text>
+                    <Text style={{ color: dc('#7C8070') }}>클래스 정보를 불러오는 중...</Text>
                 </View>
             </View>
         );

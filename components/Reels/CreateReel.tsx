@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker'; // 갤러리 접근 라이브�
 import { useReels } from '@/components/contexts/ReelContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 const CreateReel = () => {
     const { addReel } = useReels();
     const [title, setTitle] = useState('');
@@ -109,13 +110,13 @@ const CreateReel = () => {
                 >
                     {videoUri ? (
                         <>
-                            <Icon name="checkmark-circle-outline" size={50} color="#1e90ff" />
+                            <Icon name="checkmark-circle-outline" size={50} color={dc('#1e90ff')} />
                             <Text style={styles.placeholderTextSelected}>비디오 선택 완료!</Text>
                             <Text style={styles.placeholderSubText} numberOfLines={1}>{videoUri.substring(0, 40)}...</Text>
                         </>
                     ) : (
                         <>
-                            <Icon name="videocam-outline" size={50} color="#666" />
+                            <Icon name="videocam-outline" size={50} color={dc('#666')} />
                             <Text style={styles.placeholderText}>비디오 선택 / 촬영</Text>
                             <Text style={styles.placeholderSubText}>클릭하여 갤러리에서 비디오 선택</Text>
                         </>
@@ -126,7 +127,7 @@ const CreateReel = () => {
                 <TextInput
                     style={styles.input}
                     placeholder="Reel 제목을 입력하세요."
-                    placeholderTextColor="#999"
+                    placeholderTextColor={dc('#999')}
                     value={title}
                     onChangeText={setTitle}
                     maxLength={50}
@@ -136,7 +137,7 @@ const CreateReel = () => {
                 <TextInput
                     style={styles.input}
                     placeholder="썸네일 이미지 URL (선택 사항)"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={dc('#999')}
                     value={thumbnail}
                     onChangeText={setThumbnail}
                 />
@@ -148,10 +149,10 @@ const CreateReel = () => {
                     disabled={isUploading}
                 >
                     {isUploading ? (
-                        <ActivityIndicator color="#fff" size="small" />
+                        <ActivityIndicator color={dc('#fff')} size="small" />
                     ) : (
                         <>
-                            <Icon name="cloud-upload-outline" size={20} color="#fff" />
+                            <Icon name="cloud-upload-outline" size={20} color={dc('#fff')} />
                             <Text style={styles.uploadButtonText}>Reel 업로드</Text>
                         </>
                     )}

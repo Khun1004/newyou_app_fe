@@ -14,7 +14,7 @@ import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import { useReels } from '@/components/contexts/ReelContext';
 import { router } from 'expo-router'; // expo-router를 사용하여 라우팅
-import { THEME } from '@/constants/theme';
+import { THEME, dc } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -93,7 +93,7 @@ const MyReels = () => {
                     resizeMode="cover"
                 />
                 <View style={styles.reelOverlay}>
-                    <Icon name={reelIcon} size={20} color="#fff" />
+                    <Icon name={reelIcon} size={20} color={dc('#fff')} />
                     <Text style={styles.reelStatsText}>{reelStats}</Text>
                 </View>
             </TouchableOpacity>
@@ -106,7 +106,7 @@ const MyReels = () => {
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>{nickname}</Text>
                 <TouchableOpacity style={styles.menuButton}>
-                    <Icon name="menu-outline" size={26} color="#222" />
+                    <Icon name="menu-outline" size={26} color={dc('#222')} />
                 </TouchableOpacity>
             </View>
 
@@ -124,7 +124,7 @@ const MyReels = () => {
                                 />
                             ) : (
                                 <View style={styles.defaultProfileImage}>
-                                    <Icon name="person" size={48} color="#fff" />
+                                    <Icon name="person" size={48} color={dc('#fff')} />
                                 </View>
                             )}
                         </View>
@@ -149,7 +149,7 @@ const MyReels = () => {
 
                             {/* Add Reel Button (Navigation 연결) */}
                             <TouchableOpacity style={styles.addReelButton} onPress={navigateToCreateReel}>
-                                <Icon name="add-circle-outline" size={18} color="#fff" />
+                                <Icon name="add-circle-outline" size={18} color={dc('#fff')} />
                                 <Text style={styles.addReelText}>Reel 등록</Text>
                             </TouchableOpacity>
                         </View>
@@ -169,7 +169,7 @@ const MyReels = () => {
                         <Icon
                             name="grid-outline"
                             size={22}
-                            color={activeTab === 'posts' ? '#000' : '#888'}
+                            color={dc(activeTab === 'posts' ? '#000' : '#888')}
                         />
                     </TouchableOpacity>
 
@@ -181,7 +181,7 @@ const MyReels = () => {
                         <Icon
                             name="heart-outline"
                             size={22}
-                            color={activeTab === 'likes' ? '#000' : '#888'}
+                            color={dc(activeTab === 'likes' ? '#000' : '#888')}
                         />
                     </TouchableOpacity>
 
@@ -193,7 +193,7 @@ const MyReels = () => {
                         <Icon
                             name="bookmark-outline"
                             size={22}
-                            color={activeTab === 'saved' ? '#000' : '#888'}
+                            color={dc(activeTab === 'saved' ? '#000' : '#888')}
                         />
                     </TouchableOpacity>
 
@@ -205,7 +205,7 @@ const MyReels = () => {
                         <Icon
                             name="eye-off-outline"
                             size={22}
-                            color={activeTab === 'hidden' ? '#000' : '#888'}
+                            color={dc(activeTab === 'hidden' ? '#000' : '#888')}
                         />
                     </TouchableOpacity>
                 </View>
@@ -215,7 +215,7 @@ const MyReels = () => {
                     {/* 데이터가 없을 때 Empty State 표시 */}
                     {filteredReels.length === 0 ? (
                         <View style={styles.emptyState}>
-                            <Icon name="videocam-off-outline" size={60} color="#ccc" style={{ marginBottom: 10 }}/>
+                            <Icon name="videocam-off-outline" size={60} color={dc('#ccc')} style={{ marginBottom: 10 }}/>
                             <Text style={styles.emptyStateText}>
                                 {activeTab === 'posts' ? '아직 게시물이 없습니다.' :
                                     activeTab === 'likes' ? '좋아요한 릴이 없습니다.' :

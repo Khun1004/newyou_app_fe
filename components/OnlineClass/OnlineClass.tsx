@@ -13,6 +13,8 @@ import { useAuth } from '@/components/contexts/AuthProvider';
 // ❤️ [수정] likedClassIds, toggleLike 가져오기
 import { useOnlineClass } from '@/components/contexts/OnlineClassContext';
 
+import { dc } from '@/constants/theme';
+import { toImageUrl } from '@/config';
 // ClassItem 인터페이스는 Context의 ClassData와 정적 데이터를 통합하기 위해 사용됩니다.
 interface ClassItem {
     id: string | number;
@@ -152,16 +154,16 @@ const OnlineClass: React.FC = () => {
         const hasHalfStar = rating % 1 !== 0;
 
         for (let i = 0; i < fullStars; i++) {
-            stars.push(<Ionicons key={`star-full-${classId}-${i}`} name="star" size={12} color="#ffc107" />);
+            stars.push(<Ionicons key={`star-full-${classId}-${i}`} name="star" size={12} color={dc('#ffc107')} />);
         }
 
         if (hasHalfStar) {
-            stars.push(<Ionicons key={`star-half-${classId}`} name="star-half" size={12} color="#ffc107" />);
+            stars.push(<Ionicons key={`star-half-${classId}`} name="star-half" size={12} color={dc('#ffc107')} />);
         }
 
         const remainingStars = 5 - Math.ceil(rating);
         for (let i = 0; i < remainingStars; i++) {
-            stars.push(<Ionicons key={`star-empty-${classId}-${i}`} name="star-outline" size={12} color="#ffc107" />);
+            stars.push(<Ionicons key={`star-empty-${classId}-${i}`} name="star-outline" size={12} color={dc('#ffc107')} />);
         }
 
         return stars;
@@ -180,7 +182,7 @@ const OnlineClass: React.FC = () => {
             >
                 <View style={styles.profileContainer}>
                     {item.profileImage ? (
-                        <Image source={{ uri: item.profileImage }} style={styles.profileImage} />
+                        <Image source={{ uri: toImageUrl(item.profileImage) }} style={styles.profileImage} />
                     ) : (
                         <View style={styles.defaultProfileImage}>
                             <Text style={styles.profileInitial}>{item.instructor.charAt(0)}</Text>
@@ -210,7 +212,7 @@ const OnlineClass: React.FC = () => {
                             style={styles.messageButton}
                             onPress={() => handleSendMessage(item.instructor)}
                         >
-                            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#4E7D32" />
+                            <Ionicons name="chatbubble-ellipses-outline" size={20} color={dc('#4E7D32')} />
                         </TouchableOpacity>
 
                         {/* ❤️ [수정] 좋아요 하트 아이콘 (상태에 따라 아이콘 변경) */}
@@ -221,7 +223,7 @@ const OnlineClass: React.FC = () => {
                             <Ionicons
                                 name={isLiked ? "heart" : "heart-outline"} // 상태에 따른 아이콘
                                 size={20}
-                                color={isLiked ? "#dc3545" : "#dc3545"} // 좋아요 시 채워진 하트 색상
+                                color={dc(isLiked ? "#dc3545" : "#dc3545")} // 좋아요 시 채워진 하트 색상
                             />
                         </TouchableOpacity>
                     </View>
@@ -238,7 +240,7 @@ const OnlineClass: React.FC = () => {
                     classItems.map(renderClassItem)
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="sad-outline" size={50} color="#A3A794" />
+                        <Ionicons name="sad-outline" size={50} color={dc('#A3A794')} />
                         <Text style={styles.emptyText}>등록된 온라인 클래스가 없습니다.</Text>
                     </View>
                 )}
@@ -247,7 +249,7 @@ const OnlineClass: React.FC = () => {
             {/* Float 버튼: 사용자가 강사라면 클래스 등록을 쉽게 할 수 있도록 제공 */}
             {currentUser && (
                 <TouchableOpacity style={styles.registerClassButton} onPress={handleRegister}>
-                    <Ionicons name="add-circle" size={24} color="#fff" />
+                    <Ionicons name="add-circle" size={24} color={dc('#fff')} />
                     <Text style={styles.registerClassButtonText}>클래스 등록</Text>
                 </TouchableOpacity>
             )}

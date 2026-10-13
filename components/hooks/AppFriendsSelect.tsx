@@ -9,6 +9,7 @@ import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext
 import { AppFriend } from '@/components/hooks/AppFriend'; // AppFriend 타입을 직접 import
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 // 귀여운 동물 이모지 프로필 아바타 컴포넌트
 const AnimalAvatar = ({ animal, size = 64 }: { animal: string; size?: number }) => {
     const animalConfig: { [key: string]: { emoji: string; bgColor: string } } = {
@@ -19,7 +20,7 @@ const AnimalAvatar = ({ animal, size = 64 }: { animal: string; size?: number }) 
     };
     const config = animalConfig[animal] || { emoji: '🐾', bgColor: '#f3f4f6' };
     return (
-        <View style={[styles.avatarContainer, { width: size, height: size, borderRadius: size / 2, backgroundColor: config.bgColor, marginRight: 16, }]}>
+        <View style={[styles.avatarContainer, { width: size, height: size, borderRadius: size / 2, backgroundColor: dbg(config.bgColor), marginRight: 16, }]}>
             <Text style={{ fontSize: size * 0.5 }}>{config.emoji}</Text>
         </View>
     );
@@ -55,7 +56,7 @@ const FriendItem = ({ friend, onSelect, onInfoPress }: FriendItemProps) => {
 
                 {/* [수정] Chevron 아이콘을 TouchableOpacity로 감싸서 별도의 동작을 부여 */}
                 <TouchableOpacity onPress={onInfoPress} style={styles.infoIconContainer} activeOpacity={0.6}>
-                    <Ionicons name="chevron-forward" size={24} color="#666" />
+                    <Ionicons name="chevron-forward" size={24} color={dc('#666')} />
                 </TouchableOpacity>
             </TouchableOpacity>
         </View>
@@ -105,7 +106,7 @@ export default function AppFriendsSelect() {
             <View style={styles.container}>
                 <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#6C63FF" />
+                    <ActivityIndicator size="large" color={dc('#6C63FF')} />
                     <Text style={styles.loadingText}>친구 목록을 불러오는 중...</Text>
                 </View>
             </View>
@@ -130,13 +131,13 @@ export default function AppFriendsSelect() {
             <View style={styles.container}>
                 <AppHeader title="친구 선택" />
                 <View style={styles.centerContainer}>
-                    <Ionicons name="person-add-outline" size={60} color="#ccc" />
+                    <Ionicons name="person-add-outline" size={60} color={dc('#ccc')} />
                     <Text style={styles.loadingText}>등록된 친구가 없어요.</Text>
-                    <Text style={{ color: '#9ca3af', marginTop: 6, textAlign: 'center' }}>
+                    <Text style={{ color: dc('#9ca3af'), marginTop: 6, textAlign: 'center' }}>
                         생일 화면에서 친구를 먼저 추가해 주세요.
                     </Text>
-                    <TouchableOpacity onPress={() => router.push('/AddFriBirthday')} style={{ marginTop: 16, backgroundColor: '#F06292', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999 }}>
-                        <Text style={{ color: '#fff', fontWeight: '700' }}>친구 추가하러 가기</Text>
+                    <TouchableOpacity onPress={() => router.push('/AddFriBirthday')} style={{ marginTop: 16, backgroundColor: dbg('#F06292'), paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999 }}>
+                        <Text style={{ color: dc('#fff'), fontWeight: '700' }}>친구 추가하러 가기</Text>
                     </TouchableOpacity>
                 </View>
             </View>

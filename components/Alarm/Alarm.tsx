@@ -26,6 +26,7 @@ import { Picker } from '@react-native-picker/picker';
 import { useAlarms, Alarm as AlarmType } from '@/components/contexts/AlarmContext';
 import AppHeader from '@/components/AppHeader';
 
+import { dc } from '@/constants/theme';
 // --- 상수 정의 (임시 데이터) ---
 
 const DAYS_OF_WEEK = [
@@ -306,6 +307,7 @@ export default function Alarm() {
                             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                             onChange={onTimeChange}
                             textColor="#fff"
+                            themeVariant="dark"
                             style={styles.datePicker}
                         />
                     ) : (
@@ -326,7 +328,7 @@ export default function Alarm() {
                             value={label}
                             onChangeText={setLabel}
                             placeholder="알람 이름을 입력해주세요"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={dc('#666')}
                         />
                     </View>
 
@@ -362,7 +364,7 @@ export default function Alarm() {
                         <Text style={styles.settingText}>알람 소리</Text>
                         <View style={styles.settingRight}>
                             <Text style={styles.settingValue}>{ALARM_SOUNDS.find(s => s.value === selectedSound)?.label}</Text>
-                            <Ionicons name="chevron-forward" size={20} color="#666" />
+                            <Ionicons name="chevron-forward" size={20} color={dc('#666')} />
                         </View>
                     </TouchableOpacity>
 
@@ -372,22 +374,22 @@ export default function Alarm() {
                         <View style={styles.settingRight}>
                             {!isRecording && !recordingUri ? (
                                 <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
-                                    <Ionicons name="mic-outline" size={24} color="#00A389" />
+                                    <Ionicons name="mic-outline" size={24} color={dc('#00A389')} />
                                     <Text style={styles.recordButtonText}>녹음 시작</Text>
                                 </TouchableOpacity>
                             ) : isRecording ? (
                                 <TouchableOpacity style={[styles.recordButton, styles.stopRecordButton]} onPress={stopRecording}>
-                                    <Ionicons name="stop-circle-outline" size={24} color="#FF6347" />
-                                    <Text style={[styles.recordButtonText, { color: '#FF6347' }]}>녹음 중지</Text>
+                                    <Ionicons name="stop-circle-outline" size={24} color={dc('#FF6347')} />
+                                    <Text style={[styles.recordButtonText, { color: dc('#FF6347') }]}>녹음 중지</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <View style={styles.playbackContainer}>
                                     <Text style={styles.recordButtonText}>녹음 완료</Text>
                                     <TouchableOpacity onPress={playRecording} style={styles.playButton}>
-                                        <Ionicons name="play-circle-outline" size={30} color="#00A389" />
+                                        <Ionicons name="play-circle-outline" size={30} color={dc('#00A389')} />
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={deleteVoiceRecording} style={styles.deleteButton}>
-                                        <Ionicons name="close-circle-outline" size={30} color="#FF6347" />
+                                        <Ionicons name="close-circle-outline" size={30} color={dc('#FF6347')} />
                                     </TouchableOpacity>
                                 </View>
                             )}
@@ -397,7 +399,7 @@ export default function Alarm() {
                     {/* 고정 알람 설정 */}
                     <TouchableOpacity style={styles.settingItem} onPress={() => setFixedAlarmModalVisible(true)}>
                         <Text style={styles.settingText}>고정 알람 설정</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
+                        <Ionicons name="chevron-forward" size={20} color={dc('#666')} />
                     </TouchableOpacity>
 
                     {/* 시간대 설정 */}
@@ -405,7 +407,7 @@ export default function Alarm() {
                         <Text style={styles.settingText}>시간대 / 국가</Text>
                         <View style={styles.settingRight}>
                             <Text style={styles.settingValue}>{selectedCountryName}</Text>
-                            <Ionicons name="chevron-forward" size={20} color="#666" />
+                            <Ionicons name="chevron-forward" size={20} color={dc('#666')} />
                         </View>
                     </TouchableOpacity>
 
@@ -445,7 +447,7 @@ export default function Alarm() {
                                 selectedValue={selectedSound}
                                 onValueChange={(itemValue) => setSelectedSound(itemValue)}
                                 style={styles.soundPicker}
-                                itemStyle={{ color: '#fff' }}
+                                itemStyle={{ color: dc('#fff') }}
                                 dropdownIconColor="#fff"
                             >
                                 {ALARM_SOUNDS.map(sound => (
@@ -513,7 +515,7 @@ export default function Alarm() {
                                 selectedValue={selectedCountryCode}
                                 onValueChange={(itemValue) => setSelectedCountryCode(itemValue)}
                                 style={styles.soundPicker}
-                                itemStyle={{ color: '#fff' }}
+                                itemStyle={{ color: dc('#fff') }}
                                 dropdownIconColor="#fff"
                             >
                                 {COUNTRIES.map(country => (

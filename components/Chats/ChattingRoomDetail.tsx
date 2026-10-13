@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import AppHeader from '@/components/AppHeader';
 
+import { dbg, dc } from '@/constants/theme';
 const ChattingRoomDetail = () => {
     const router = useRouter();
     const { currentUser } = useAuth();
@@ -22,11 +23,11 @@ const ChattingRoomDetail = () => {
 
     if (!chatData || !currentUser) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
                 <AppHeader title="채팅방 정보" />
                 <SafeAreaView style={styles.container}>
                     <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle-outline" size={60} color="#FF6B6B" />
+                        <Ionicons name="alert-circle-outline" size={60} color={dc('#FF6B6B')} />
                         <Text style={styles.errorText}>
                             채팅 상세 정보를 불러올 수 없습니다.
                         </Text>
@@ -98,7 +99,7 @@ const ChattingRoomDetail = () => {
                 {/* Shared Content Section */}
                 <View style={styles.card}>
                     <TouchableOpacity style={styles.cardHeader}>
-                        <Ionicons name="image-outline" size={20} color="#007AFF" style={styles.cardIcon} />
+                        <Ionicons name="image-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Photos/Videos</Text>
                     </TouchableOpacity>
                     <View style={styles.mediaGallery}>
@@ -112,15 +113,15 @@ const ChattingRoomDetail = () => {
 
                 <View style={styles.card}>
                     <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="document-text-outline" size={20} color="#007AFF" style={styles.cardIcon} />
+                        <Ionicons name="document-text-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>File</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="link-outline" size={20} color="#007AFF" style={styles.cardIcon} />
+                        <Ionicons name="link-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Links</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#007AFF" style={styles.cardIcon} />
+                        <Ionicons name="checkmark-circle-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Schedule</Text>
                     </TouchableOpacity>
                 </View>
@@ -128,19 +129,19 @@ const ChattingRoomDetail = () => {
                 {/* Additional Features Section */}
                 <View style={[styles.card, styles.twoColumnCard]}>
                     <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="menu-outline" size={20} color="#007AFF" />
+                        <Ionicons name="menu-outline" size={20} color={dc('#007AFF')} />
                         <Text style={styles.twoColumnText}>Boards</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="megaphone-outline" size={20} color="#007AFF" />
+                        <Ionicons name="megaphone-outline" size={20} color={dc('#007AFF')} />
                         <Text style={styles.twoColumnText}>Announcement</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="checkbox-outline" size={20} color="#007AFF" />
+                        <Ionicons name="checkbox-outline" size={20} color={dc('#007AFF')} />
                         <Text style={styles.twoColumnText}>Vote</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="help-circle-outline" size={20} color="#007AFF" />
+                        <Ionicons name="help-circle-outline" size={20} color={dc('#007AFF')} />
                         <Text style={styles.twoColumnText}>Quiz</Text>
                     </TouchableOpacity>
                 </View>
@@ -148,7 +149,7 @@ const ChattingRoomDetail = () => {
                 {/* Chatbot Section */}
                 <View style={styles.card}>
                     <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="happy-outline" size={20} color="#007AFF" style={styles.cardIcon} />
+                        <Ionicons name="happy-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
                         <Text style={styles.cardTitle}>Chatbot <Text style={styles.betaText}>beta</Text></Text>
                     </TouchableOpacity>
                 </View>
@@ -157,7 +158,7 @@ const ChattingRoomDetail = () => {
                 <View style={styles.card}>
                     <Text style={styles.sectionHeader}>Participants</Text>
                     <TouchableOpacity style={styles.inviteItem}>
-                        <Ionicons name="add" size={24} color="#007AFF" />
+                        <Ionicons name="add" size={24} color={dc('#007AFF')} />
                         <Text style={styles.inviteText}>Invite</Text>
                     </TouchableOpacity>
                     {participants.map(item => (

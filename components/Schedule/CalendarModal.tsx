@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlans } from '@/components/Plan/PlanContext';
 import { useRequireLogin } from '@/components/RequireLogin';
-import { THEME } from '@/constants/theme';
+import { THEME, dbg, dc, dgrad } from '@/constants/theme';
 
 /**
  * 시간표 화면 헤더의 달력 아이콘을 누르면 아래에서 올라오는 달력
@@ -127,7 +127,7 @@ export default function CalendarModal({
                 <View style={styles.handle} />
 
                 {/* 달 이동 */}
-                <LinearGradient colors={COLORS.sunrise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.monthBar}>
+                <LinearGradient colors={dgrad(COLORS.sunrise as any)} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.monthBar}>
                     <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navButton} accessibilityLabel="이전 달">
                         <Ionicons name="chevron-back" size={22} color={COLORS.text} />
                     </TouchableOpacity>
@@ -194,7 +194,7 @@ export default function CalendarModal({
                                                 styles.dayText,
                                                 di === 0 && { color: COLORS.pink },
                                                 di === 6 && { color: COLORS.blue },
-                                                isToday && { color: '#fff' },
+                                                isToday && { color: dc('#fff') },
                                             ]}
                                         >
                                             {date.getDate()}
@@ -202,7 +202,7 @@ export default function CalendarModal({
                                     </View>
                                     <View style={styles.dotRow}>
                                         {hasPlan && <View style={[styles.dot, { backgroundColor: COLORS.pink }]} />}
-                                        {hasSchedule && <View style={[styles.dot, { backgroundColor: '#F2B705' }]} />}
+                                        {hasSchedule && <View style={[styles.dot, { backgroundColor: dbg('#F2B705') }]} />}
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -213,7 +213,7 @@ export default function CalendarModal({
                 <View style={styles.legend}>
                     <View style={[styles.dot, { backgroundColor: COLORS.pink }]} />
                     <Text style={styles.legendText}>계획</Text>
-                    <View style={[styles.dot, { backgroundColor: '#F2B705', marginLeft: 12 }]} />
+                    <View style={[styles.dot, { backgroundColor: dbg('#F2B705'), marginLeft: 12 }]} />
                     <Text style={styles.legendText}>시간표</Text>
                 </View>
 
@@ -227,14 +227,14 @@ export default function CalendarModal({
                             <>
                                 {selectedPlans.map((p) => (
                                     <View key={`p-${p.id}`} style={styles.item}>
-                                        <View style={[styles.itemBar, { backgroundColor: p.color || COLORS.pink }]} />
+                                        <View style={[styles.itemBar, { backgroundColor: dbg(p.color) || COLORS.pink }]} />
                                         <Text style={styles.itemTag}>계획</Text>
                                         <Text style={styles.itemTitle} numberOfLines={1}>{p.title}</Text>
                                     </View>
                                 ))}
                                 {selectedSchedules.map((s) => (
                                     <View key={`s-${s.id}`} style={styles.item}>
-                                        <View style={[styles.itemBar, { backgroundColor: s.color || '#F2B705' }]} />
+                                        <View style={[styles.itemBar, { backgroundColor: dbg(s.color) || '#F2B705' }]} />
                                         <Text style={styles.itemTag}>{formatTime(s.time)}</Text>
                                         <Text style={styles.itemTitle} numberOfLines={1}>{s.title}</Text>
                                     </View>
@@ -252,7 +252,7 @@ export default function CalendarModal({
                             router.push({ pathname: '/MakePlan', params: { date: selectedKey } });
                         }}
                     >
-                        <Ionicons name="add" size={18} color="#fff" />
+                        <Ionicons name="add" size={18} color={dc('#fff')} />
                         <Text style={styles.planButtonText}>이 날 계획 추가</Text>
                     </TouchableOpacity>
                 </View>

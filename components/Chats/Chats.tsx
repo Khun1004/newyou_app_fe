@@ -1,20 +1,15 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ChatContext } from '@/components/contexts/ChatContext';
-import { toImageUrl } from '@/config';
+import FriendAvatar from '@/components/Birthday/FriendAvatar';
 
-// 사진이 없으면 이름 첫 글자 동그라미
-const ChatAvatar = ({ item }: { item: any }) => {
-    if (item.avatar) return <Image source={{ uri: toImageUrl(item.avatar) }} style={styles.avatar} />;
-    const colors = item.colors?.length >= 2 ? item.colors : ['#9AD0A0', '#4E7D32'];
-    return (
-        <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarText}>{(item.name || '?').charAt(0).toUpperCase()}</Text>
-        </LinearGradient>
-    );
-};
+// 친구 프로필 (생일 화면과 같은 앱 색 동그라미)
+const ChatAvatar = ({ item }: { item: any }) => (
+    <View style={{ marginRight: 15 }}>
+        <FriendAvatar name={item.name} photo={item.avatar} size={55} />
+    </View>
+);
 
 const Chats = () => {
     const router = useRouter();

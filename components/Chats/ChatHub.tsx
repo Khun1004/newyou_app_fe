@@ -23,7 +23,7 @@ export default function ChatHub() {
     const bottomSpace = NOTCH_TABS_HEIGHT + Math.max(insets.bottom, 10) + 8;
 
     return (
-        <View style={[styles.container, { backgroundColor: mode === 'reels' ? '#000' : '#FFFFFF' }]}>
+        <View style={[styles.container, { backgroundColor: mode === 'reels' ? '#000' : THEME.card }]}>
             <View style={{ flex: 1 }}>
                 {mode === 'chat' ? (
                     <View style={{ flex: 1, paddingBottom: bottomSpace }}>
