@@ -14,15 +14,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { NoteContext } from '@/components/contexts/NoteContext';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
+import { useNotePin } from '@/components/Note/NotePinPad';
 import AppHeader from '@/components/AppHeader';
 
-import { dbg, isDark } from '@/constants/theme';
+import { dbg, dc, isDark } from '@/constants/theme';
 export default function NoteDetail() {
     const router = useRouter();
     const { noteId } = useLocalSearchParams();
     const noteContext = useContext(NoteContext);
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const [note, setNote] = useState<any>(null);
+    const { askPin, pinPad } = useNotePin();
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -59,9 +61,36 @@ export default function NoteDetail() {
         );
     }
 
-    const designStyle = NOTE_DESIGNS[note.design] || NOTE_DESIGNS.ribbon_pink;
-    const getCategoryColor = (category) => {
-        const colors = {
+    const designStyle = (NOTE_DESIGNS as any)[note.design] || NOTE_DESIGNS.ribbon_pink;
+    const hidden = !!note.locked && !note.unlocked; // 잠겨 있고 아직 안 열었어요
+
+    // 🔒 PIN 넣고 열기
+    const openWithPin = () =>
+        askPin({
+            title: '잠긴 메모 열기',
+            subtitle: `'${note.title}' 메모의 PIN을 눌러 주세요`,
+            onPin: (pin) => noteContext!.unlockNote(note.id, pin),
+        });
+
+    // 🔒 잠그기 / 🔓 잠금 풀기
+    const toggleLock = () => {
+        if (note.locked) {
+            askPin({
+                title: '잠금 풀기',
+                subtitle: 'PIN을 넣으면 이 메모의 잠금이 풀려요',
+                onPin: (pin) => noteContext!.setNoteLocked(note.id, false, pin),
+            });
+        } else {
+            askPin({
+                title: '메모 잠그기',
+                needPin: false,
+                onPin: () => noteContext!.setNoteLocked(note.id, true),
+                onDone: () => router.back(), // 잠갔으면 목록으로
+            });
+        }
+    };
+    const getCategoryColor = (category: string) => {
+        const colors: Record<string, string> = {
             personal: '#FF9A9E',
             todo: '#A8EDEA',
             work: '#FFECD2',
@@ -172,18 +201,52 @@ export default function NoteDetail() {
                                         backgroundColor: `${designStyle.accentColor}40`,
                                         borderColor: designStyle.borderColor
                                     }]}>
-                                        <Text style={styles.noteContentText}>
-                                            {note.content}
-                                        </Text>
+                                        {hidden ? (
+                                            <View style={styles.lockedPanel}>
+                                                <View style={[styles.lockedIcon, { backgroundColor: designStyle.headerColor }]}>
+                                                    <Ionicons name="lock-closed" size={26} color={dc('#FFFFFF')} />
+                                                </View>
+                                                <Text style={styles.lockedTitle}>잠긴 메모예요</Text>
+                                                <Text style={styles.lockedSub}>PIN 4자리를 넣으면 내용을 볼 수 있어요</Text>
+                                                <TouchableOpacity
+                                                    style={[styles.lockedButton, { backgroundColor: designStyle.headerColor }]}
+                                                    onPress={openWithPin}
+                                                    activeOpacity={0.85}
+                                                >
+                                                    <Ionicons name="keypad-outline" size={16} color={dc('#FFFFFF')} />
+                                                    <Text style={styles.lockedButtonText}>PIN 입력하기</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        ) : (
+                                            <Text style={styles.noteContentText}>
+                                                {note.content}
+                                            </Text>
+                                        )}
                                     </View>
                                 </View>
                             </View>
                         </ScrollView>
                     </Animated.View>
 
-                    <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
+                    <Animated.View style={[styles.buttonContainer, styles.buttonRow, { opacity: fadeAnim }]}>
+                        {/* 잠그기 / 잠금 풀기 */}
                         <TouchableOpacity
-                            style={[styles.confirmButton, { backgroundColor: designStyle.headerColor }]}
+                            style={[styles.lockToggle, { borderColor: designStyle.headerColor }]}
+                            onPress={toggleLock}
+                            activeOpacity={0.8}
+                            accessibilityLabel={note.locked ? '잠금 풀기' : '잠그기'}
+                        >
+                            <Ionicons
+                                name={note.locked ? 'lock-open-outline' : 'lock-closed-outline'}
+                                size={18}
+                                color={designStyle.headerColor}
+                            />
+                            <Text style={[styles.lockToggleText, { color: designStyle.headerColor }]}>
+                                {note.locked ? '잠금 풀기' : '잠그기'}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.confirmButton, { flex: 1, backgroundColor: designStyle.headerColor }]}
                             onPress={() => router.back()}
                             activeOpacity={0.8}
                         >
@@ -192,6 +255,7 @@ export default function NoteDetail() {
                     </Animated.View>
                 </View>
             </View>
+            {pinPad}
         </>
     );
 }
@@ -283,6 +347,37 @@ const styles = StyleSheet.create({
         color: '#34495e',
         lineHeight: 28,
     },
+    buttonRow: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+    lockToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        backgroundColor: '#FFFFFF',
+    },
+    lockToggleText: { fontSize: 15, fontWeight: '800' },
+    lockedPanel: { alignItems: 'center', paddingVertical: 18 },
+    lockedIcon: {
+        width: 58,
+        height: 58,
+        borderRadius: 29,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    lockedTitle: { fontSize: 17, fontWeight: '900', color: '#34495e' },
+    lockedSub: { fontSize: 13, color: '#7f8c8d', marginTop: 4, marginBottom: 16 },
+    lockedButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 18,
+        height: 42,
+        borderRadius: 21,
+    },
+    lockedButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
     buttonContainer: {
         paddingHorizontal: 24,
         paddingVertical: 16,

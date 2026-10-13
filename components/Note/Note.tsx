@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { NoteContext } from '@/components/contexts/NoteContext';
 import { NOTE_DESIGNS } from '@/components/Note/NoteDesigns';
+import { useNotePin } from '@/components/Note/NotePinPad';
 import AppHeader from '@/components/AppHeader';
 import { useRequireLogin } from '@/components/RequireLogin';
 import { useAuth } from '@/components/contexts/AuthProvider';
@@ -23,10 +24,12 @@ import { THEME, dbg, dc, dgrad } from '@/constants/theme';
  *  - 포스트잇을 코르크 보드에 붙여 놓은 것처럼 2줄로 보여줘요.
  *  - 메모마다 살짝 기울어져 있고, 위에 마스킹 테이프가 붙어 있어요.
  *  - 위쪽에서 검색하고, 종류(개인/할일/업무/아이디어)로 골라 볼 수 있어요.
- *  - 메모를 누르면 자세히 보기, 꾹 누르거나 ··· 를 누르면 수정/삭제.
+ *  - 메모를 누르면 자세히 보기, 꾹 누르거나 ··· 를 누르면 수정/잠그기/삭제.
+ *  - 🔒 잠긴 메모는 내용이 가려져 있고, PIN 4자리를 넣어야 열려요.
+ *    목록 화면으로 돌아오면 다시 잠겨요.
  */
 
-type FilterKey = 'all' | 'personal' | 'todo' | 'work' | 'idea' | 'etc';
+type FilterKey = 'all' | 'personal' | 'todo' | 'work' | 'idea' | 'etc' | 'locked';
 
 const FILTERS: { key: FilterKey; label: string; emoji: string }[] = [
     { key: 'all', label: '전체', emoji: '🗂️' },
@@ -35,12 +38,16 @@ const FILTERS: { key: FilterKey; label: string; emoji: string }[] = [
     { key: 'work', label: '업무', emoji: '💼' },
     { key: 'idea', label: '아이디어', emoji: '💡' },
     { key: 'etc', label: '기타', emoji: '📝' },
+    { key: 'locked', label: '잠금', emoji: '🔒' },
 ];
 
 const categoryOf = (c?: string | null): FilterKey =>
     c === 'personal' || c === 'todo' || c === 'work' || c === 'idea' ? c : 'etc';
 
 const labelOf = (c?: string | null) => FILTERS.find((f) => f.key === categoryOf(c))!;
+
+// 잠겨 있고 아직 PIN으로 열지 않은 메모
+const isHidden = (n: any) => !!n.locked && !n.unlocked;
 
 // 메모마다 조금씩 다른 기울기 (id로 정해서 다시 그려도 같은 각도)
 const TILTS = [-2.2, 1.6, -1.1, 2.4, -1.8, 1.0];
@@ -68,16 +75,27 @@ export default function Note() {
 
     const [filter, setFilter] = useState<FilterKey>('all');
     const [query, setQuery] = useState('');
+    const { askPin, pinPad } = useNotePin();
 
     const notes = noteContext?.notes ?? [];
+
+    // 목록으로 돌아오면 열어 두었던 잠긴 메모를 다시 잠가요
+    const relockAll = noteContext?.relockAll;
+    useFocusEffect(
+        useCallback(() => {
+            relockAll?.();
+        }, [relockAll])
+    );
 
     // 최신 순 정렬 + 검색 + 종류 필터
     const visible = useMemo(() => {
         const q = query.trim().toLowerCase();
         return [...notes]
             .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-            .filter((n: any) => filter === 'all' || categoryOf(n.category) === filter)
-            .filter((n: any) => !q || `${n.title} ${n.content}`.toLowerCase().includes(q));
+            .filter((n: any) =>
+                filter === 'all' ? true : filter === 'locked' ? !!n.locked : categoryOf(n.category) === filter
+            )
+            .filter((n: any) => !q || `${n.title} ${isHidden(n) ? '' : n.content}`.toLowerCase().includes(q));
     }, [notes, filter, query]);
 
     // 2줄(왼쪽/오른쪽)로 번갈아 나눠요
@@ -89,26 +107,70 @@ export default function Note() {
     }, [visible]);
 
     const countOf = (key: FilterKey) =>
-        key === 'all' ? notes.length : notes.filter((n: any) => categoryOf(n.category) === key).length;
+        key === 'all'
+            ? notes.length
+            : key === 'locked'
+                ? notes.filter((n: any) => n.locked).length
+                : notes.filter((n: any) => categoryOf(n.category) === key).length;
+    const lockedCount = countOf('locked');
 
     const handleAddNote = () => {
         if (!requireLogin('메모 작성')) return;
         router.push('/AddNote');
     };
 
-    const openNote = (id: string) => router.push({ pathname: '/NoteDetail', params: { noteId: id } });
+    const goDetail = (id: string) => router.push({ pathname: '/NoteDetail', params: { noteId: id } });
+
+    // 잠긴 메모면 PIN을 먼저 물어보고, 맞으면 then() 을 해요
+    const withUnlock = (note: any, title: string, then: () => void) => {
+        if (!isHidden(note)) return then();
+        askPin({
+            title,
+            subtitle: `'${note.title}' 메모의 PIN을 눌러 주세요`,
+            onPin: (pin) => noteContext!.unlockNote(note.id, pin),
+            onDone: then,
+        });
+    };
+
+    const openNote = (note: any) => withUnlock(note, '잠긴 메모 열기', () => goDetail(note.id));
+
+    const lockNote = (note: any) =>
+        askPin({
+            title: '메모 잠그기',
+            needPin: false, // PIN이 이미 있으면 바로 잠가요 (없으면 먼저 만들어요)
+            onPin: () => noteContext!.setNoteLocked(note.id, true),
+            onDone: () => Alert.alert('🔒 잠갔어요', '이제 PIN을 넣어야 이 메모를 볼 수 있어요.'),
+        });
+
+    const unlockForever = (note: any) =>
+        askPin({
+            title: '잠금 풀기',
+            subtitle: 'PIN을 넣으면 이 메모의 잠금이 풀려요',
+            onPin: (pin) => noteContext!.setNoteLocked(note.id, false, pin),
+        });
+
+    const confirmDelete = (note: any) =>
+        Alert.alert('메모 삭제', '정말 이 메모를 삭제할까요?', [
+            { text: '아니요', style: 'cancel' },
+            { text: '삭제', style: 'destructive', onPress: () => noteContext?.deleteNote(note.id) },
+        ]);
 
     const openMenu = (note: any) => {
-        Alert.alert(note.title || '메모', '무엇을 할까요?', [
-            { text: '수정하기', onPress: () => router.push({ pathname: '/AddNote', params: { noteId: note.id } }) },
+        Alert.alert(note.title || '메모', note.locked ? '🔒 잠긴 메모예요' : '무엇을 할까요?', [
+            {
+                text: '수정하기',
+                onPress: () =>
+                    withUnlock(note, '메모 수정', () =>
+                        router.push({ pathname: '/AddNote', params: { noteId: note.id } })
+                    ),
+            },
+            note.locked
+                ? { text: '🔓 잠금 풀기', onPress: () => unlockForever(note) }
+                : { text: '🔒 잠그기', onPress: () => lockNote(note) },
             {
                 text: '삭제하기',
                 style: 'destructive',
-                onPress: () =>
-                    Alert.alert('메모 삭제', '정말 이 메모를 삭제할까요?', [
-                        { text: '아니요', style: 'cancel' },
-                        { text: '삭제', style: 'destructive', onPress: () => noteContext?.deleteNote(note.id) },
-                    ]),
+                onPress: () => withUnlock(note, '메모 삭제', () => confirmDelete(note)),
             },
             { text: '닫기', style: 'cancel' },
         ]);
@@ -118,11 +180,12 @@ export default function Note() {
         const d = (NOTE_DESIGNS as any)[note.design] || NOTE_DESIGNS.ribbon_pink;
         const cat = labelOf(note.category);
         const tilt = tiltOf(note.id);
+        const hidden = isHidden(note);
         return (
             <TouchableOpacity
                 key={note.id}
                 activeOpacity={0.85}
-                onPress={() => openNote(note.id)}
+                onPress={() => openNote(note)}
                 onLongPress={() => openMenu(note)}
                 style={[styles.stickyWrap, { transform: [{ rotate: `${tilt}deg` }] }]}
             >
@@ -138,9 +201,16 @@ export default function Note() {
                     <View style={[styles.fold, { borderTopColor: d.borderColor }]} />
 
                     <View style={styles.stickyTop}>
-                        <Text style={[styles.catChip, { color: d.headerColor }]}>
-                            {cat.emoji} {cat.label}
-                        </Text>
+                        <View style={styles.stickyTopLeft}>
+                            <Text style={[styles.catChip, { color: d.headerColor }]}>
+                                {cat.emoji} {cat.label}
+                            </Text>
+                            {note.locked && (
+                                <View style={[styles.lockBadge, { backgroundColor: d.headerColor }]}>
+                                    <Ionicons name={hidden ? 'lock-closed' : 'lock-open'} size={10} color={dc('#FFFFFF')} />
+                                </View>
+                            )}
+                        </View>
                         <TouchableOpacity
                             onPress={() => openMenu(note)}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -154,10 +224,22 @@ export default function Note() {
                         {note.title}
                     </Text>
 
-                    {/* 줄 노트 느낌의 본문 */}
-                    <Text style={styles.stickyBody} numberOfLines={6}>
-                        {note.content}
-                    </Text>
+                    {/* 줄 노트 느낌의 본문 (잠긴 메모는 가려요) */}
+                    {hidden ? (
+                        <View style={styles.lockedBody}>
+                            <View style={[styles.blurLine, { width: '92%' }]} />
+                            <View style={[styles.blurLine, { width: '74%' }]} />
+                            <View style={[styles.blurLine, { width: '84%' }]} />
+                            <View style={styles.lockedTag}>
+                                <Ionicons name="lock-closed" size={12} color={dc('#5A4E2E')} />
+                                <Text style={styles.lockedTagText}>눌러서 PIN 입력</Text>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text style={styles.stickyBody} numberOfLines={6}>
+                            {note.content}
+                        </Text>
+                    )}
 
                     <Text style={styles.stickyDate}>{formatDate(note.createdAt)}</Text>
                 </View>
@@ -186,6 +268,12 @@ export default function Note() {
                         <Text style={styles.heroSub}>
                             {notes.length > 0 ? `포스트잇 ${notes.length}장이 붙어 있어요` : '떠오른 생각을 붙여 두세요'}
                         </Text>
+                        {lockedCount > 0 && (
+                            <View style={styles.heroLock}>
+                                <Ionicons name="lock-closed" size={11} color={THEME.primaryDark} />
+                                <Text style={styles.heroLockText}>잠긴 메모 {lockedCount}장</Text>
+                            </View>
+                        )}
                     </View>
                     <View style={styles.heroBadge}>
                         <Text style={styles.heroBadgeNum}>{notes.length}</Text>
@@ -224,11 +312,15 @@ export default function Note() {
                             <TouchableOpacity
                                 key={f.key}
                                 onPress={() => setFilter(f.key)}
+                                activeOpacity={0.8}
                                 style={[styles.filterChip, active && styles.filterChipActive]}
                             >
-                                <Text style={[styles.filterText, active && styles.filterTextActive]}>
-                                    {f.emoji} {f.label} {count}
-                                </Text>
+                                <Text style={styles.filterEmoji}>{f.emoji}</Text>
+                                <Text style={[styles.filterText, active && styles.filterTextActive]}>{f.label}</Text>
+                                {/* 숫자 배지 */}
+                                <View style={[styles.countBadge, active && styles.countBadgeActive]}>
+                                    <Text style={[styles.countText, active && styles.countTextActive]}>{count}</Text>
+                                </View>
                             </TouchableOpacity>
                         );
                     })}
@@ -272,6 +364,9 @@ export default function Note() {
                     <Text style={styles.fabText}>메모 붙이기</Text>
                 </LinearGradient>
             </TouchableOpacity>
+
+            {/* PIN 입력 창 */}
+            {pinPad}
         </View>
     );
 }
@@ -289,6 +384,18 @@ const styles = StyleSheet.create({
     },
     heroHello: { fontSize: 18, fontWeight: '800', color: THEME.text },
     heroSub: { fontSize: 13, color: THEME.subText, marginTop: 4 },
+    heroLock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        alignSelf: 'flex-start',
+        marginTop: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+    },
+    heroLockText: { fontSize: 11, fontWeight: '800', color: THEME.primaryDark },
     heroBadge: {
         width: 64,
         height: 64,
@@ -297,7 +404,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         transform: [{ rotate: '4deg' }],
-        shadowColor: '#6B5A2A',
+        // shadowColor: '#6B5A2A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.12,
         shadowRadius: 8,
@@ -321,28 +428,50 @@ const styles = StyleSheet.create({
 
     filters: { gap: 8, paddingVertical: 12 },
     filterChip: {
-        paddingHorizontal: 14,
-        height: 34,
-        borderRadius: 17,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingLeft: 12,
+        paddingRight: 5,
+        height: 36,
+        borderRadius: 18,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
         borderColor: THEME.line,
-        justifyContent: 'center',
     },
-    filterChipActive: { backgroundColor: THEME.primary, borderColor: THEME.primary },
+    filterChipActive: {
+        backgroundColor: THEME.primary,
+        borderColor: THEME.primary,
+        shadowColor: THEME.primaryDark,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    filterEmoji: { fontSize: 13 },
     filterText: { fontSize: 13, fontWeight: '700', color: THEME.subText },
-    filterTextActive: { color: '#FFFFFF' },
+    filterTextActive: { color: '#FFFFFF', fontWeight: '800' },
+    // 숫자 배지: 동그란 알약 모양
+    countBadge: {
+        minWidth: 24,
+        height: 24,
+        borderRadius: 12,
+        paddingHorizontal: 7,
+        backgroundColor: THEME.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 2,
+    },
+    countBadgeActive: { backgroundColor: THEME.accent },
+    countText: { fontSize: 12, fontWeight: '900', color: THEME.primaryDark },
+    countTextActive: { color: '#3B3000' },
 
     // 코르크 보드
     board: {
         flexDirection: 'row',
         gap: 12,
-        backgroundColor: '#E9DCC3',
-        borderRadius: 22,
-        padding: 12,
+        paddingHorizontal: 4,
         paddingTop: 20,
-        borderWidth: 6,
-        borderColor: '#C9A97A',
     },
     column: { flex: 1 },
 
@@ -387,7 +516,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 6,
     },
+    stickyTopLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     catChip: { fontSize: 11, fontWeight: '800' },
+    lockBadge: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+    lockedBody: { gap: 7, paddingTop: 4 },
+    blurLine: { height: 9, borderRadius: 5, backgroundColor: 'rgba(90, 78, 46, 0.14)' },
+    lockedTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        alignSelf: 'flex-start',
+        marginTop: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.65)',
+    },
+    lockedTagText: { fontSize: 11, fontWeight: '800', color: '#5A4E2E' },
     stickyTitle: { fontSize: 16, fontWeight: '900', marginBottom: 6, lineHeight: 21, color: '#2E3326' },
     stickyBody: { fontSize: 13, color: '#4A4A3F', lineHeight: 20 },
     stickyDate: { fontSize: 11, color: '#8A8670', marginTop: 10, fontWeight: '600' },
