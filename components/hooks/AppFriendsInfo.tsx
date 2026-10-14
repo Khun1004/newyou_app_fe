@@ -1,13 +1,16 @@
 // app/AppFriendsInfo.tsx
-import React, { useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import {
-    View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, ScrollView, Alert,
+    View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, ScrollView, Alert, Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext';
 import { AppFriend } from '@/components/hooks/AppFriend';
 import AppHeader from '@/components/AppHeader';
+import { useStatusFeed, relationOf } from '@/components/Status/statusApi';
+import { ChatContext } from '@/components/contexts/ChatContext';
+import { toImageUrl } from '@/config';
 
 import { dbg, dc } from '@/constants/theme';
 // 메인 컬러 정의 (일관성을 위해 사용)
@@ -34,7 +37,7 @@ const AnimalAvatar = ({ animal, size = 80 }: { animal: string; size?: number }) 
 };
 
 // 정보 항목 컴포넌트 (디자인 개선을 위해 분리)
-const InfoItem = ({ icon, text, onPress, isLast = false }: { icon: keyof typeof Ionicons.glyphMap, text: string, onPress?: () => void, isLast?: boolean }) => (
+const InfoItem = ({ icon, text, sub, onPress, isLast = false }: { icon: keyof typeof Ionicons.glyphMap, text: string, sub?: string, onPress?: () => void, isLast?: boolean }) => (
     <TouchableOpacity
         style={[styles.infoItem, !isLast && styles.infoItemBorder]}
         onPress={onPress}
@@ -44,7 +47,10 @@ const InfoItem = ({ icon, text, onPress, isLast = false }: { icon: keyof typeof 
             <View style={styles.iconCircle}>
                 <Ionicons name={icon} size={20} color={PRIMARY_COLOR} />
             </View>
-            <Text style={styles.infoText}>{text}</Text>
+            <View>
+                <Text style={styles.infoText}>{text}</Text>
+                {sub ? <Text style={styles.infoSub}>{sub}</Text> : null}
+            </View>
         </View>
         <Ionicons name="chevron-forward" size={20} color={dc('#aaa')} />
     </TouchableOpacity>
@@ -55,6 +61,8 @@ export default function AppFriendsInfo() {
     const router = useRouter();
     const { friendId } = useLocalSearchParams<{ friendId: string }>();
     const { friends, isLoading, error } = useAppFriendsContext();
+    const { people } = useStatusFeed();
+    const chatCtx = useContext(ChatContext);
 
     const friend = useMemo<AppFriend | null>(() => {
         if (!friendId || isLoading) return null;
@@ -88,7 +96,47 @@ export default function AppFriendsInfo() {
         );
     }
 
-    const { nickname, phoneNumber, profileImage, isAppUser } = friend;
+    const { nickname, phoneNumber, profileImage } = friend;
+
+    // 💞 이 친구와 연결 상태 (기념일 화면의 '연결 관리'에서 아이디로 연결해요)
+    const person = people.find((p) => p.friendId === friend.id);
+    const rel = relationOf(person?.relation);
+    const mutual = !!person?.linked && !!person?.canSeeStatus;
+    const linkText = !person?.linked
+        ? '연결 전'
+        : mutual
+            ? `서로 연결 · @${person.linkedLoginId}`
+            : `@${person.linkedLoginId} · 친구의 연결을 기다리는 중`;
+
+    // 우리 둘의 공간 열기 (탭: anniv 기념일 / time 시간표 / gift 선물 / reel 릴스)
+    const openSpace = (tab: 'anniv' | 'time' | 'gift' | 'reel') =>
+        router.push({
+            pathname: '/FriendSpace',
+            params: {
+                userId: person?.userId ? String(person.userId) : '',
+                name: nickname,
+                photo: friend.photo ?? '',
+                relation: person?.relation ?? '',
+                birthday: friend.birthdayText ?? '',
+                tab,
+            },
+        });
+
+    // 💬 메시지: 채팅 목록에 있는 이 친구 방을 열어요
+    const openChat = () => {
+        const chat = chatCtx?.chatData.find((c) => c.id === `f-${friend.id}`) ?? {
+            id: `f-${friend.id}`,
+            name: nickname,
+            lastMessage: '',
+            timestamp: '',
+            unreadCount: 0,
+            avatar: friend.photo ?? '',
+            colors: friend.colors,
+        };
+        router.push({ pathname: '/ChattingRoom', params: { chatData: JSON.stringify(chat) } });
+    };
+
+    const needLink = '아이디로 연결하면 볼 수 있어요';
 
     return (
         <View style={styles.container}>
@@ -101,14 +149,26 @@ export default function AppFriendsInfo() {
                     <View style={styles.profileContentRow}>
 
                         {/* 왼쪽: 아바타 */}
-                        <AnimalAvatar animal={profileImage} size={100} />
+                        {friend.photo ? (
+                            <Image source={{ uri: toImageUrl(friend.photo) }} style={{ width: 100, height: 100, borderRadius: 50 }} />
+                        ) : (
+                            <AnimalAvatar animal={profileImage} size={100} />
+                        )}
 
                         {/* 오른쪽: 닉네임, 전화번호, 상태 */}
                         <View style={styles.profileInfoRight}>
                             <Text style={styles.nicknameText}>{nickname}</Text>
                             <Text style={styles.phoneText}>{friend.birthdayText || phoneNumber || '생일 정보 없음'}</Text>
-                            <View style={styles.statusBadge}>
-                                <Text style={styles.statusText}>{isAppUser ? '앱 사용자' : '내 생일 친구'}</Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                <View style={styles.statusBadge}>
+                                    <Text style={styles.statusText}>{rel ? `${rel.emoji} ${rel.label}` : '내 생일 친구'}</Text>
+                                </View>
+                                <View style={[styles.statusBadge, mutual ? styles.linkBadgeOk : styles.linkBadge]}>
+                                    <Text style={[styles.statusText, { color: mutual ? '#2F8F5B' : '#888' }]} numberOfLines={1}>
+                                        {mutual ? '✓ ' : '🔗 '}
+                                        {linkText}
+                                    </Text>
+                                </View>
                             </View>
                         </View>
                     </View>
@@ -118,10 +178,34 @@ export default function AppFriendsInfo() {
                 <View style={styles.infoCard}>
                     <Text style={styles.sectionTitle}>친구와 함께하는 기능</Text>
 
-                    <InfoItem icon="calendar-outline" text="서로의 기념일" isLast={false} onPress={() => {/* Action */}} />
-                    <InfoItem icon="time-outline" text="시간표" isLast={false} onPress={() => {/* Action */}} />
-                    <InfoItem icon="gift-outline" text="선물 교환" isLast={false} onPress={() => {/* Action */}} />
-                    <InfoItem icon="videocam-outline" text="Reel" isLast={true} onPress={() => {/* Action */}} />
+                    <InfoItem
+                        icon="calendar-outline"
+                        text="서로의 기념일"
+                        sub={friend.birthdayText ? `생일 ${friend.birthdayText.replace('🎂 ', '')} · 친구의 특별한 날` : '친구의 특별한 날'}
+                        onPress={() => openSpace('anniv')}
+                    />
+                    <InfoItem
+                        icon="time-outline"
+                        text="시간표"
+                        sub={person?.canSeeStatus ? '친구 시간표 + 같이 비는 시간' : needLink}
+                        onPress={() => openSpace('time')}
+                    />
+                    <InfoItem
+                        icon="gift-outline"
+                        text="선물 교환"
+                        sub={mutual ? '선물 보내기 · 받은 선물 열어보기' : '서로 연결하면 주고받을 수 있어요'}
+                        onPress={() => openSpace('gift')}
+                    />
+                    <InfoItem
+                        icon="videocam-outline"
+                        text="Reel"
+                        sub={person?.canSeeStatus ? `${nickname}님이 올린 릴스 보기` : needLink}
+                        isLast={true}
+                        onPress={() =>
+                            // 🎬 친구 릴스를 바로 넘겨 보며 봐요
+                            router.push({ pathname: '/FriendReels', params: { userId: person?.userId ? String(person.userId) : '', name: nickname, photo: friend.photo ?? '' } })
+                        }
+                    />
                 </View>
 
                 {/* 3. 액션 버튼 섹션: 카드 스타일 및 한 줄 배치 유지 */}
@@ -129,7 +213,7 @@ export default function AppFriendsInfo() {
                     <Text style={styles.sectionTitle}>액션</Text>
                     <View style={styles.actionButtonRow}>
 
-                        <TouchableOpacity style={styles.primaryActionButton}>
+                        <TouchableOpacity style={styles.primaryActionButton} onPress={openChat}>
                             <Ionicons name="chatbox-ellipses-outline" size={20} color={dc('#FFFFFF')} />
                             <Text style={styles.primaryActionButtonText}>메시지 보내기</Text>
                         </TouchableOpacity>
@@ -284,6 +368,13 @@ const styles = StyleSheet.create({
         color: '#333',
         fontWeight: '500'
     },
+    infoSub: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 2,
+    },
+    linkBadge: { backgroundColor: '#f1f1f1', maxWidth: 200 },
+    linkBadgeOk: { backgroundColor: '#e3f5ea', maxWidth: 200 },
 
     // 3. 액션 버튼 섹션 (Card 스타일 & 한 줄)
     actionCard: {

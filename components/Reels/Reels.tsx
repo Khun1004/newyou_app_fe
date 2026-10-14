@@ -27,10 +27,24 @@ const ResizeMode = {
 
 const { width } = Dimensions.get('window');
 
+// 🎬 영상 한 칸 — 칸마다 따로 플레이어를 만들어요
+//    (목록 길이가 바뀌어도 '훅 개수가 달라졌어요' 오류가 나지 않게 컴포넌트로 나눴어요)
+function ReelVideo({ url, active, register }: { url: string; active: boolean; register: (p: any) => void }) {
+    const player = useVideoPlayer(url, (p) => {
+        p.loop = true;
+    });
+    useEffect(() => {
+        register(player);
+        if (active) player.play();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [player]);
+    return <VideoView style={styles.video} player={player} contentFit={ResizeMode.COVER as any} nativeControls={false} />;
+}
+
 // topInset: 위쪽에 겹쳐 있는 헤더 높이 (그만큼 아래에 배지를 둬요)
 const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelId?: any; onScrollFinished?: any; topInset?: number }) => {
     // ReelContext에서 데이터 및 액션 함수를 가져옵니다.
-    const { allReels, toggleLike, toggleSave } = useReels();
+    const { allReels, toggleLike, toggleSave, loading } = useReels();
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [containerHeight, setContainerHeight] = useState(Dimensions.get('window').height);
@@ -175,8 +189,20 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
     if (allReels.length === 0) {
         return (
             <View style={[styles.container, styles.center]}>
-                <ActivityIndicator size="large" color={dc('#fff')} />
-                <Text style={styles.loadingText}>릴스를 로드하는 중...</Text>
+                {loading ? (
+                    <>
+                        <ActivityIndicator size="large" color={dc('#fff')} />
+                        <Text style={styles.loadingText}>릴스를 불러오는 중...</Text>
+                    </>
+                ) : (
+                    <>
+                        <Text style={{ fontSize: 48 }}>🎬</Text>
+                        <Text style={[styles.loadingText, { fontSize: 16, fontWeight: '800', marginTop: 10 }]}>아직 볼 릴스가 없어요</Text>
+                        <Text style={[styles.loadingText, { textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 }]}>
+                            '내 릴스'에서 첫 릴스를 올리거나{'\n'}친구와 아이디로 연결하면 친구 릴스가 여기에 나와요
+                        </Text>
+                    </>
+                )}
             </View>
         );
     }
@@ -205,13 +231,6 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                         // 이 패턴은 expo-video의 공식 예제에서 흔히 사용됩니다.
                         // 이 컴포넌트는 단일 페이지네이션 스크롤뷰이므로 인덱스가 변경될 때마다
                         // 새로운 훅 호출이 발생하는 것은 자연스럽습니다.
-                        const player = useVideoPlayer(short.videoUrl, (player) => {
-                            player.loop = true; // 비디오 반복 재생 설정
-                        });
-
-                        // useRef에 플레이어 인스턴스 저장
-                        playerRefs.current[short.id] = player;
-
                         const isActive = index === currentIndex;
 
                         return (
@@ -223,11 +242,12 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
                                 ]}
                             >
                                 {/* 비디오 뷰 컴포넌트 */}
-                                <VideoView
-                                    style={styles.video}
-                                    player={player}
-                                    contentFit={ResizeMode.COVER}
-                                    nativeControls={false}
+                                <ReelVideo
+                                    url={short.videoUrl}
+                                    active={index === currentIndex}
+                                    register={(p) => {
+                                        (playerRefs.current as any)[short.id] = p;
+                                    }}
                                 />
 
                                 {/* 위·아래 어둡게 (글자가 잘 보이게) */}
@@ -313,7 +333,9 @@ const Reels = ({ initialReelId, onScrollFinished, topInset = 0 }: { initialReelI
 
                                 {/* 아래 왼쪽: 만든 사람 · 제목 · 소리 */}
                                 <View style={styles.bottomInfo} pointerEvents="none">
-                                    <Text style={styles.creatorName}>@{short.creatorId || 'user'}</Text>
+                                    <Text style={styles.creatorName}>
+                                        {short.mine ? '내 릴스' : `@${short.creatorId || 'user'}`}
+                                    </Text>
                                     <Text style={styles.title} numberOfLines={2}>
                                         {short.title}
                                     </Text>

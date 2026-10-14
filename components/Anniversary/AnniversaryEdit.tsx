@@ -1,8 +1,8 @@
 // app/AnniversaryEdit.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView,
-    Alert, Platform, TextInput, ActivityIndicator
+    Alert, Platform, TextInput, ActivityIndicator, Image
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,6 +11,8 @@ import { useAnniversary } from '@/components/contexts/AnniversaryContext'; // �
 import { useAppFriendsContext } from '@/components/contexts/UseAppFriendsContext'; // 실제 Context 사용
 import { AppFriend } from '@/components/hooks/AppFriend'; // AppFriend 타입을 직접 import
 import AppHeader from '@/components/AppHeader';
+import MemberPicker, { MAX_MEMBERS } from '@/components/Anniversary/MemberPicker';
+import { toImageUrl } from '@/config';
 
 import { dc, isDark, dbg } from '@/constants/theme';
 // AnniversaryContext.tsx에 정의된 타입을 재사용
@@ -25,6 +27,7 @@ interface Anniversary {
     backgroundImageUri?: string;
     celebrationMessage?: string;
     partnerFriendId?: string | null;
+    memberFriendIds?: string[]; // 👨‍👩‍👧 함께하는 사람들 (3명까지)
 }
 
 
@@ -89,6 +92,15 @@ export default function AnniversaryEdit() {
 
     const [selectedFriend, setSelectedFriend] = useState<AppFriend | null>(null);
 
+    // 👨‍👩‍👧 함께하는 사람들 (파트너 말고 3명까지)
+    const [memberIds, setMemberIds] = useState<string[]>([]);
+    const [memberOpen, setMemberOpen] = useState(false);
+    const membersLoaded = useRef(false);
+    const members = memberIds
+        .filter((mid) => mid !== selectedFriend?.id)
+        .map((mid) => friends.find((f) => f.id === mid))
+        .filter((f): f is AppFriend => !!f);
+
     // 1. 기존 기념일 정보 로드 (수정 모드)
     useEffect(() => {
         if (existing) {
@@ -97,6 +109,11 @@ export default function AnniversaryEdit() {
             setRelationshipType(existing.relationshipType);
             setMessage(existing.celebrationMessage || '');
             setIsDefault(existing.isDefault);
+            // 함께하는 사람은 처음 한 번만 불러와요 (고르는 중에 다시 덮어쓰지 않게)
+            if (!membersLoaded.current) {
+                setMemberIds(existing.memberFriendIds ?? []);
+                membersLoaded.current = true;
+            }
 
             // 기존 기념일에 연결된 친구 정보가 있다면 로드
             const existingFriendId = existing.partnerFriendId;
@@ -149,7 +166,9 @@ export default function AnniversaryEdit() {
             startDate: startDate.toISOString().split('T')[0],
             relationshipType,
             celebrationMessage: message.trim(),
-            partnerFriendId: selectedFriend?.id || null
+            partnerFriendId: selectedFriend?.id || null,
+            // 파트너와 같은 사람은 빼고 저장해요
+            memberFriendIds: memberIds.filter((mid) => mid !== selectedFriend?.id).slice(0, MAX_MEMBERS),
         };
 
         try {
@@ -254,6 +273,46 @@ export default function AnniversaryEdit() {
                     )}
                 </View>
 
+                {/* 1-1. 👨‍👩‍👧 함께하는 사람들 */}
+                <View style={styles.section}>
+                    <View style={styles.rowBetween}>
+                        <Text style={[styles.label, { marginBottom: 0 }]}>함께하는 사람들</Text>
+                        <Text style={styles.memberCount}>
+                            {members.length}/{MAX_MEMBERS}
+                        </Text>
+                    </View>
+                    <Text style={[styles.helpText, { marginBottom: 12 }]}>
+                        파트너 말고 가족·친구를 {MAX_MEMBERS}명까지 더 연결할 수 있어요. 메인 화면에 함께 보여요.
+                    </Text>
+                    <View style={styles.memberWrap}>
+                        {members.map((m) => (
+                            <View key={m.id} style={styles.memberChip}>
+                                {m.photo ? (
+                                    <Image source={{ uri: toImageUrl(m.photo) }} style={styles.memberAvatar} />
+                                ) : (
+                                    <AnimalAvatar animal={m.profileImage} size={30} />
+                                )}
+                                <Text style={styles.memberName} numberOfLines={1}>
+                                    {m.nickname}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setMemberIds((prev) => prev.filter((x) => x !== m.id))}
+                                    hitSlop={8}
+                                    accessibilityLabel={`${m.nickname} 빼기`}
+                                >
+                                    <Ionicons name="close-circle" size={20} color={dc('#B0B0B0')} />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                        {members.length < MAX_MEMBERS && (
+                            <TouchableOpacity style={styles.memberAdd} onPress={() => setMemberOpen(true)} disabled={isFriendsLoading}>
+                                <Ionicons name="add" size={20} color={dc('#6C63FF')} />
+                                <Text style={styles.memberAddText}>{members.length === 0 ? '함께할 사람 추가' : '더 추가'}</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+
                 {/* 2. 관계 타입 선택 섹션 */}
                 <View style={styles.section}>
                     <Text style={styles.label}>관계 타입</Text>
@@ -333,6 +392,18 @@ export default function AnniversaryEdit() {
                     </View>
                 )}
             </ScrollView>
+
+            <MemberPicker
+                visible={memberOpen}
+                friends={friends}
+                excludeId={selectedFriend?.id}
+                selected={members.map((m) => m.id)}
+                onClose={() => setMemberOpen(false)}
+                onSave={(ids) => {
+                    setMemberIds(ids);
+                    setMemberOpen(false);
+                }}
+            />
         </View>
     );
 }
@@ -349,6 +420,24 @@ const styles = StyleSheet.create({
     section: { marginBottom: 25 },
     label: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 12 },
     helpText: { fontSize: 12, color: '#999', marginTop: 4 },
+    memberCount: {
+        fontSize: 12, fontWeight: '800', color: '#6C63FF',
+        backgroundColor: '#F0EEFF', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 10, overflow: 'hidden',
+    },
+    memberWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    memberChip: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        paddingLeft: 4, paddingRight: 8, height: 40, borderRadius: 20,
+        backgroundColor: '#F7F6FF', borderWidth: 1, borderColor: '#E3E0FF', maxWidth: '100%',
+    },
+    memberAvatar: { width: 30, height: 30, borderRadius: 15 },
+    memberName: { fontSize: 14, fontWeight: '700', color: '#333', maxWidth: 110 },
+    memberAdd: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        paddingHorizontal: 14, height: 40, borderRadius: 20,
+        borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#6C63FF',
+    },
+    memberAddText: { fontSize: 14, fontWeight: '700', color: '#6C63FF' },
     input: {
         borderWidth: 1, borderColor: '#ddd', borderRadius: 12, padding: 15,
         fontSize: 16, color: '#333',

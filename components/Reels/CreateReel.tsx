@@ -12,6 +12,8 @@ import {
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker'; // 갤러리 접근 라이브러리 import
+import { uploadReel } from '@/components/FriendSpace/spaceApi';
+import { toImageUrl } from '@/config';
 import { useReels } from '@/components/contexts/ReelContext';
 import AppHeader from '@/components/AppHeader';
 
@@ -19,7 +21,7 @@ import { dc } from '@/constants/theme';
 const CreateReel = () => {
     const { addReel } = useReels();
     const [title, setTitle] = useState('');
-    const [videoUri, setVideoUri] = useState(null);
+    const [videoUri, setVideoUri] = useState<string | null>(null);
     const [thumbnail, setThumbnail] = useState(''); // 썸네일을 빈 문자열로 시작
     const [isUploading, setIsUploading] = useState(false);
 
@@ -35,6 +37,8 @@ const CreateReel = () => {
             mediaTypes: ImagePicker.MediaTypeOptions.Videos,
             allowsEditing: true,
             quality: 1,
+            videoMaxDuration: 60, // 친구에게 보내기 좋게 1분까지
+            videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
         });
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -67,12 +71,16 @@ const CreateReel = () => {
         };
 
         try {
-            // 실제 업로드 시뮬레이션
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // 🎬 서버에 올려요 → 연결된 친구가 '우리 둘의 공간'에서 볼 수 있어요
+            const res = await uploadReel(videoUri, newReel.title);
+            if (!res.ok) {
+                Alert.alert("업로드 실패", res.message || "릴을 올리지 못했어요.");
+                return;
+            }
 
-            // ⭐️ ReelContext에 새 릴 추가
-            addReel(newReel);
-            Alert.alert("성공", `${newReel.title} 릴이 등록되었습니다!`);
+            // ⭐️ ReelContext에도 추가 (서버 주소로)
+            addReel({ ...newReel, videoUrl: res.reel?.videoUrl ? toImageUrl(res.reel.videoUrl) : videoUri });
+            Alert.alert("성공", `${newReel.title} 릴이 등록되었어요!\n연결된 친구들도 볼 수 있어요.`);
 
             // 화면 이동 (MyReels로 돌아감)
             if (router.canGoBack()) {

@@ -39,12 +39,13 @@ const YourReel = () => {
     // Context에서 필요한 데이터와 함수 가져오기
     const {
         allReels,
+        myReels,
         deleteReel,
         toggleHideReel
     } = useReels();
 
-    // ID를 기반으로 현재 릴 데이터 찾기
-    const currentReel = allReels.find(r => String(r.id) === String(reelId));
+    // ID를 기반으로 현재 릴 데이터 찾기 (숨긴 내 릴스도 찾을 수 있게 내 릴스까지 봐요)
+    const currentReel = [...allReels, ...myReels].find(r => String(r.id) === String(reelId));
 
     // ----------------------------------------------------
     // 비디오 플레이어 설정
@@ -93,7 +94,7 @@ const YourReel = () => {
     // ----------------------------------------------------
     const handleDelete = () => {
         // 'posts', 'hidden' 탭에서 온 내 릴만 삭제 가능 (MOCK_USER_ID 가정)
-        if (!currentReel || (tab !== 'posts' && tab !== 'hidden') || currentReel.creatorId !== 'user123') return;
+        if (!currentReel || (tab !== 'posts' && tab !== 'hidden') || !currentReel.mine) return;
 
         Alert.alert(
             "릴 삭제",
@@ -118,7 +119,7 @@ const YourReel = () => {
     // ----------------------------------------------------
     const handleToggleHide = () => {
         // 'posts', 'hidden' 탭에서 온 내 릴만 숨김/숨김 해제 가능 (MOCK_USER_ID 가정)
-        if (!currentReel || (tab !== 'posts' && tab !== 'hidden') || currentReel.creatorId !== 'user123') return;
+        if (!currentReel || (tab !== 'posts' && tab !== 'hidden') || !currentReel.mine) return;
 
         const action = currentReel.isHidden ? '해제' : '숨김';
         const message = currentReel.isHidden

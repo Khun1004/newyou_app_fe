@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons as Icon } from '@expo/vector-icons';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import { VideoFrame } from '@/components/FriendSpace/ReelViews';
 import { useReels } from '@/components/contexts/ReelContext';
 import { router } from 'expo-router'; // expo-router를 사용하여 라우팅
 import { THEME, dc } from '@/constants/theme';
@@ -87,11 +88,12 @@ const MyReels = () => {
 
         return (
             <TouchableOpacity style={styles.gridItem} onPress={handlePress}>
-                <Image
-                    source={{ uri: reel.thumbnail }}
-                    style={styles.gridImage}
-                    resizeMode="cover"
-                />
+                {reel.thumbnail ? (
+                    <Image source={{ uri: reel.thumbnail }} style={styles.gridImage} resizeMode="cover" />
+                ) : (
+                    // 서버에 올린 릴스는 사진 썸네일이 없어서 영상 첫 장면을 보여줘요
+                    <VideoFrame uri={reel.videoUrl} style={styles.gridImage} />
+                )}
                 <View style={styles.reelOverlay}>
                     <Icon name={reelIcon} size={20} color={dc('#fff')} />
                     <Text style={styles.reelStatsText}>{reelStats}</Text>

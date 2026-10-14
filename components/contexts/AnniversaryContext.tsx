@@ -17,6 +17,10 @@ interface AnniversarySettings {
     relationshipType?: RelationshipType;
     // 🎉 추가: 기본 기념일에 연결된 친구 ID를 저장하여 메인 화면에서 아바타를 표시
     partnerFriendId?: string | null;
+    // 👨‍👩‍👧 함께하는 사람들 (파트너 말고 5명까지 더 연결)
+    memberFriendIds?: string[];
+    // 💝 연결된 친구에게 내 기념일 보여주기 (기본: 켜짐)
+    shareWithFriends?: boolean;
 }
 
 interface Anniversary {
@@ -31,6 +35,8 @@ interface Anniversary {
     celebrationMessage?: string;
     // 🎉 추가: 친구 연결 ID
     partnerFriendId?: string | null;
+    // 👨‍👩‍👧 함께하는 사람들 (5명까지)
+    memberFriendIds?: string[];
 }
 
 interface AnniversaryContextType {
@@ -50,6 +56,8 @@ interface AnniversaryContextType {
     deleteAnniversary: (id: string) => Promise<void>;
     setDefaultAnniversary: (id: string) => Promise<void>;
     loadAnniversaries: () => Promise<void>;
+    // 👨‍👩‍👧 기본 기념일에 함께하는 사람들 정하기 (5명까지)
+    setMemberFriendIds: (ids: string[]) => Promise<void>;
 }
 
 const defaultSettings: AnniversarySettings = {
@@ -126,6 +134,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
                 startDate: newAnniversary.startDate,
                 relationshipType: newAnniversary.relationshipType,
                 partnerFriendId: newAnniversary.partnerFriendId, // 🎉 추가: 친구 ID
+                memberFriendIds: newAnniversary.memberFriendIds ?? [],
                 // 배경 및 메시지는 AnniversaryEditBackground에서 설정하므로 기본값 사용
                 backgroundColors: defaultSettings.backgroundColors,
                 celebrationMessage: defaultSettings.celebrationMessage,
@@ -171,6 +180,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
                 startDate: updatedAnniv.startDate,
                 relationshipType: updatedAnniv.relationshipType,
                 partnerFriendId: updatedAnniv.partnerFriendId,
+                memberFriendIds: updatedAnniv.memberFriendIds ?? [],
                 backgroundColors: updatedAnniv.backgroundColors ?? defaultSettings.backgroundColors,
                 backgroundImageUri: updatedAnniv.backgroundImageUri,
                 celebrationMessage: updatedAnniv.celebrationMessage ?? defaultSettings.celebrationMessage,
@@ -240,6 +250,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
                 startDate: defaultOne.startDate,
                 relationshipType: defaultOne.relationshipType,
                 partnerFriendId: defaultOne.partnerFriendId,
+                memberFriendIds: defaultOne.memberFriendIds ?? [],
                 backgroundColors: defaultOne.backgroundColors ?? defaultSettings.backgroundColors,
                 backgroundImageUri: defaultOne.backgroundImageUri,
                 celebrationMessage: defaultOne.celebrationMessage ?? defaultSettings.celebrationMessage,
@@ -278,6 +289,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
                 startDate: defaultOne.startDate,
                 relationshipType: defaultOne.relationshipType,
                 partnerFriendId: defaultOne.partnerFriendId, // 🎉 추가: 친구 ID
+                memberFriendIds: defaultOne.memberFriendIds ?? [],
                 backgroundColors: defaultOne.backgroundColors ?? defaultSettings.backgroundColors,
                 backgroundImageUri: defaultOne.backgroundImageUri,
                 celebrationMessage: defaultOne.celebrationMessage ?? defaultSettings.celebrationMessage,
@@ -301,6 +313,21 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
         loadAnniversaries();
     }, [owner]);
 
+    // 👨‍👩‍👧 함께하는 사람들 저장 (화면 설정 + 기본 기념일 둘 다)
+    const setMemberFriendIds = async (ids: string[]) => {
+        const clean = Array.from(new Set(ids)).slice(0, 5);
+        await updateSettings({ memberFriendIds: clean });
+        try {
+            const saved = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
+            const list: Anniversary[] = saved ? JSON.parse(saved) : anniversaries;
+            const next = list.map((a) => (a.isDefault ? { ...a, memberFriendIds: clean } : a));
+            setAnniversaries(next);
+            await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(next));
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
         <AnniversaryContext.Provider value={{
             settings,
@@ -314,6 +341,7 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
             deleteAnniversary,
             setDefaultAnniversary,
             loadAnniversaries,
+            setMemberFriendIds,
         }}>
             {children}
         </AnniversaryContext.Provider>

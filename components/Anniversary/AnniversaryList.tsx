@@ -21,6 +21,7 @@ import { AppFriend } from '@/components/hooks/AppFriend';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
+import MyFriendsSection from '@/components/FriendSpace/MyFriendsSection';
 
 import { dc, isDark, dbg } from '@/constants/theme';
 const { height: screenHeight } = Dimensions.get('window');
@@ -348,6 +349,9 @@ export default function AnniversaryList() {
             {/* 스크롤 가능한 콘텐츠 영역 */}
             <ScrollView style={styles.scrollView}>
                 <View style={styles.scrollContent}>
+                    {/* 💞 내 친구들 → 우리 둘의 공간 */}
+                    <MyFriendsSection />
+
                     {sortedAnniversaries.length === 0 ? (
                         <View style={styles.emptyContainer}>
                             <Ionicons name="calendar-outline" size={80} color={dc('#ccc')} />
