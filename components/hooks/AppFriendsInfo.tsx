@@ -12,9 +12,10 @@ import { useStatusFeed, relationOf } from '@/components/Status/statusApi';
 import { ChatContext } from '@/components/contexts/ChatContext';
 import { toImageUrl } from '@/config';
 
-import { dbg, dc } from '@/constants/theme';
+import { dbg, dc, THEME } from '@/constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 // 메인 컬러 정의 (일관성을 위해 사용)
-const PRIMARY_COLOR = '#6C63FF';
+const PRIMARY_COLOR = THEME.primary; // 앱 초록 (예전 보라색 → 프로젝트 색으로)
 const DANGER_COLOR = '#ff4444';
 
 // 귀여운 동물 이모지 프로필 아바타 컴포넌트
@@ -213,9 +214,16 @@ export default function AppFriendsInfo() {
                     <Text style={styles.sectionTitle}>액션</Text>
                     <View style={styles.actionButtonRow}>
 
-                        <TouchableOpacity style={styles.primaryActionButton} onPress={openChat}>
-                            <Ionicons name="chatbox-ellipses-outline" size={20} color={dc('#FFFFFF')} />
-                            <Text style={styles.primaryActionButtonText}>메시지 보내기</Text>
+                        <TouchableOpacity style={styles.primaryActionWrap} onPress={openChat} activeOpacity={0.85}>
+                            <LinearGradient
+                                colors={THEME.buttonGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.primaryActionButton}
+                            >
+                                <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" />
+                                <Text style={[styles.primaryActionButtonText, { color: '#FFFFFF' }]}>메시지 보내기</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -247,7 +255,7 @@ const sharedCardStyle = {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa'
+        backgroundColor: THEME.background
     },
     header: {
         flexDirection: 'row',
@@ -316,7 +324,7 @@ const styles = StyleSheet.create({
         marginBottom: 8, // 텍스트 간격 조정
     },
     statusBadge: {
-        backgroundColor: '#e6e6ff',
+        backgroundColor: THEME.primarySoft,
         paddingHorizontal: 10, // 뱃지 패딩 조정
         paddingVertical: 4,
         borderRadius: 20,
@@ -359,7 +367,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#f1f3f9',
+        backgroundColor: THEME.primarySoft,
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -388,15 +396,17 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     primaryActionButton: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: PRIMARY_COLOR,
         paddingVertical: 16,
-        borderRadius: 12,
+        borderRadius: 14,
         gap: 8,
-        shadowColor: PRIMARY_COLOR,
+    },
+    primaryActionWrap: {
+        flex: 1,
+        borderRadius: 14,
+        shadowColor: '#3B5A24',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 5,
@@ -416,7 +426,7 @@ const styles = StyleSheet.create({
         borderColor: '#ffcccc',
         borderWidth: 1,
         paddingVertical: 16,
-        borderRadius: 12,
+        borderRadius: 14,
         gap: 8
     },
     secondaryActionButtonText: {

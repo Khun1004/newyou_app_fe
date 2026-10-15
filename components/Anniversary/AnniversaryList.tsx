@@ -12,7 +12,7 @@ import {
     Image,
     Dimensions,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAnniversary } from '@/components/contexts/AnniversaryContext';
 import { useAuth } from '@/components/contexts/AuthProvider';
@@ -21,9 +21,11 @@ import { AppFriend } from '@/components/hooks/AppFriend';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
-import MyFriendsSection from '@/components/FriendSpace/MyFriendsSection';
+import { MyFriendsTab, NewYouFriendsTab } from '@/components/Anniversary/ManageFriendsTabs';
+import { AddFriendByIdModal } from '@/components/Friends/AddFriendById';
+import { useStatusFeed } from '@/components/Status/statusApi';
 
-import { dc, isDark, dbg } from '@/constants/theme';
+import { dc, isDark, dbg, THEME } from '@/constants/theme';
 const { height: screenHeight } = Dimensions.get('window');
 
 // 이미지 경로를 절대 경로로 변환하는 유틸리티 함수
@@ -94,6 +96,15 @@ export default function AnniversaryList() {
     // const [isSettingDefault, setIsSettingDefault] = useState(false); // [삭제] 불필요한 상태 제거
 
     const [isLoading, setIsLoading] = useState(true);
+
+    // 탭: 👥 내 친구들 · 🌱 뉴유 친구들 · 💝 내 기념일 관리
+    type ManageTab = 'friends' | 'newyou' | 'anniv';
+    const params = useLocalSearchParams<{ tab?: string }>();
+    const [tab, setTab] = useState<ManageTab>(
+        params.tab === 'newyou' || params.tab === 'anniv' ? (params.tab as ManageTab) : 'friends'
+    );
+    const { people, loading: peopleLoading, reload: reloadPeople } = useStatusFeed();
+    const [addOpen, setAddOpen] = useState(false);
     const [sortedAnniversaries, setSortedAnniversaries] = useState<Anniversary[]>([]);
 
     // 화면 포커스 시 데이터 새로고침
@@ -102,7 +113,7 @@ export default function AnniversaryList() {
             const refresh = async () => {
                 try {
                     setIsLoading(true);
-                    await loadAnniversaries();
+                    await Promise.all([loadAnniversaries(), reloadPeople()]);
                 } catch (err) {
                     console.error('기념일 목록 로드 실패:', err);
                     Alert.alert('오류', '데이터를 불러오지 못했습니다.');
@@ -111,7 +122,7 @@ export default function AnniversaryList() {
                 }
             };
             refresh();
-        }, [loadAnniversaries])
+        }, [loadAnniversaries, reloadPeople])
     );
 
     useEffect(() => {
@@ -332,51 +343,124 @@ export default function AnniversaryList() {
                 <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
                 <AppHeader title="기념일 관리" />
                 <View style={styles.loadingContent}>
-                    <ActivityIndicator size="large" color={dc('#6C63FF')} />
+                    <ActivityIndicator size="large" color={THEME.primary} />
                     <Text style={styles.loadingText}>데이터를 불러오는 중입니다...</Text>
                 </View>
             </View>
         );
     }
 
+    const TABS: { key: ManageTab; label: string; icon: string }[] = [
+        { key: 'friends', label: '내 친구들', icon: 'people' },
+        { key: 'newyou', label: '뉴유 친구들', icon: 'leaf' },
+        { key: 'anniv', label: '내 기념일', icon: 'heart' },
+    ];
+    const newyouCount = people.filter((p) => p.linked).length;
+    const friendCount = people.filter((p) => p.friendId).length;
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle={isDark() ? 'light-content' : 'dark-content'} />
 
-            {/* 공통 헤더: < 기념일 관리 [+] 🔔 */}
-            <AppHeader title="기념일 관리" right={[{ icon: 'add-circle-outline', onPress: handleAddPress, accessibilityLabel: '기념일 추가' }]} />
+            {/* 공통 헤더: < 기념일 관리 [+] 🔔  (탭마다 + 버튼이 달라요) */}
+            <AppHeader
+                title="기념일 관리"
+                right={
+                    tab === 'anniv'
+                        ? [{ icon: 'add-circle-outline', onPress: handleAddPress, accessibilityLabel: '기념일 추가' }]
+                        : tab === 'newyou'
+                          ? [{ icon: 'person-add-outline', onPress: () => setAddOpen(true), accessibilityLabel: '뉴유 친구 추가' }]
+                          : []
+                }
+            />
+
+            {/* 탭 3개 */}
+            <View style={styles.tabBar}>
+                {TABS.map((t) => {
+                    const on = tab === t.key;
+                    const count = t.key === 'friends' ? friendCount : t.key === 'newyou' ? newyouCount : sortedAnniversaries.length;
+                    return (
+                        <TouchableOpacity key={t.key} style={[styles.tabBtn, on && styles.tabBtnOn]} onPress={() => setTab(t.key)} activeOpacity={0.85}>
+                            <Ionicons name={(on ? t.icon : t.icon + '-outline') as any} size={15} color={on ? '#FFFFFF' : THEME.subText} />
+                            <Text style={[styles.tabText, on && { color: '#FFFFFF' }]} numberOfLines={1}>
+                                {t.label}
+                            </Text>
+                            {count > 0 && (
+                                <Text style={[styles.tabCount, on && { color: 'rgba(255,255,255,0.85)' }]}>{count}</Text>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
 
             {/* 스크롤 가능한 콘텐츠 영역 */}
             <ScrollView style={styles.scrollView}>
                 <View style={styles.scrollContent}>
-                    {/* 💞 내 친구들 → 우리 둘의 공간 */}
-                    <MyFriendsSection />
+                    {tab === 'friends' && <MyFriendsTab people={people} loading={peopleLoading} />}
 
-                    {sortedAnniversaries.length === 0 ? (
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="calendar-outline" size={80} color={dc('#ccc')} />
-                            <Text style={styles.emptyTitle}>등록된 기념일이 없습니다</Text>
-                            <Text style={styles.emptySubtitle}>
-                                추가 버튼을 눌러{'\n'}소중한 사람과의 기념일을 등록해보세요
-                            </Text>
-                            <TouchableOpacity onPress={handleAddPress} style={styles.emptyButton}>
-                                <Ionicons name="add-circle-outline" size={24} color={dc('#fff')} />
-                                <Text style={styles.emptyButtonText}>새 기념일 등록</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View style={styles.anniversariesList}>
-                            {sortedAnniversaries.map(renderCard)}
-                        </View>
+                    {tab === 'newyou' && (
+                        <NewYouFriendsTab
+                            people={people}
+                            loading={peopleLoading}
+                            onAddPress={() => setAddOpen(true)}
+                            reload={reloadPeople}
+                        />
                     )}
+
+                    {tab === 'anniv' &&
+                        (sortedAnniversaries.length === 0 ? (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="calendar-outline" size={80} color={dc('#ccc')} />
+                                <Text style={styles.emptyTitle}>등록된 기념일이 없습니다</Text>
+                                <Text style={styles.emptySubtitle}>
+                                    추가 버튼을 눌러{'\n'}소중한 사람과의 기념일을 등록해보세요
+                                </Text>
+                                <TouchableOpacity onPress={handleAddPress} style={styles.emptyButton}>
+                                    <Ionicons name="add-circle-outline" size={24} color={dc('#fff')} />
+                                    <Text style={styles.emptyButtonText}>새 기념일 등록</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.anniversariesList}>{sortedAnniversaries.map(renderCard)}</View>
+                        ))}
                 </View>
             </ScrollView>
+
+            {/* 🔍 아이디로 뉴유 친구 추가 */}
+            <AddFriendByIdModal visible={addOpen} onClose={() => setAddOpen(false)} onAdded={reloadPeople} />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8f9fa' },
+    container: { flex: 1, backgroundColor: THEME.background },
+    tabBar: {
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginTop: 12,
+        padding: 4,
+        borderRadius: 18,
+        backgroundColor: THEME.primarySoft,
+    },
+    tabBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        paddingVertical: 9,
+        borderRadius: 14,
+    },
+    tabBtnOn: {
+        backgroundColor: THEME.primary,
+        shadowColor: '#3B5A24',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    tabText: { fontSize: 13, fontWeight: '800', color: THEME.subText },
+    tabCount: { fontSize: 11.5, fontWeight: '900', color: THEME.primary },
     scrollView: { flex: 1 },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -386,7 +470,7 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 18, fontWeight: '700', color: '#333' },
     addButton: { padding: 5, marginRight: -5 },
     placeholderButton: { width: 30, height: 30 },
-    scrollContent: { padding: 20, paddingBottom: 40, minHeight: screenHeight * 0.8 },
+    scrollContent: { padding: 16, paddingBottom: 40, minHeight: screenHeight * 0.7 },
     anniversariesList: { gap: 16 },
     card: {
         backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000',
@@ -414,16 +498,16 @@ const styles = StyleSheet.create({
     actionButton: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 8, gap: 4 },
     actionButtonText: { fontSize: 14, color: '#666' },
     defaultBadge: {
-        position: 'absolute', top: 12, right: 12, backgroundColor: '#6C63FF',
+        position: 'absolute', top: 12, right: 12, backgroundColor: THEME.primary,
         paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
     },
     defaultBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-    loadingContainer: { flex: 1, backgroundColor: '#f8f9fa' },
+    loadingContainer: { flex: 1, backgroundColor: THEME.background },
     loadingContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 12, fontSize: 16, color: '#666' },
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 80, minHeight: screenHeight * 0.7 },
     emptyTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginTop: 20 },
     emptySubtitle: { fontSize: 16, color: '#999', textAlign: 'center', lineHeight: 24, marginTop: 8, marginBottom: 30 },
-    emptyButton: { flexDirection: 'row', backgroundColor: '#6C63FF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 30, alignItems: 'center', gap: 8 },
+    emptyButton: { flexDirection: 'row', backgroundColor: THEME.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 30, alignItems: 'center', gap: 8 },
     emptyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

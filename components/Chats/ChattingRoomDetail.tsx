@@ -1,365 +1,312 @@
-import React from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    TouchableOpacity,
-    Image,
-    FlatList,
-    ScrollView,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/components/contexts/AuthProvider';
 import AppHeader from '@/components/AppHeader';
+import FriendAvatar from '@/components/Birthday/FriendAvatar';
+import { THEME } from '@/constants/theme';
 
-import { dbg, dc } from '@/constants/theme';
+/**
+ * ℹ️ 채팅방 정보
+ *  - 위: 친구(그룹) 사진 · 이름 + 빠른 버튼 (프로필 · 알림 · 검색)
+ *  - 사진/동영상 · 파일 · 링크 · 일정
+ *  - 게시판 · 공지 · 투표 · 퀴즈
+ *  - 대화 상대 목록
+ */
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const Row = ({ icon, label, tint, right, onPress, last }: { icon: IconName; label: string; tint: string; right?: React.ReactNode; onPress?: () => void; last?: boolean }) => (
+    <TouchableOpacity style={[styles.row, !last && styles.rowLine]} onPress={onPress} activeOpacity={onPress ? 0.6 : 1}>
+        <View style={[styles.rowIcon, { backgroundColor: tint + '22' }]}>
+            <Ionicons name={icon} size={18} color={tint} />
+        </View>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {right ?? <Ionicons name="chevron-forward" size={18} color={THEME.icon} />}
+    </TouchableOpacity>
+);
+
 const ChattingRoomDetail = () => {
     const router = useRouter();
     const { currentUser } = useAuth();
     const { chatData: chatDataJson } = useLocalSearchParams();
-    const chatData = chatDataJson ? JSON.parse(chatDataJson) : null;
+    const [muted, setMuted] = useState(false);
+    const [pinned, setPinned] = useState(false);
+
+    let chatData: any = null;
+    try {
+        chatData = chatDataJson ? JSON.parse(String(chatDataJson)) : null;
+    } catch {
+        chatData = null;
+    }
 
     if (!chatData || !currentUser) {
         return (
-            <View style={{ flex: 1, backgroundColor: dbg('#fff') }}>
+            <View style={styles.container}>
                 <AppHeader title="채팅방 정보" />
-                <SafeAreaView style={styles.container}>
-                    <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle-outline" size={60} color={dc('#FF6B6B')} />
-                        <Text style={styles.errorText}>
-                            채팅 상세 정보를 불러올 수 없습니다.
-                        </Text>
-                        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-                            <Text style={styles.closeButtonText}>돌아가기</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SafeAreaView>
+                <View style={styles.errorContainer}>
+                    <Text style={{ fontSize: 40, marginBottom: 12 }}>😢</Text>
+                    <Text style={styles.errorText}>채팅방 정보를 불러올 수 없어요</Text>
+                    <TouchableOpacity style={styles.errorButton} onPress={() => router.back()}>
+                        <Text style={styles.errorButtonText}>돌아가기</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         );
     }
 
-    const isGroupChat = chatData.memberCount && chatData.memberCount > 0;
+    const isGroupChat = !!chatData.memberCount;
+    const friendId = typeof chatData.id === 'string' && chatData.id.startsWith('f-') ? chatData.id.slice(2) : null;
+    const me = { id: 'me', name: currentUser.name || currentUser.nickname || '나', avatar: currentUser.profileImage, isCurrentUser: true };
+    const participants: any[] = isGroupChat
+        ? [me, ...(chatData.members || [])]
+        : [me, { id: chatData.id, name: chatData.name, avatar: chatData.avatar }];
 
-    let participants = [];
-    if (isGroupChat && chatData.members) {
-        const isCurrentUserInMembers = chatData.members.some(member => member.id === currentUser.id);
-        participants = isCurrentUserInMembers ? chatData.members : [...chatData.members, {
-            id: currentUser.id,
-            name: currentUser.nickname || '나',
-            avatar: currentUser.profileImage,
-            isCurrentUser: true,
-        }];
-    } else {
-        participants = [
-            {
-                id: currentUser.id,
-                name: currentUser.nickname || '나',
-                avatar: currentUser.profileImage,
-                isCurrentUser: true,
-            },
-            {
-                id: chatData.id,
-                name: chatData.name,
-                avatar: chatData.avatar,
-                isCurrentUser: false,
-            }
-        ];
-    }
-
-    const renderParticipantItem = ({ item }) => (
-        <View style={styles.participantItem}>
-            <Image
-                source={{
-                    uri: item.avatar || 'https://images.unsplash.com/photo-1511367461989-2de3c3d03e8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80'
-                }}
-                style={styles.participantAvatar}
-            />
-            <Text style={styles.participantName}>{item.name}</Text>
-        </View>
-    );
+    const quick: { icon: IconName; label: string; on?: boolean; onPress: () => void }[] = [
+        {
+            icon: 'person-circle-outline',
+            label: '프로필',
+            onPress: () => friendId && router.push({ pathname: '/AppFriendsInfo', params: { friendId } }),
+        },
+        { icon: muted ? 'notifications-off' : 'notifications-outline', label: muted ? '알림 끔' : '알림', on: muted, onPress: () => setMuted((v) => !v) },
+        { icon: pinned ? 'bookmark' : 'bookmark-outline', label: pinned ? '고정됨' : '고정', on: pinned, onPress: () => setPinned((v) => !v) },
+        { icon: 'search-outline', label: '검색', onPress: () => {} },
+    ];
 
     return (
         <View style={styles.container}>
-            {/* 공통 헤더 */}
             <AppHeader title="채팅방 정보" />
 
-            <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                <View style={styles.profileSection}>
-                    <Image
-                        source={{
-                            uri: chatData.avatar || 'https://images.unsplash.com/photo-1511367461989-2de3c3d03e8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80'
-                        }}
-                        style={styles.profileAvatar}
-                    />
-                    <Text style={styles.profileName}>{chatData.name}</Text>
-                </View>
-
-                {/* Shared Content Section */}
-                <View style={styles.card}>
-                    <TouchableOpacity style={styles.cardHeader}>
-                        <Ionicons name="image-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
-                        <Text style={styles.cardTitle}>Photos/Videos</Text>
-                    </TouchableOpacity>
-                    <View style={styles.mediaGallery}>
-                        <View style={styles.mediaPlaceholder} />
-                        <View style={styles.mediaPlaceholder} />
-                        <View style={styles.mediaPlaceholder} />
-                        <View style={styles.mediaPlaceholder} />
-                        <View style={styles.mediaPlaceholder} />
+            <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
+                {/* 위쪽 프로필 */}
+                <LinearGradient colors={THEME.headerGradient} style={styles.hero}>
+                    <View style={styles.heroAvatar}>
+                        <FriendAvatar name={chatData.name} photo={chatData.avatar} size={96} />
                     </View>
-                </View>
+                    <Text style={styles.profileName}>{chatData.name}</Text>
+                    <Text style={styles.profileSub}>{isGroupChat ? `그룹 채팅 · ${chatData.memberCount}명` : '1:1 채팅 · 활동 중'}</Text>
 
+                    <View style={styles.quickRow}>
+                        {quick.map((q) => (
+                            <TouchableOpacity key={q.label} style={styles.quickItem} onPress={q.onPress} activeOpacity={0.7}>
+                                <View style={[styles.quickCircle, q.on && { backgroundColor: THEME.primary }]}>
+                                    <Ionicons name={q.icon} size={20} color={q.on ? '#FFFFFF' : THEME.primary} />
+                                </View>
+                                <Text style={styles.quickLabel}>{q.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </LinearGradient>
+
+                {/* 사진 · 동영상 */}
                 <View style={styles.card}>
-                    <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="document-text-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
-                        <Text style={styles.cardTitle}>File</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="link-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
-                        <Text style={styles.cardTitle}>Links</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
-                        <Text style={styles.cardTitle}>Schedule</Text>
-                    </TouchableOpacity>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>사진 · 동영상</Text>
+                        <Text style={styles.cardMore}>전체 보기</Text>
+                    </View>
+                    <View style={styles.mediaGallery}>
+                        {['🌸', '☕', '📚', '🌙'].map((e, i) => (
+                            <View key={i} style={[styles.mediaBox, { backgroundColor: ['#FFE4EC', '#FFF4CC', '#E8F2DE', '#E4ECFF'][i] }]}>
+                                <Text style={{ fontSize: 26 }}>{e}</Text>
+                            </View>
+                        ))}
+                    </View>
+                    <Text style={styles.cardHint}>대화에서 주고받은 사진이 여기에 모여요</Text>
                 </View>
 
-                {/* Additional Features Section */}
-                <View style={[styles.card, styles.twoColumnCard]}>
-                    <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="menu-outline" size={20} color={dc('#007AFF')} />
-                        <Text style={styles.twoColumnText}>Boards</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="megaphone-outline" size={20} color={dc('#007AFF')} />
-                        <Text style={styles.twoColumnText}>Announcement</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="checkbox-outline" size={20} color={dc('#007AFF')} />
-                        <Text style={styles.twoColumnText}>Vote</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.twoColumnItem}>
-                        <Ionicons name="help-circle-outline" size={20} color={dc('#007AFF')} />
-                        <Text style={styles.twoColumnText}>Quiz</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Chatbot Section */}
+                {/* 파일 · 링크 · 일정 */}
                 <View style={styles.card}>
-                    <TouchableOpacity style={styles.cardItem}>
-                        <Ionicons name="happy-outline" size={20} color={dc('#007AFF')} style={styles.cardIcon} />
-                        <Text style={styles.cardTitle}>Chatbot <Text style={styles.betaText}>beta</Text></Text>
-                    </TouchableOpacity>
+                    <Row icon="document-text" label="파일" tint="#2E9CCA" />
+                    <Row icon="link" label="링크" tint="#7C5CFA" />
+                    <Row icon="calendar" label="일정" tint="#FF8C42" last />
                 </View>
 
-                {/* Participants Section */}
+                {/* 함께 쓰는 기능 */}
+                <View style={styles.featureGrid}>
+                    {(
+                        [
+                            { icon: 'clipboard', label: '게시판', tint: '#4E7D32' },
+                            { icon: 'megaphone', label: '공지', tint: '#F2A005' },
+                            { icon: 'stats-chart', label: '투표', tint: '#F06292' },
+                            { icon: 'bulb', label: '퀴즈', tint: '#2E9CCA' },
+                        ] as { icon: IconName; label: string; tint: string }[]
+                    ).map((f) => (
+                        <TouchableOpacity key={f.label} style={styles.featureItem} activeOpacity={0.7}>
+                            <View style={[styles.featureIcon, { backgroundColor: f.tint + '22' }]}>
+                                <Ionicons name={f.icon} size={22} color={f.tint} />
+                            </View>
+                            <Text style={styles.featureText}>{f.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* 챗봇 */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionHeader}>Participants</Text>
-                    <TouchableOpacity style={styles.inviteItem}>
-                        <Ionicons name="add" size={24} color={dc('#007AFF')} />
-                        <Text style={styles.inviteText}>Invite</Text>
+                    <Row
+                        icon="sparkles"
+                        label="챗봇"
+                        tint="#7C5CFA"
+                        last
+                        right={
+                            <View style={styles.betaPill}>
+                                <Text style={styles.betaText}>BETA</Text>
+                            </View>
+                        }
+                    />
+                </View>
+
+                {/* 대화 상대 */}
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>대화 상대 {participants.length}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.inviteItem} activeOpacity={0.7}>
+                        <View style={styles.inviteCircle}>
+                            <Ionicons name="add" size={22} color={THEME.primary} />
+                        </View>
+                        <Text style={styles.inviteText}>친구 초대하기</Text>
                     </TouchableOpacity>
-                    {participants.map(item => (
+                    {participants.map((item) => (
                         <View key={item.id} style={styles.participantItem}>
-                            <Image
-                                source={{
-                                    uri: item.avatar || 'https://images.unsplash.com/photo-1511367461989-2de3c3d03e8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=256&q=80'
-                                }}
-                                style={styles.participantAvatar}
-                            />
-                            <Text style={styles.participantName}>
-                                {item.name}
-                                {item.isCurrentUser && <Text style={styles.meIndicator}> (me)</Text>}
-                            </Text>
+                            <FriendAvatar name={item.name} photo={item.avatar} size={40} />
+                            <Text style={styles.participantName}>{item.name}</Text>
+                            {item.isCurrentUser && (
+                                <View style={styles.mePill}>
+                                    <Text style={styles.meText}>나</Text>
+                                </View>
+                            )}
                         </View>
                     ))}
                 </View>
+
+                {/* 나가기 */}
+                <TouchableOpacity style={styles.leaveButton} onPress={() => router.back()} activeOpacity={0.7}>
+                    <Ionicons name="exit-outline" size={18} color="#E5484D" />
+                    <Text style={styles.leaveText}>채팅방 나가기</Text>
+                </TouchableOpacity>
             </ScrollView>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F0F2F5', // Light background
-    },
-    scrollViewContent: {
+    container: { flex: 1, backgroundColor: THEME.background },
+    scrollViewContent: { paddingBottom: 40 },
+
+    hero: {
+        alignItems: 'center',
+        paddingTop: 24,
         paddingBottom: 20,
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        marginBottom: 16,
     },
-    header: {
-        flexDirection: 'row',
+    heroAvatar: {
+        padding: 4,
+        borderRadius: 60,
+        backgroundColor: THEME.card,
+        shadowColor: '#3B5A24',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    profileName: { marginTop: 12, fontSize: 22, fontWeight: '900', color: THEME.text },
+    profileSub: { marginTop: 3, fontSize: 13, color: THEME.subText, fontWeight: '600' },
+    quickRow: { flexDirection: 'row', marginTop: 18, paddingHorizontal: 28, alignSelf: 'stretch' },
+    quickItem: { flex: 1, alignItems: 'center' },
+    quickCircle: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: THEME.card,
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        backgroundColor: '#FFFFFF', // White header
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E0E0E0',
+        justifyContent: 'center',
     },
-    headerIcon: {
-        padding: 5,
-    },
-    headerRightIcons: {
-        flexDirection: 'row',
-    },
-    profileSection: {
-        alignItems: 'center',
-        paddingVertical: 20,
-        backgroundColor: '#FFFFFF', // White background
-        marginBottom: 15,
-    },
-    profileAvatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 3,
-        borderColor: '#E0E0E0', // Light border
-        resizeMode: 'cover',
-    },
-    profileName: {
-        marginTop: 15,
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333333', // Dark text
-    },
+    quickLabel: { marginTop: 6, fontSize: 12, fontWeight: '700', color: THEME.text },
+
     card: {
-        backgroundColor: '#FFFFFF', // White card background
-        borderRadius: 10,
-        marginHorizontal: 15,
-        marginBottom: 15,
-        paddingVertical: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: THEME.card,
+        borderRadius: 20,
+        marginHorizontal: 16,
+        marginBottom: 14,
+        paddingVertical: 4,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: THEME.line,
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E0E0E0',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 6,
     },
-    cardItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E0E0E0',
-    },
-    cardIcon: {
-        marginRight: 10,
-    },
-    cardTitle: {
-        fontSize: 16,
-        color: '#333333', // Dark text
-        fontWeight: '500',
-    },
-    betaText: {
-        fontSize: 12,
-        color: '#999999', // Grey for beta tag
-        fontWeight: '400',
-    },
-    mediaGallery: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        justifyContent: 'flex-start',
-    },
-    mediaPlaceholder: {
-        width: 80,
-        height: 80,
-        backgroundColor: '#E0E0E0', // Light placeholder color
-        borderRadius: 8,
-        margin: 5,
-    },
-    twoColumnCard: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-around',
-        paddingVertical: 0,
-    },
-    twoColumnItem: {
-        width: '45%',
-        alignItems: 'center',
-        paddingVertical: 15,
-        marginVertical: 5,
-    },
-    twoColumnText: {
-        marginTop: 5,
-        fontSize: 14,
-        color: '#333333', // Dark text
-        fontWeight: '500',
-    },
-    sectionHeader: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333333',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-    },
-    inviteItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E0E0E0',
-    },
-    inviteText: {
-        fontSize: 16,
-        color: '#007AFF',
-        marginLeft: 10,
-        fontWeight: '500',
-    },
-    participantItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#E0E0E0',
-    },
-    participantAvatar: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        marginRight: 15,
-        resizeMode: 'cover',
-    },
-    participantName: {
-        fontSize: 16,
-        color: '#333333', // Dark text
-    },
-    meIndicator: {
-        fontSize: 14,
-        color: '#999999', // Grey for 'me' indicator
-    },
-    errorContainer: {
+    cardTitle: { fontSize: 15, fontWeight: '800', color: THEME.text },
+    cardMore: { fontSize: 12, fontWeight: '700', color: THEME.primary },
+    cardHint: { fontSize: 12, color: THEME.subText, paddingHorizontal: 16, paddingBottom: 12 },
+    mediaGallery: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+    mediaBox: { flex: 1, aspectRatio: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+
+    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
+    rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: THEME.line },
+    rowIcon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    rowLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: THEME.text },
+
+    featureGrid: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 14, gap: 10 },
+    featureItem: {
         flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F0F2F5',
+        paddingVertical: 14,
+        borderRadius: 18,
+        backgroundColor: THEME.card,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: THEME.line,
     },
-    errorText: {
-        fontSize: 18,
-        color: '#FF6B6B',
-        marginBottom: 30,
-        textAlign: 'center',
-        fontWeight: '500',
+    featureIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    featureText: { marginTop: 7, fontSize: 12.5, fontWeight: '700', color: THEME.text },
+
+    betaPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: THEME.accentSoft },
+    betaText: { fontSize: 10, fontWeight: '900', color: '#B07F00' },
+
+    inviteItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
+    inviteCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        borderColor: THEME.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    closeButtonText: {
-        color: '#007AFF', // Blue text for button
-        fontSize: 16,
-        fontWeight: '600',
+    inviteText: { marginLeft: 12, fontSize: 15, fontWeight: '700', color: THEME.primary },
+    participantItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 9 },
+    participantName: { marginLeft: 12, fontSize: 15, fontWeight: '600', color: THEME.text },
+    mePill: { marginLeft: 8, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8, backgroundColor: THEME.primarySoft },
+    meText: { fontSize: 11, fontWeight: '800', color: THEME.primary },
+
+    leaveButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginHorizontal: 16,
+        marginTop: 4,
+        paddingVertical: 14,
+        borderRadius: 18,
+        backgroundColor: THEME.card,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: THEME.line,
     },
+    leaveText: { fontSize: 15, fontWeight: '700', color: '#E5484D' },
+
+    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30 },
+    errorText: { fontSize: 16, color: THEME.text, fontWeight: '700', marginBottom: 22 },
+    errorButton: { backgroundColor: THEME.primary, paddingVertical: 13, paddingHorizontal: 28, borderRadius: 16 },
+    errorButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });
 
 export default ChattingRoomDetail;
