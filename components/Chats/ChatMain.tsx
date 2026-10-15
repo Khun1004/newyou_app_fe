@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, FlatList, Image, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AppHeader from '@/components/AppHeader';
 import { THEME, dc } from '@/constants/theme';
@@ -196,16 +197,39 @@ const ChatsMain = () => {
     return (
         <View style={styles.container}>
             {/* 공통 헤더: < 제목 [새 채팅][친구 추가] 🔔 */}
-            <AppHeader
-                title="채팅"
-                right={[
-                    { icon: 'create-outline', onPress: handleNewGroupChat, accessibilityLabel: '새 그룹 채팅' },
-                    { icon: 'person-add-outline', onPress: handleAddFriendPress, accessibilityLabel: '친구 추가' },
-                ]}
-            />
+            {/* 🌿 초록 헤더: 제목 · 안 읽은 수 · 버튼 + 검색창 */}
+            <LinearGradient
+                colors={['#7BA84E', '#4E7D32', '#3B5A24']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.band, { paddingTop: insets.top + 6 }]}
+            >
+                <View pointerEvents="none" style={[styles.bandBubble, { width: 150, height: 150, top: -50, right: -30 }]} />
+                <View pointerEvents="none" style={[styles.bandBubble, { width: 70, height: 70, bottom: 10, left: -20 }]} />
 
-            {/* 🔍 검색 (이름 · 메시지로 찾기) */}
-            <View style={styles.searchContainer}>
+                <View style={styles.bandRow}>
+                    <TouchableOpacity
+                        onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+                        style={styles.bandBtn}
+                        accessibilityLabel="뒤로 가기"
+                    >
+                        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1, marginLeft: 4 }}>
+                        <Text style={styles.bandTitle}>채팅</Text>
+                        <Text style={styles.bandSub}>
+                            {unreadChats + unreadGroups > 0 ? `안 읽은 메시지 ${unreadChats + unreadGroups}개 💬` : '모든 메시지를 읽었어요 ✨'}
+                        </Text>
+                    </View>
+                    <TouchableOpacity onPress={handleNewGroupChat} style={styles.bandBtnSoft} accessibilityLabel="새 그룹 채팅">
+                        <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleAddFriendPress} style={styles.bandBtnSoft} accessibilityLabel="친구 추가">
+                        <Ionicons name="person-add-outline" size={20} color="#FFFFFF" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* 🔍 검색 (이름 · 메시지로 찾기) */}
                 <View style={[styles.searchBar, focused && styles.searchBarFocused]}>
                     <Ionicons name="search" size={18} color={focused ? THEME.primary : THEME.icon} style={styles.searchIcon} />
                     <TextInput
@@ -224,7 +248,7 @@ const ChatsMain = () => {
                         </TouchableOpacity>
                     )}
                 </View>
-            </View>
+            </LinearGradient>
 
             {/* 🟢 지금 활동 중인 친구 (가로로 넘겨요) */}
             {!q && chatData.length > 0 && (
@@ -407,6 +431,29 @@ const ChatsMain = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: THEME.background },
 
+    // 🌿 초록 헤더
+    band: {
+        paddingHorizontal: 14,
+        paddingBottom: 18,
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
+        overflow: 'hidden',
+    },
+    bandBubble: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.1)' },
+    bandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+    bandBtn: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
+    bandTitle: { color: 'rgba(255,255,255,1)', fontSize: 26, fontWeight: '900' },
+    bandSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12.5, fontWeight: '700', marginTop: 1 },
+    bandBtnSoft: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginLeft: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+    },
+
     // 🔍 검색
     searchContainer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
     searchBar: {
@@ -416,15 +463,15 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 14,
         height: 46,
-        borderWidth: 1,
-        borderColor: THEME.line,
+        borderWidth: 2,
+        borderColor: 'transparent',
     },
-    searchBarFocused: { borderColor: THEME.primary },
+    searchBarFocused: { borderColor: '#FFD54F' },
     searchIcon: { marginRight: 8 },
     searchInput: { flex: 1, fontSize: 15, color: THEME.text, paddingVertical: 0 },
 
     // 🟢 활동 중
-    onlineWrap: { paddingTop: 6 },
+    onlineWrap: { paddingTop: 10 },
     onlineRow: { paddingHorizontal: 12, paddingVertical: 6 },
     onlineItem: { width: 70, alignItems: 'center', marginHorizontal: 2 },
     onlineDot: {

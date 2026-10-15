@@ -23,6 +23,7 @@ import { BASE_URL } from '@/config';
 import AppHeader from '@/components/AppHeader';
 import { MyFriendsTab, NewYouFriendsTab } from '@/components/Anniversary/ManageFriendsTabs';
 import { AddFriendByIdModal } from '@/components/Friends/AddFriendById';
+import PrivacySettingsTab from '@/components/Anniversary/PrivacySettingsTab';
 import { useStatusFeed } from '@/components/Status/statusApi';
 
 import { dc, isDark, dbg, THEME } from '@/constants/theme';
@@ -98,13 +99,14 @@ export default function AnniversaryList() {
     const [isLoading, setIsLoading] = useState(true);
 
     // 탭: 👥 내 친구들 · 🌱 뉴유 친구들 · 💝 내 기념일 관리
-    type ManageTab = 'friends' | 'newyou' | 'anniv';
+    type ManageTab = 'friends' | 'newyou' | 'anniv' | 'settings';
     const params = useLocalSearchParams<{ tab?: string }>();
     const [tab, setTab] = useState<ManageTab>(
-        params.tab === 'newyou' || params.tab === 'anniv' ? (params.tab as ManageTab) : 'friends'
+        params.tab === 'newyou' || params.tab === 'anniv' || params.tab === 'settings' ? (params.tab as ManageTab) : 'friends'
     );
     const { people, loading: peopleLoading, reload: reloadPeople } = useStatusFeed();
     const [addOpen, setAddOpen] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0); // 아이디로 추가하면 뉴유 목록 새로고침
     const [sortedAnniversaries, setSortedAnniversaries] = useState<Anniversary[]>([]);
 
     // 화면 포커스 시 데이터 새로고침
@@ -353,9 +355,9 @@ export default function AnniversaryList() {
     const TABS: { key: ManageTab; label: string; icon: string }[] = [
         { key: 'friends', label: '내 친구들', icon: 'people' },
         { key: 'newyou', label: '뉴유 친구들', icon: 'leaf' },
-        { key: 'anniv', label: '내 기념일', icon: 'heart' },
+        { key: 'anniv', label: '기념일', icon: 'heart' },
+        { key: 'settings', label: '설정', icon: 'settings' },
     ];
-    const newyouCount = people.filter((p) => p.linked).length;
     const friendCount = people.filter((p) => p.friendId).length;
 
     return (
@@ -378,7 +380,7 @@ export default function AnniversaryList() {
             <View style={styles.tabBar}>
                 {TABS.map((t) => {
                     const on = tab === t.key;
-                    const count = t.key === 'friends' ? friendCount : t.key === 'newyou' ? newyouCount : sortedAnniversaries.length;
+                    const count = t.key === 'friends' ? friendCount : t.key === 'newyou' ? 0 : sortedAnniversaries.length;
                     return (
                         <TouchableOpacity key={t.key} style={[styles.tabBtn, on && styles.tabBtnOn]} onPress={() => setTab(t.key)} activeOpacity={0.85}>
                             <Ionicons name={(on ? t.icon : t.icon + '-outline') as any} size={15} color={on ? '#FFFFFF' : THEME.subText} />
@@ -396,15 +398,12 @@ export default function AnniversaryList() {
             {/* 스크롤 가능한 콘텐츠 영역 */}
             <ScrollView style={styles.scrollView}>
                 <View style={styles.scrollContent}>
-                    {tab === 'friends' && <MyFriendsTab people={people} loading={peopleLoading} />}
+                    {tab === 'friends' && <MyFriendsTab people={people} loading={peopleLoading} onChanged={reloadPeople} />}
+
+                    {tab === 'settings' && <PrivacySettingsTab people={people} onChanged={reloadPeople} />}
 
                     {tab === 'newyou' && (
-                        <NewYouFriendsTab
-                            people={people}
-                            loading={peopleLoading}
-                            onAddPress={() => setAddOpen(true)}
-                            reload={reloadPeople}
-                        />
+                        <NewYouFriendsTab onAddPress={() => setAddOpen(true)} reload={reloadPeople} refreshKey={refreshKey} />
                     )}
 
                     {tab === 'anniv' &&
@@ -427,7 +426,14 @@ export default function AnniversaryList() {
             </ScrollView>
 
             {/* 🔍 아이디로 뉴유 친구 추가 */}
-            <AddFriendByIdModal visible={addOpen} onClose={() => setAddOpen(false)} onAdded={reloadPeople} />
+            <AddFriendByIdModal
+                visible={addOpen}
+                onClose={() => setAddOpen(false)}
+                onAdded={async () => {
+                    await reloadPeople();
+                    setRefreshKey((k) => k + 1);
+                }}
+            />
         </View>
     );
 }
@@ -447,7 +453,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
+        gap: 3,
         paddingVertical: 9,
         borderRadius: 14,
     },
@@ -459,7 +465,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
     },
-    tabText: { fontSize: 13, fontWeight: '800', color: THEME.subText },
+    tabText: { fontSize: 12, fontWeight: '800', color: THEME.subText },
     tabCount: { fontSize: 11.5, fontWeight: '900', color: THEME.primary },
     scrollView: { flex: 1 },
     header: {

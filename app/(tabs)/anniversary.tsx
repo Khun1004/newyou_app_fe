@@ -488,6 +488,8 @@ const AnniversaryScreen: React.FC = () => {
                     emoji: m.photo ? null : ANIMAL_EMOJI[m.profileImage] ?? null,
                 })),
                 shared: shareWithFriends,
+                // 🔒 비공개여도 기념일 상대 · 함께하는 사람은 볼 수 있어요
+                allowedFriendIds: [settings.partnerFriendId, ...memberIds].filter((x): x is string => !!x),
             });
         }, 800);
         return () => clearTimeout(t);
@@ -537,6 +539,7 @@ const AnniversaryScreen: React.FC = () => {
                     note={latestText(myStatuses)}
                     plus
                     onPress={onMyRing}
+                    onPlusPress={() => requireLogin('상태 올리기') && setComposerOpen(true)}
                     onLongPress={() => requireLogin('상태 올리기') && setComposerOpen(true)}
                 />
                 {feed.people.map((p) => (
@@ -744,11 +747,13 @@ const AnniversaryScreen: React.FC = () => {
                     onSeen={feed.markViewed}
                     onDelete={feed.remove}
                     loadViewers={feed.viewers}
+                    onAddMore={() => {
+                        setViewer(null);
+                        setComposerOpen(true);
+                    }}
                 />
             )}
             <ConnectSheet
-                shareAnniversary={shareWithFriends}
-                onToggleShare={(v) => updateSettings({ shareWithFriends: v })}
                 onOpenAnniversary={(p) => {
                     setConnectOpen(false);
                     openFriendAnniversary(p);

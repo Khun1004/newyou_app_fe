@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,13 +12,18 @@ import { THEME } from '@/constants/theme';
 
 /**
  * ℹ️ 채팅방 정보
- *  - 위: 친구(그룹) 사진 · 이름 + 빠른 버튼 (프로필 · 알림 · 검색)
+ *  - 위: 앱 초록 배경(아래가 살짝 둥글게 파인 모양) 위에 흰 카드
+ *        카드 위쪽에 친구 사진이 반쯤 걸쳐 있고, 이름 · 빠른 버튼 4개 (프로필 · 알림 · 고정 · 검색)
  *  - 사진/동영상 · 파일 · 링크 · 일정
  *  - 게시판 · 공지 · 투표 · 퀴즈
  *  - 대화 상대 목록
  */
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const BAND = 240; // 초록 배경 높이 (헤더 아래)
+const AVATAR = 104;
 
 const Row = ({ icon, label, tint, right, onPress, last }: { icon: IconName; label: string; tint: string; right?: React.ReactNode; onPress?: () => void; last?: boolean }) => (
     <TouchableOpacity style={[styles.row, !last && styles.rowLine]} onPress={onPress} activeOpacity={onPress ? 0.6 : 1}>
@@ -32,6 +39,7 @@ const ChattingRoomDetail = () => {
     const router = useRouter();
     const { currentUser } = useAuth();
     const { chatData: chatDataJson } = useLocalSearchParams();
+    const insets = useSafeAreaInsets();
     const [muted, setMuted] = useState(false);
     const [pinned, setPinned] = useState(false);
 
@@ -77,28 +85,66 @@ const ChattingRoomDetail = () => {
 
     return (
         <View style={styles.container}>
-            <AppHeader title="채팅방 정보" />
+            <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false} bounces={false}>
+                {/* 초록 배경 + 헤더 (전자출결 화면 스타일) */}
+                <LinearGradient
+                    colors={['#7BA84E', '#4E7D32', '#3B5A24']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{ height: insets.top + BAND, paddingTop: insets.top }}
+                >
+                    {/* 동글동글 무늬 */}
+                    <View pointerEvents="none" style={[styles.bubble, { width: 160, height: 160, top: -40, right: -40 }]} />
+                    <View pointerEvents="none" style={[styles.bubble, { width: 90, height: 90, top: insets.top + 90, left: -30 }]} />
 
-            <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
-                {/* 위쪽 프로필 */}
-                <LinearGradient colors={THEME.headerGradient} style={styles.hero}>
-                    <View style={styles.heroAvatar}>
-                        <FriendAvatar name={chatData.name} photo={chatData.avatar} size={96} />
+                    <View style={styles.bandHeader}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles.bandIcon} hitSlop={8} accessibilityLabel="뒤로 가기">
+                            <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
+                        </TouchableOpacity>
+                        <Text style={styles.bandTitle}>채팅방 정보</Text>
+                        <TouchableOpacity
+                            onPress={() => router.push('/ChatMain')}
+                            style={styles.bandIcon}
+                            hitSlop={8}
+                            accessibilityLabel="채팅 목록"
+                        >
+                            <Ionicons name="chatbubbles-outline" size={23} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* 아래 가장자리: 가운데가 살짝 올라간 곡선 */}
+                    <Svg width={SCREEN_W} height={46} style={styles.curve} pointerEvents="none">
+                        <Path d={`M0 46 L0 40 Q ${SCREEN_W / 2} -6 ${SCREEN_W} 40 L${SCREEN_W} 46 Z`} fill={THEME.background} />
+                    </Svg>
+                </LinearGradient>
+
+                {/* 흰 카드 (사진이 위에 걸쳐 있어요) */}
+                <View style={styles.profileCard}>
+                    <View style={styles.avatarFloat}>
+                        <View style={styles.heroAvatar}>
+                            <FriendAvatar name={chatData.name} photo={chatData.avatar} size={AVATAR} />
+                        </View>
+                    </View>
+
+                    <View style={styles.typePill}>
+                        <Text style={styles.typePillText}>{isGroupChat ? `그룹 채팅 · ${chatData.memberCount}명` : '1:1 채팅'}</Text>
                     </View>
                     <Text style={styles.profileName}>{chatData.name}</Text>
-                    <Text style={styles.profileSub}>{isGroupChat ? `그룹 채팅 · ${chatData.memberCount}명` : '1:1 채팅 · 활동 중'}</Text>
+                    <Text style={styles.profileSub}>{isGroupChat ? '함께 이야기해요' : '● 활동 중'}</Text>
+
+                    <View style={styles.cardDivider} />
 
                     <View style={styles.quickRow}>
                         {quick.map((q) => (
                             <TouchableOpacity key={q.label} style={styles.quickItem} onPress={q.onPress} activeOpacity={0.7}>
                                 <View style={[styles.quickCircle, q.on && { backgroundColor: THEME.primary }]}>
-                                    <Ionicons name={q.icon} size={20} color={q.on ? '#FFFFFF' : THEME.primary} />
+                                    <Ionicons name={q.icon} size={22} color={q.on ? '#FFFFFF' : THEME.primary} />
                                 </View>
                                 <Text style={styles.quickLabel}>{q.label}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
-                </LinearGradient>
+                </View>
 
                 {/* 사진 · 동영상 */}
                 <View style={styles.card}>
@@ -195,37 +241,61 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: THEME.background },
     scrollViewContent: { paddingBottom: 40 },
 
-    hero: {
+    bubble: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.1)' },
+    bandHeader: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10 },
+    bandIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    bandTitle: { color: 'rgba(255,255,255,1)', fontSize: 18, fontWeight: '800' },
+    curve: { position: 'absolute', left: 0, bottom: -1 },
+
+    profileCard: {
+        marginTop: -(BAND - 150),
+        marginHorizontal: 18,
+        marginBottom: 18,
+        paddingTop: AVATAR / 2 + 18,
+        paddingBottom: 18,
+        paddingHorizontal: 16,
         alignItems: 'center',
-        paddingTop: 24,
-        paddingBottom: 20,
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
-        marginBottom: 16,
-    },
-    heroAvatar: {
-        padding: 4,
-        borderRadius: 60,
+        borderRadius: 26,
         backgroundColor: THEME.card,
-        shadowColor: '#3B5A24',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        shadowColor: '#2E3326',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 16,
+        elevation: 5,
+    },
+    avatarFloat: { position: 'absolute', top: -(AVATAR / 2 + 6), alignSelf: 'center' },
+    heroAvatar: {
+        padding: 5,
+        borderRadius: 70,
+        backgroundColor: THEME.card,
+        shadowColor: '#2E3326',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
         elevation: 4,
     },
-    profileName: { marginTop: 12, fontSize: 22, fontWeight: '900', color: THEME.text },
-    profileSub: { marginTop: 3, fontSize: 13, color: THEME.subText, fontWeight: '600' },
-    quickRow: { flexDirection: 'row', marginTop: 18, paddingHorizontal: 28, alignSelf: 'stretch' },
+    typePill: {
+        paddingHorizontal: 18,
+        paddingVertical: 6,
+        borderRadius: 18,
+        borderWidth: 1.5,
+        borderColor: THEME.primary,
+    },
+    typePillText: { color: THEME.primary, fontSize: 13.5, fontWeight: '800' },
+    profileName: { marginTop: 12, fontSize: 23, fontWeight: '900', color: THEME.text },
+    profileSub: { marginTop: 4, fontSize: 13, color: '#43A55F', fontWeight: '700' },
+    cardDivider: { alignSelf: 'stretch', height: 1, backgroundColor: THEME.line, marginTop: 18, marginBottom: 16 },
+    quickRow: { flexDirection: 'row', alignSelf: 'stretch' },
     quickItem: { flex: 1, alignItems: 'center' },
     quickCircle: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: THEME.card,
+        width: 52,
+        height: 52,
+        borderRadius: 18,
+        backgroundColor: THEME.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    quickLabel: { marginTop: 6, fontSize: 12, fontWeight: '700', color: THEME.text },
+    quickLabel: { marginTop: 7, fontSize: 12.5, fontWeight: '700', color: THEME.text },
 
     card: {
         backgroundColor: THEME.card,

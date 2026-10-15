@@ -45,12 +45,12 @@ import {
  *  - 내 말풍선은 앱 초록 그라데이션
  *  - 말풍선을 두 번 톡톡 → ❤️ 반응
  *  - 입력창이 비어 있으면 빠른 이모지 줄이 나와요 (누르면 바로 보내요)
- *  - + 버튼: 앨범 · 카메라 · 파일 · 약속 잡기 · 투표 · 선물 · 기념일 · 릴스
+ *  - + 버튼: 앨범 · 카메라 · 파일 · 약속 잡기 · 투표 · 기념일 · 릴스
  *  - 오른쪽 버튼: 글자가 없으면 🎤 음성 녹음, 글자를 쓰면 ✈️ 보내기
  */
 
 const { width } = Dimensions.get('window');
-const HEADER_BAR = 58;
+const HEADER_BAR = 66;
 const QUICK_EMOJIS = ['👍', '😂', '❤️', '🥹', '🎉', '🔥'];
 
 type Msg = {
@@ -221,9 +221,9 @@ const ChattingRoom = () => {
     if (!chatData || !currentUser) {
         return (
             <View style={styles.container}>
-                <LinearGradient colors={THEME.headerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
+                <LinearGradient colors={['#7BA84E', '#4E7D32', '#3B5A24']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
                     <TouchableOpacity onPress={goBack} style={styles.headerIcon}>
-                        <Ionicons name="chevron-back" size={26} color={THEME.text} />
+                        <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
                     </TouchableOpacity>
                 </LinearGradient>
                 <View style={styles.errorContainer}>
@@ -271,13 +271,13 @@ const ChattingRoom = () => {
     const person = friendId ? people.find((p) => p.friendId === friendId) : undefined;
     const linkedUserId = person?.userId ?? null;
     const needLink = () =>
-        Alert.alert('아이디 연결이 필요해요', `${chatData.name}님을 아이디로 연결하면 선물 · 기념일 · 릴스를 같이 볼 수 있어요.`, [
+        Alert.alert('아이디 연결이 필요해요', `${chatData.name}님을 아이디로 연결하면 기념일 · 릴스를 같이 볼 수 있어요.`, [
             { text: '닫기', style: 'cancel' },
             ...(friendId
                 ? [{ text: '연결하러 가기', onPress: () => router.push({ pathname: '/AppFriendsInfo', params: { friendId } }) }]
                 : []),
         ]);
-    const openSpace = (tab: 'gift' | 'anniv') =>
+    const openSpace = (tab: 'anniv') =>
         router.push({
             pathname: '/FriendSpace',
             params: {
@@ -322,8 +322,6 @@ const ChattingRoom = () => {
                 setPollOpen(true);
             } else if (!linkedUserId) {
                 needLink();
-            } else if (k === 'gift') {
-                openSpace('gift');
             } else if (k === 'anniv') {
                 openSpace('anniv');
             } else if (k === 'reel') {
@@ -466,13 +464,16 @@ const ChattingRoom = () => {
     return (
         <View style={styles.container}>
             {/* 위쪽: < 사진 이름 · 활동 중   ⋯ */}
-            <LinearGradient colors={THEME.headerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
+            <LinearGradient colors={['#7BA84E', '#4E7D32', '#3B5A24']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.header, { paddingTop: insets.top, height: headerHeight }]}>
                 <TouchableOpacity onPress={goBack} style={styles.headerIcon} accessibilityLabel="뒤로 가기">
-                    <Ionicons name="chevron-back" size={26} color={THEME.text} />
+                    <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
                 </TouchableOpacity>
+                <View pointerEvents="none" style={[styles.headerBubble, { width: 120, height: 120, top: -40, right: 40 }]} />
                 <TouchableOpacity style={styles.headerPerson} onPress={openDetail} activeOpacity={0.7}>
                     <View>
-                        <FriendAvatar name={chatData.name} photo={chatData.avatar} size={38} />
+                        <View style={styles.headerAvatarRing}>
+                            <FriendAvatar name={chatData.name} photo={chatData.avatar} size={40} />
+                        </View>
                         {!isGroup && <View style={styles.headerDot} />}
                     </View>
                     <View style={{ marginLeft: 10, flex: 1 }}>
@@ -482,8 +483,17 @@ const ChattingRoom = () => {
                         <Text style={styles.headerStatus}>{isGroup ? `멤버 ${chatData.memberCount}명` : '● 활동 중'}</Text>
                     </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={openDetail} style={styles.headerIcon} accessibilityLabel="채팅방 정보">
-                    <Ionicons name="ellipsis-horizontal-circle-outline" size={26} color={THEME.text} />
+                {friendId && (
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: '/FriendSpace', params: { friendId } })}
+                        style={styles.headerSoftBtn}
+                        accessibilityLabel="우리 공간"
+                    >
+                        <Ionicons name="heart" size={18} color="#FFFFFF" />
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={openDetail} style={styles.headerSoftBtn} accessibilityLabel="채팅방 정보">
+                    <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
             </LinearGradient>
 
@@ -598,8 +608,21 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 6,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: THEME.line,
+        paddingRight: 12,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        overflow: 'hidden',
+    },
+    headerBubble: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.1)' },
+    headerAvatarRing: { padding: 2, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)' },
+    headerSoftBtn: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        marginLeft: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
     },
     headerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     headerPerson: { flex: 1, flexDirection: 'row', alignItems: 'center' },
@@ -614,8 +637,8 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#FFFFFF',
     },
-    headerName: { fontSize: 16, fontWeight: '800', color: THEME.text },
-    headerStatus: { fontSize: 12, color: '#43A55F', fontWeight: '600', marginTop: 1 },
+    headerName: { fontSize: 17, fontWeight: '900', color: 'rgba(255,255,255,1)' },
+    headerStatus: { fontSize: 12, color: 'rgba(214,245,190,1)', fontWeight: '700', marginTop: 1 },
 
     // 대화 시작 소개
     intro: { alignItems: 'center', paddingTop: 18, paddingBottom: 6 },
