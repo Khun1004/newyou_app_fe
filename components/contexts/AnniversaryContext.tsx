@@ -1,10 +1,13 @@
 // components/contexts/AnniversaryContext.tsx
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/components/contexts/AuthProvider';
+import api from '@/components/utils/api';
 
-// 기념일은 계정별로 따로 저장해요. (예: @anniversaries_01011112222)
-// → 다른 계정이나 예전에 테스트한 기념일이 내 화면에 보이지 않아요.
+// 💝 기념일은 데이터베이스(anniversaries 테이블)에 저장해요. → /api/anniversaries
+//  - 등록 · 수정 · 삭제 · 기본 정하기 모두 서버에 저장돼서, 휴대폰을 바꿔도 그대로 있어요.
+//  - 예전에 휴대폰에만 있던 기념일은 처음 불러올 때 한 번 서버로 옮겨요.
+//  - 기념일 화면 설정(배경 · 우리 노래 등)은 휴대폰에 계정별로 저장해요. (예: @anniversary_settings_01011112222)
 
 type RelationshipType = 'married' | 'relationship' | 'friendship';
 
@@ -21,6 +24,8 @@ interface AnniversarySettings {
     memberFriendIds?: string[];
     // 💝 연결된 친구에게 내 기념일 보여주기 (기본: 켜짐)
     shareWithFriends?: boolean;
+    // 🎵 우리 노래 (가운데 하트를 누르면 들어요) — 바꾸기 전까지 계속 남아요
+    song?: { uri: string; name: string; artist?: string; artwork?: string; link?: string; source?: 'itunes' | 'file' } | null;
 }
 
 interface Anniversary {
@@ -68,6 +73,33 @@ const defaultSettings: AnniversarySettings = {
 
 const AnniversaryContext = createContext<AnniversaryContextType | undefined>(undefined);
 
+// 서버 ↔ 앱 모양 맞추기
+const fromServer = (a: any): Anniversary => ({
+    id: String(a.id),
+    partnerNickname: a.partnerNickname ?? '',
+    startDate: a.startDate ?? '',
+    relationshipType: (a.relationshipType ?? 'relationship') as RelationshipType,
+    isDefault: !!a.isDefault,
+    backgroundColors: Array.isArray(a.backgroundColors) && a.backgroundColors.length ? a.backgroundColors : undefined,
+    backgroundImageUri: a.backgroundImageUri || undefined,
+    celebrationMessage: a.celebrationMessage || undefined,
+    partnerFriendId: a.partnerFriendId ?? null,
+    memberFriendIds: Array.isArray(a.memberFriendIds) ? a.memberFriendIds : [],
+});
+
+const toServer = (a: Partial<Anniversary>) => ({
+    id: a.id, // 휴대폰에서 옮길 때만 써요 (같은 기념일을 두 번 옮기지 않게)
+    partnerNickname: a.partnerNickname,
+    startDate: a.startDate ? String(a.startDate).slice(0, 10) : a.startDate,
+    relationshipType: a.relationshipType,
+    isDefault: a.isDefault,
+    backgroundColors: a.backgroundColors ?? [],
+    backgroundImageUri: a.backgroundImageUri ?? null,
+    celebrationMessage: a.celebrationMessage ?? null,
+    partnerFriendId: a.partnerFriendId ?? null,
+    memberFriendIds: a.memberFriendIds ?? [],
+});
+
 export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [settings, setSettings] = useState<AnniversarySettings>(defaultSettings);
     const [anniversaries, setAnniversaries] = useState<Anniversary[]>([]);
@@ -76,7 +108,15 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
     const { isAuthenticated, currentUser } = useAuth();
     const owner = isAuthenticated && currentUser?.phoneNumber ? currentUser.phoneNumber : 'guest';
     const SETTINGS_KEY = `@anniversary_settings_${owner}`;
+    // 예전에 휴대폰에만 저장하던 목록 → 지금은 서버(DB) 목록을 잠깐 보관하는 곳 (인터넷이 안 될 때 보여줘요)
     const ANNIVERSARIES_KEY = `@anniversaries_${owner}`;
+    const MIGRATED_KEY = `@anniversaries_migrated_${owner}`;
+
+    // 최신 settings 를 언제나 쓸 수 있게
+    const settingsRef = useRef<AnniversarySettings>(defaultSettings);
+    useEffect(() => {
+        settingsRef.current = settings;
+    }, [settings]);
 
     // ⚠️ useCallback 으로 고정해요. (화면이 이 함수를 useEffect/useFocusEffect 에 넣어서,
     //    매번 새 함수가 되면 '불러오기 → 다시 그리기 → 또 불러오기'가 무한 반복돼 화면이 흔들려요)
@@ -84,247 +124,175 @@ export const AnniversaryProvider: React.FC<{ children: ReactNode }> = ({ childre
         try {
             const saved = await AsyncStorage.getItem(SETTINGS_KEY);
             // 저장된 게 없으면 기본값으로 (이전 계정의 설정이 남지 않게)
-            setSettings(saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings);
+            const next = saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+            settingsRef.current = next;
+            setSettings(next);
         } catch (e) { console.error(e); }
     }, [SETTINGS_KEY]);
 
+    // 화면 설정 저장 (휴대폰) — 여러 번 연달아 불러도 앞의 변경이 사라지지 않게 최신 값에 합쳐요
+    const updateSettings = useCallback(async (newSettings: Partial<AnniversarySettings>) => {
+        const next = { ...settingsRef.current, ...newSettings };
+        settingsRef.current = next;
+        setSettings(next);
+        await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    }, [SETTINGS_KEY]);
+
+    // 기본 기념일 → 기념일 화면 설정에 반영
+    const applyDefault = useCallback(async (list: Anniversary[]) => {
+        const d = list.find((a) => a.isDefault);
+        if (!d) {
+            // 기념일이 하나도 없으면 기념일 화면도 비워요
+            if (list.length === 0 && settingsRef.current.startDate) {
+                await updateSettings({
+                    partnerNickname: undefined,
+                    startDate: undefined,
+                    partnerFriendId: null,
+                    memberFriendIds: [],
+                    backgroundImageUri: undefined,
+                    backgroundColors: defaultSettings.backgroundColors,
+                    celebrationMessage: defaultSettings.celebrationMessage,
+                });
+            }
+            return;
+        }
+        await updateSettings({
+            partnerNickname: d.partnerNickname,
+            startDate: d.startDate,
+            relationshipType: d.relationshipType,
+            partnerFriendId: d.partnerFriendId ?? null,
+            memberFriendIds: d.memberFriendIds ?? [],
+            backgroundColors: d.backgroundColors?.length ? d.backgroundColors : defaultSettings.backgroundColors,
+            backgroundImageUri: d.backgroundImageUri || undefined,
+            celebrationMessage: d.celebrationMessage || defaultSettings.celebrationMessage,
+        });
+    }, [updateSettings]);
+
+    // 서버 목록 받기 → 화면 · 보관용 저장 · 기념일 화면 설정
+    const takeList = useCallback(async (raw: any[]) => {
+        const list = (raw ?? []).map(fromServer);
+        setAnniversaries(list);
+        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(list)).catch(() => {});
+        await applyDefault(list);
+        return list;
+    }, [ANNIVERSARIES_KEY, applyDefault]);
+
+    /** 🗄️ 데이터베이스에서 내 기념일 불러오기 (처음 한 번은 휴대폰에 있던 기념일을 서버로 옮겨요) */
+    // 여러 화면이 동시에 불러도 한 번만 서버에 가요 (옮기기가 두 번 되지 않게)
+    const loadingRef = useRef<Promise<void> | null>(null);
     const loadAnniversaries = useCallback(async () => {
+        if (owner === 'guest') {
+            setAnniversaries([]);
+            return;
+        }
+        if (loadingRef.current) return loadingRef.current;
+        const job = loadFromServer().finally(() => {
+            loadingRef.current = null;
+        });
+        loadingRef.current = job;
+        return job;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [owner, ANNIVERSARIES_KEY, MIGRATED_KEY, takeList]);
+
+    const loadFromServer = async () => {
         try {
-            const saved = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
-            if (saved) {
-                setAnniversaries(JSON.parse(saved));
-            } else {
+            const res = await api.get('/anniversaries');
+            let list: any[] = res.data ?? [];
+
+            const migrated = await AsyncStorage.getItem(MIGRATED_KEY);
+            if (!migrated) {
+                const localRaw = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
+                const local: Anniversary[] = localRaw ? JSON.parse(localRaw) : [];
+                // 서버에 없는 예전 기념일만 옮겨요 (숫자로 된 서버 id 는 이미 서버에 있는 거예요)
+                const toImport = list.length === 0 ? local.filter((a) => a && a.partnerNickname && a.startDate) : [];
+                if (toImport.length > 0) {
+                    const imp = await api.post('/anniversaries/import', toImport.map(toServer));
+                    list = imp.data ?? list;
+                    console.log(`💝 휴대폰에 있던 기념일 ${toImport.length}개를 데이터베이스로 옮겼어요`);
+                }
+                await AsyncStorage.setItem(MIGRATED_KEY, '1');
+            }
+            await takeList(list);
+        } catch (e) {
+            // 인터넷이 안 되면 마지막으로 받은 목록을 보여줘요
+            console.warn('기념일을 서버에서 불러오지 못했어요 (보관된 목록을 보여줘요)', e);
+            try {
+                const saved = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
+                setAnniversaries(saved ? JSON.parse(saved) : []);
+            } catch {
                 setAnniversaries([]);
             }
-        } catch (e) {
-            console.error(e);
-            setAnniversaries([]);
         }
-    }, [ANNIVERSARIES_KEY]);
-
-    const updateSettings = async (newSettings: Partial<AnniversarySettings>) => {
-        const newAppState = { ...settings, ...newSettings };
-        setSettings(newAppState);
-        await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(newAppState));
     };
 
     const clearImageBackground = async () => {
-        const newSettings = { ...settings, backgroundImageUri: undefined };
-        setSettings(newSettings);
-        await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+        await updateSettings({ backgroundImageUri: undefined });
     };
 
+    /** ➕ 등록 */
     const addAnniversary = async (anniversary: Omit<Anniversary, 'id' | 'isDefault'>) => {
-        const newAnniversary: Anniversary = {
-            id: Date.now().toString(), // 간단한 ID 생성
-            isDefault: anniversaries.length === 0, // 첫 번째 등록 시 기본으로 설정
-            ...anniversary,
-        };
-
-        let newAnniversaries = [];
-
-        if (newAnniversary.isDefault) {
-            // 다른 모든 기념일을 기본 해제
-            const nonDefaulted = anniversaries.map(a => ({ ...a, isDefault: false }));
-            newAnniversaries = [newAnniversary, ...nonDefaulted];
-
-            // 기본 기념일이 바뀌었으므로 전역 settings 업데이트
-            await updateSettings({
-                partnerNickname: newAnniversary.partnerNickname,
-                startDate: newAnniversary.startDate,
-                relationshipType: newAnniversary.relationshipType,
-                partnerFriendId: newAnniversary.partnerFriendId, // 🎉 추가: 친구 ID
-                memberFriendIds: newAnniversary.memberFriendIds ?? [],
-                // 배경 및 메시지는 AnniversaryEditBackground에서 설정하므로 기본값 사용
-                backgroundColors: defaultSettings.backgroundColors,
-                celebrationMessage: defaultSettings.celebrationMessage,
-            });
-        } else {
-            newAnniversaries = [...anniversaries, newAnniversary];
-        }
-
-        setAnniversaries(newAnniversaries);
-        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(newAnniversaries));
+        await api.post('/anniversaries', toServer(anniversary));
+        const res = await api.get('/anniversaries');
+        await takeList(res.data);
     };
 
-    /**
-     * @description 기념일 정보를 수정합니다. isDefault가 true로 설정되면, 다른 모든 기념일은 해제됩니다.
-     * @param updatedAnniv 수정된 기념일 객체
-     */
+    /** ✏️ 수정 (isDefault 가 true 면 기본 기념일로) */
     const updateAnniversary = async (updatedAnniv: Anniversary) => {
-        let finalUpdatedList: Anniversary[] = [];
-
-        setAnniversaries(prevAnniversaries => {
-            const newAnnivList = prevAnniversaries.map(a => {
-                if (a.id === updatedAnniv.id) {
-                    return updatedAnniv; // 현재 수정하는 기념일 업데이트
-                }
-
-                // 🎉 수정: 수정된 기념일이 '기본'이면 나머지 기념일은 '기본 해제'
-                // 이 로직 덕분에 AnniversaryEdit에서 isDefault를 true로 설정하면 다른 기념일들은 자동으로 false가 됩니다.
-                if (updatedAnniv.isDefault) {
-                    return { ...a, isDefault: false };
-                }
-                return a;
-            });
-
-            finalUpdatedList = newAnnivList;
-            return newAnnivList;
-        });
-
-        // 기본 기념일이면 전역 settings도 동기화
-        if (updatedAnniv.isDefault) {
-            // updateSettings 호출 시, 기념일의 배경 정보도 포함하여 업데이트
-            await updateSettings({
-                partnerNickname: updatedAnniv.partnerNickname,
-                startDate: updatedAnniv.startDate,
-                relationshipType: updatedAnniv.relationshipType,
-                partnerFriendId: updatedAnniv.partnerFriendId,
-                memberFriendIds: updatedAnniv.memberFriendIds ?? [],
-                backgroundColors: updatedAnniv.backgroundColors ?? defaultSettings.backgroundColors,
-                backgroundImageUri: updatedAnniv.backgroundImageUri,
-                celebrationMessage: updatedAnniv.celebrationMessage ?? defaultSettings.celebrationMessage,
-            });
-        }
-
-        // setAnniversaries는 비동기적으로 처리되므로, AsyncStorage 저장을 위해 캡처된 리스트를 사용
-        await new Promise(resolve => setTimeout(resolve, 0));
-        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(finalUpdatedList));
+        await api.put(`/anniversaries/${updatedAnniv.id}`, toServer(updatedAnniv));
+        const res = await api.get('/anniversaries');
+        await takeList(res.data);
     };
 
+    /** 🎨 배경 · 메시지 바꾸기 */
     const updateAnniversaryBackground = async (id: string, data: {
         backgroundColors?: string[];
         backgroundImageUri?: string;
         celebrationMessage?: string;
     }) => {
-        let defaultOne: Anniversary | undefined;
-        let finalUpdatedList: Anniversary[] = [];
-
-        setAnniversaries(prevAnniversaries => {
-            const updated = prevAnniversaries.map(a => {
-                if (a.id === id) {
-                    const updatedAnniv = { ...a, ...data };
-                    if (updatedAnniv.isDefault) defaultOne = updatedAnniv;
-                    return updatedAnniv;
-                }
-                return a;
-            });
-            finalUpdatedList = updated;
-            return updated;
-        });
-
-        // 기본 기념일이면 전역 settings도 동기화
-        if (defaultOne) {
-            await updateSettings({
-                backgroundColors: defaultOne.backgroundColors,
-                backgroundImageUri: defaultOne.backgroundImageUri,
-                celebrationMessage: defaultOne.celebrationMessage,
-            });
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 0));
-        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(finalUpdatedList));
+        const body: Record<string, any> = {};
+        if ('backgroundColors' in data) body.backgroundColors = data.backgroundColors ?? [];
+        if ('backgroundImageUri' in data) body.backgroundImageUri = data.backgroundImageUri ?? null;
+        if ('celebrationMessage' in data) body.celebrationMessage = data.celebrationMessage ?? '';
+        await api.put(`/anniversaries/${id}`, body);
+        const res = await api.get('/anniversaries');
+        await takeList(res.data);
     };
 
+    /** 🗑️ 삭제 (기본을 지우면 가장 먼저 등록한 기념일이 기본이 돼요) */
     const deleteAnniversary = async (id: string) => {
-        const newAnniversaries = anniversaries.filter(a => a.id !== id);
-        let defaultFound = newAnniversaries.find(a => a.isDefault);
-        let defaultOne: Anniversary | undefined;
-
-        // 삭제된 항목이 기본 기념일이었고, 남은 항목 중에 기본이 없으면
-        // 가장 오래된 항목 (가장 처음 등록된 항목)을 기본으로 설정합니다.
-        if (!defaultFound && newAnniversaries.length > 0) {
-            defaultOne = { ...newAnniversaries[0], isDefault: true };
-            newAnniversaries[0] = defaultOne; // 리스트에도 반영
-        } else if (defaultFound) {
-            defaultOne = defaultFound; // 기존 기본 기념일 유지
-        }
-
-        setAnniversaries(newAnniversaries);
-        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(newAnniversaries));
-
-        // 기본 기념일이 변경되거나 재설정된 경우, 전역 settings도 업데이트
-        if (defaultOne) {
-            await updateSettings({
-                partnerNickname: defaultOne.partnerNickname,
-                startDate: defaultOne.startDate,
-                relationshipType: defaultOne.relationshipType,
-                partnerFriendId: defaultOne.partnerFriendId,
-                memberFriendIds: defaultOne.memberFriendIds ?? [],
-                backgroundColors: defaultOne.backgroundColors ?? defaultSettings.backgroundColors,
-                backgroundImageUri: defaultOne.backgroundImageUri,
-                celebrationMessage: defaultOne.celebrationMessage ?? defaultSettings.celebrationMessage,
-            });
-        } else if (newAnniversaries.length === 0) {
-            // 모든 기념일 삭제 시 settings 초기화 (선택적)
-            await updateSettings({});
-        }
+        const res = await api.delete(`/anniversaries/${id}`);
+        await takeList(res.data);
     };
 
-    /**
-     * @description 지정된 ID의 기념일을 기본 기념일로 설정하고, 나머지 기념일을 해제합니다.
-     * @param id 기본으로 설정할 기념일 ID
-     */
+    /** ⭐ 기본 기념일 정하기 */
     const setDefaultAnniversary = async (id: string) => {
-        let defaultOne: Anniversary | undefined;
-        let finalUpdatedList: Anniversary[] = [];
-
-        // 🎉 수정: 함수형 업데이트를 사용하여 최신 anniversaries 상태를 기반으로 리스트를 안전하게 업데이트
-        setAnniversaries(prevAnniversaries => {
-            const updated = prevAnniversaries.map(a => {
-                const isDefault = a.id === id;
-                const newAnniv = { ...a, isDefault };
-                if (isDefault) defaultOne = newAnniv; // 갱신된 객체를 참조하도록 함
-                return newAnniv;
-            });
-            finalUpdatedList = updated;
-            return updated;
-        });
-
-        // 전역 settings 업데이트 로직 (defaultOne이 정의된 경우)
-        if (defaultOne) {
-            // 기본 기념일의 세부 정보를 전역 settings에 동기화
-            await updateSettings({
-                partnerNickname: defaultOne.partnerNickname,
-                startDate: defaultOne.startDate,
-                relationshipType: defaultOne.relationshipType,
-                partnerFriendId: defaultOne.partnerFriendId, // 🎉 추가: 친구 ID
-                memberFriendIds: defaultOne.memberFriendIds ?? [],
-                backgroundColors: defaultOne.backgroundColors ?? defaultSettings.backgroundColors,
-                backgroundImageUri: defaultOne.backgroundImageUri,
-                celebrationMessage: defaultOne.celebrationMessage ?? defaultSettings.celebrationMessage,
-            });
-        }
-
-        // ⚠️ 수정: setAnniversaries는 비동기적으로 처리되므로, AsyncStorage 저장을 위해 캡처된 리스트를 사용
-        await new Promise(resolve => setTimeout(resolve, 0));
-        await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(finalUpdatedList));
+        const res = await api.put(`/anniversaries/${id}/default`);
+        await takeList(res.data);
     };
-
 
     // 계정이 바뀔 때마다(로그인/로그아웃) 그 계정의 기념일을 다시 불러와요
     useEffect(() => {
         if (owner === 'guest') {
+            settingsRef.current = defaultSettings;
             setSettings(defaultSettings);
             setAnniversaries([]);
             return;
         }
-        loadSettings();
-        loadAnniversaries();
+        loadSettings().then(() => loadAnniversaries());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [owner]);
 
     // 👨‍👩‍👧 함께하는 사람들 저장 (화면 설정 + 기본 기념일 둘 다)
     const setMemberFriendIds = async (ids: string[]) => {
         const clean = Array.from(new Set(ids)).slice(0, 5);
         await updateSettings({ memberFriendIds: clean });
+        const d = anniversaries.find((a) => a.isDefault);
+        if (!d) return;
         try {
-            const saved = await AsyncStorage.getItem(ANNIVERSARIES_KEY);
-            const list: Anniversary[] = saved ? JSON.parse(saved) : anniversaries;
-            const next = list.map((a) => (a.isDefault ? { ...a, memberFriendIds: clean } : a));
-            setAnniversaries(next);
-            await AsyncStorage.setItem(ANNIVERSARIES_KEY, JSON.stringify(next));
+            await api.put(`/anniversaries/${d.id}`, { memberFriendIds: clean });
+            setAnniversaries((cur) => cur.map((a) => (a.id === d.id ? { ...a, memberFriendIds: clean } : a)));
         } catch (e) {
-            console.error(e);
+            console.error('함께하는 사람을 저장하지 못했어요', e);
         }
     };
 

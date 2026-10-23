@@ -26,6 +26,16 @@ import StatusComposer from '@/components/Status/StatusComposer';
 import ConnectSheet from '@/components/Status/ConnectSheet';
 import { toImageUrl } from '@/config';
 import { syncMyAnniversary } from '@/components/Anniversary/anniversaryShare';
+import SongPicker from '@/components/Anniversary/SongPicker';
+import {
+    FlowLine,
+    FlowLineFlex,
+    SongHeart,
+    SongChip,
+    deleteAnniversarySongFile,
+    AnniversarySongData,
+    useAnniversarySongPlayer,
+} from '@/components/Anniversary/AnniversarySong';
 import { useStatusFeed, relationOf, RELATIONS, Person } from '@/components/Status/statusApi';
 
 import { dc, dbg } from '@/constants/theme';
@@ -205,7 +215,7 @@ const AnniversaryScreen: React.FC = () => {
 
     // ⭐️ 프로필 이미지 렌더링 함수 (AnimalAvatar 또는 Image 사용)
     const renderProfileContent = (profile: Profile) => {
-        const size = 120; // styles.profileImageBorder와 동일한 크기
+        const size = 96; // styles.profileImageBorder(104) 안쪽 크기
 
         if (profile.profileImageKey) {
             // 연결된 친구가 있고, 이모지 키가 있을 경우 AnimalAvatar 사용
@@ -276,6 +286,58 @@ const AnniversaryScreen: React.FC = () => {
     // 💬 상태 동그라미 줄
     // ------------------------------------------------------------
     const myStatuses = feed.me?.statuses ?? [];
+
+    // ------------------------------------------------------------
+    // 🎵 우리 노래 — 가운데 하트를 누르면 들어요
+    // ------------------------------------------------------------
+    const song = settings.song ?? null;
+    const songPlayer = useAnniversarySongPlayer(song);
+    // 다른 화면으로 가면 노래를 멈춰요
+    useFocusEffect(
+        useCallback(() => {
+            return () => songPlayer.stop();
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [song?.uri])
+    );
+    // 🎵 노래 고르기 창 (검색 · 내 휴대폰)
+    const [songPickerOpen, setSongPickerOpen] = useState(false);
+    const chooseSong = () => {
+        if (!requireLogin('우리 노래')) return;
+        setSongPickerOpen(true);
+    };
+    const onSongPicked = async (picked: AnniversarySongData) => {
+        setSongPickerOpen(false);
+        songPlayer.stop();
+        // 예전 휴대폰 파일은 지워요 (새 노래와 다를 때만)
+        if (song && song.uri !== picked.uri) await deleteAnniversarySongFile(song);
+        await updateSettings({ song: picked });
+    };
+    const onHeartPress = () => (song ? songPlayer.toggle() : chooseSong());
+    // 🗑️ 노래 지우기 (한 번 더 물어봐요)
+    const removeSong = () => {
+        if (!song) return;
+        Alert.alert('노래 지우기', `"${song.name}"을(를) 우리 노래에서 지울까요?`, [
+            { text: '취소', style: 'cancel' },
+            {
+                text: '지우기',
+                style: 'destructive',
+                onPress: async () => {
+                    songPlayer.stop();
+                    setSongPickerOpen(false);
+                    await deleteAnniversarySongFile(song);
+                    await updateSettings({ song: null });
+                },
+            },
+        ]);
+    };
+    const onHeartLongPress = () => {
+        if (!song) return chooseSong();
+        Alert.alert(`🎵 ${song.name}`, song.artist ? `${song.artist}\n우리 노래를 바꾸거나 지울 수 있어요.` : '우리 노래를 바꾸거나 지울 수 있어요.', [
+            { text: '노래 바꾸기', onPress: chooseSong },
+            { text: '노래 지우기', style: 'destructive', onPress: removeSong },
+            { text: '닫기', style: 'cancel' },
+        ]);
+    };
     const latestText = (list: { text?: string | null }[]) => [...list].reverse().find((x) => x.text)?.text ?? null;
 
     // 상태가 있는 사람들 (스토리 보기에서 차례로 넘어가요)
@@ -415,25 +477,30 @@ const AnniversaryScreen: React.FC = () => {
                     const mx = cx + Math.cos(angle) * (start + len / 2);
                     const my = cy + Math.sin(angle) * (start + len / 2);
                     return (
-                        <View
+                        <FlowLine
                             key={`line-${i}`}
-                            pointerEvents="none"
-                            style={[
-                                styles.memberLine,
-                                {
-                                    left: mx - len / 2,
-                                    top: my - 1,
-                                    width: len,
-                                    backgroundColor: 'rgba(255,255,255,0.6)',
-                                    transform: [{ rotate: `${(angle * 180) / Math.PI}deg` }],
-                                },
-                            ]}
+                            left={mx - len / 2}
+                            top={my - 1}
+                            length={len}
+                            angleDeg={(angle * 180) / Math.PI}
+                            active={!!song}
+                            playing={songPlayer.playing}
+                            delay={i * 180}
                         />
                     );
                 })}
-                {/* 가운데 하트 */}
-                <View pointerEvents="none" style={[styles.groupHeart, { left: cx - 26, top: cy - 26, backgroundColor: 'rgba(255,255,255,0.92)' }]}>
-                    <Text style={{ fontSize: 22 }}>{heart}</Text>
+                {/* 가운데 하트 (누르면 우리 노래) */}
+                <View style={{ position: 'absolute', left: cx - 33, top: cy - 37, zIndex: 3 }}>
+                    <SongHeart
+                        emoji={heart}
+                        size={52}
+                        song={song}
+                        hasSong={!!song}
+                        playing={songPlayer.playing}
+                        progress={songPlayer.progress}
+                        onPress={onHeartPress}
+                        onLongPress={onHeartLongPress}
+                    />
                 </View>
 
                 {/* 사람들 */}
@@ -668,14 +735,20 @@ const AnniversaryScreen: React.FC = () => {
                             <Text style={styles.nickname}>{myProfile.nickname}</Text>
                         </TouchableOpacity>
 
-                        <View style={styles.connectionContainer}>
-                            <View style={styles.connectionLine} />
-                            <View style={styles.heartContainer}>
-                                <Text style={styles.connectionHeart}>
-                                    {relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
-                                </Text>
-                            </View>
-                            <View style={styles.connectionLine} />
+                        {/* 하트 양쪽 선 (노래가 있으면 빛이 왔다 갔다) · 하트를 누르면 우리 노래 */}
+                        <View style={styles.songConnector}>
+                            <FlowLineFlex active={!!song} playing={songPlayer.playing} />
+                            <SongHeart
+                                emoji={relationshipType === 'friendship' ? '🤝' : relationshipType === 'married' ? '💍' : '❤️'}
+                                size={50}
+                                song={song}
+                                hasSong={!!song}
+                                playing={songPlayer.playing}
+                                progress={songPlayer.progress}
+                                onPress={onHeartPress}
+                                onLongPress={onHeartLongPress}
+                            />
+                            <FlowLineFlex active={!!song} playing={songPlayer.playing} reverse delay={300} />
                         </View>
 
                         {/* ⭐️ 파트너 프로필 (수정된 부분) */}
@@ -692,6 +765,11 @@ const AnniversaryScreen: React.FC = () => {
                     </View>
 
                     )}
+
+                    {/* 🎵 우리 노래 이름 */}
+                    <View style={{ marginTop: -36, marginBottom: 24 }}>
+                        <SongChip song={song} playing={songPlayer.playing} onToggle={songPlayer.toggle} onAdd={chooseSong} onEdit={chooseSong} />
+                    </View>
 
                     <View style={styles.relationshipContainer}>
                         <View style={[
@@ -727,6 +805,15 @@ const AnniversaryScreen: React.FC = () => {
                 {renderPeopleSummary()}
                 </ScrollView>
             </SafeAreaView>
+
+            {/* 🎵 우리 노래 고르기 */}
+            <SongPicker
+                visible={songPickerOpen}
+                current={song}
+                onClose={() => setSongPickerOpen(false)}
+                onPick={onSongPicked}
+                onRemove={removeSong}
+            />
 
             {/* 💬 상태 올리기 / 보기 / 연결 */}
             <StatusComposer
@@ -1090,16 +1177,17 @@ const styles = StyleSheet.create({
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
     },
+    songConnector: { flex: 1, flexDirection: 'row', alignItems: 'center', marginHorizontal: 2 },
     profilesContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 10,
+        paddingHorizontal: 4,
         marginBottom: 60,
     },
     profileSection: {
         alignItems: 'center',
-        flex: 1,
+        width: 106, // 가운데 선(노래 빛)이 잘 보이게 사진 칸을 조금 줄였어요
     },
     profileImageContainer: {
         position: 'relative',
@@ -1112,9 +1200,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     profileImageBorder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 104,
+        height: 104,
+        borderRadius: 52,
         borderWidth: 4,
         borderColor: '#FFFFFF',
         shadowColor: '#000',
@@ -1127,13 +1215,13 @@ const styles = StyleSheet.create({
     profileImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 56,
+        borderRadius: 48,
     },
     profileGlow: {
         position: 'absolute',
-        width: 140,
-        height: 140,
-        borderRadius: 70,
+        width: 124,
+        height: 124,
+        borderRadius: 62,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         top: -10,
         left: -10,

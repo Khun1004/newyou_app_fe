@@ -380,7 +380,7 @@ export default function AnniversaryList() {
             <View style={styles.tabBar}>
                 {TABS.map((t) => {
                     const on = tab === t.key;
-                    const count = t.key === 'friends' ? friendCount : t.key === 'newyou' ? 0 : sortedAnniversaries.length;
+                    const count = t.key === 'friends' ? friendCount : t.key === 'anniv' ? sortedAnniversaries.length : 0;
                     return (
                         <TouchableOpacity key={t.key} style={[styles.tabBtn, on && styles.tabBtnOn]} onPress={() => setTab(t.key)} activeOpacity={0.85}>
                             <Ionicons name={(on ? t.icon : t.icon + '-outline') as any} size={15} color={on ? '#FFFFFF' : THEME.subText} />
